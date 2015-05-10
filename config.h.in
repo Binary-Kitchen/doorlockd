@@ -1,0 +1,16 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#cmakedefine USE_COLORIZED_LOGS
+
+#ifdef DEBUG
+#define DEFAULT_LOG_LEVEL LogLevel::debug2
+#else
+#define DEFAULT_LOG_LEVEL LogLevel::info
+#endif
+
+#define TOKEN_TIMEOUT 15
+#define LOCKPAGE_PREFIX "https://lock.binary.kitchen/"
+#define FIFO_LOCATION "/tmp/fifo"
+
+#endif
