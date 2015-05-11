@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <json/json.h>
 
+#define LDAP_DEPRECATED 1
+#include <ldap.h>
+
 #include "util.h"
 #include "logic.h"
 
@@ -16,6 +19,9 @@ using namespace std;
 
 const string Logic::_lockPagePrefix = LOCKPAGE_PREFIX;
 const string Logic::_fifoLocation = FIFO_LOCATION;
+
+const string Logic::_ldapServer = LDAP_SERVER;
+const string Logic::_bindDN = BINDDN;
 
 Logic &Logic::get()
 {
@@ -86,7 +92,6 @@ void Logic::_parseRequest(const string &str)
         action = getJsonOrFail<string>(root, "action");
         host = getJsonOrFail<string>(root, "host");
         authenticated = getJsonOrFail<bool>(root, "authenticated");
-        string user, password;
         if (authenticated == true)
         {
             user = getJsonOrFail<string>(root, "user");
@@ -218,7 +223,47 @@ bool Logic::_checkToken(const string &strToken)
 
 bool Logic::_checkLDAP(const string &user, const string &password)
 {
-    return true;
+    constexpr int BUFFERSIZE = 1024;
+    char buffer[BUFFERSIZE];
+    bool retval = false;
+    int rc = -1;
+    LDAP* ld = nullptr;
+    unsigned long version = LDAP_VERSION3;
+
+    _logger(LogLevel::notice, "Trying to authenticate as user \"%s\"", user.c_str());
+    snprintf(buffer, BUFFERSIZE, _bindDN.c_str(), user.c_str());
+
+    rc = ldap_initialize(&ld, _ldapServer.c_str());
+    if(rc != LDAP_SUCCESS)
+    {   
+        _logger(LogLevel::error, "LDAP initialize error: %s", ldap_err2string(rc));
+        goto out2;
+    }
+
+    rc = ldap_set_option(ld,
+                         LDAP_OPT_PROTOCOL_VERSION,
+                         (void*)&version);
+    if (rc != LDAP_SUCCESS)
+    {
+        _logger(LogLevel::error, "LDAP set version failed");
+        goto out;
+    }
+
+    rc = ldap_simple_bind_s(ld, buffer, password.c_str());
+    if (rc != LDAP_SUCCESS)
+    {   
+        _logger(LogLevel::error, "Credential check for user \"%s\" failed: %s", user.c_str(), ldap_err2string(rc));
+        goto out;
+    }
+
+    _logger(LogLevel::notice, "user \"%s\" successfully authenticated", user.c_str());
+    retval = true;
+
+out:
+    ldap_unbind(ld);
+    ld = nullptr;
+out2:
+    return retval;
 }
 
 void Logic::_createNewToken(const bool stillValid)

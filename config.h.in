@@ -13,4 +13,7 @@
 #define LOCKPAGE_PREFIX "https://lock.binary.kitchen/"
 #define FIFO_LOCATION "/tmp/fifo"
 
+#define LDAP_SERVER "ldaps://ldap.binary.kitchen"
+#define BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
+
 #endif

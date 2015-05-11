@@ -14,7 +14,6 @@ int main(void)
 {
     l(LogLevel::notice, "Starting doorlockd");
 
-
     try {
         Logic &logic = Logic::get();
         logic.run();

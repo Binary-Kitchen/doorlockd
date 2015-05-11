@@ -27,4 +27,4 @@ epaper/bsp.c
 
 add_executable(doorlockd ${SRCS})
 
-target_link_libraries(doorlockd wiringPi jsoncpp)
+target_link_libraries(doorlockd wiringPi jsoncpp ldap)

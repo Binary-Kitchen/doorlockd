@@ -45,6 +45,8 @@ private:
 
     const static std::string _lockPagePrefix;
     const static std::string _fifoLocation;
+    const static std::string _bindDN;
+    const static std::string _ldapServer;
 
     int _fifoHandle = {-1};
 
