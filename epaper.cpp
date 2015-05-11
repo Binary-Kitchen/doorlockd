@@ -38,7 +38,7 @@ void Epaper::draw(const string &uri)
     snprintf((char*)buffer, ARRAY_SIZE, "qrencode -l M -d 100 -s 5 \"%s\" -o /tmp/qr.png", uri.c_str());
     system((char*)buffer);
 
-    FILE* f = popen("composite -geometry +90+0 /tmp/qr.png /tmp/template.png -colorspace gray -depth 1 gray:-", "r");
+    FILE* f = popen("composite -geometry +90+0 /tmp/qr.png /usr/local/share/doorlockd/template.png -colorspace gray -depth 1 gray:-", "r");
     int i = fread(buffer, ARRAY_SIZE, 1, f);
     if (i != 1)
     {

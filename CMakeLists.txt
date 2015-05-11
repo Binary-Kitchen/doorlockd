@@ -26,5 +26,11 @@ epaper/bsp.c
 )
 
 add_executable(doorlockd ${SRCS})
-
 target_link_libraries(doorlockd wiringPi jsoncpp ldap)
+
+install(TARGETS doorlockd DESTINATION sbin)
+install(FILES img/template.png DESTINATION share/doorlockd)
+install(DIRECTORY scripts/ DESTINATION share/doorlockd
+    FILES_MATCHING PATTERN "scripts/doorlockd-*"
+    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE OWNER_WRITE)
+install(FILES scripts/doorlockd.service DESTINATION /etc/systemd/system)

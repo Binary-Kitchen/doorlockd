@@ -1,0 +1,12 @@
+#!/bin/bash
+PIDFILE=/tmp/doorlockd-pid
+
+gpio load spi
+gpio load i2c
+
+/home/ralf/doorlockd-build/doorlockd &
+PID=$!
+
+echo $PID > $PIDFILE
+
+wait $PID
