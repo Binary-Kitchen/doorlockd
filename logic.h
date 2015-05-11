@@ -22,13 +22,14 @@ public:
 private:
 
     Logic();
-    void _parseRequest(const std::string &str);
+    int _parseRequest(const std::string &str);
 
     void _lock();
     void _unlock();
 
     bool _checkToken(const std::string &token);
     bool _checkLDAP(const std::string &user, const std::string &password);
+    bool _checkIP(const std::string &ip);
 
     void _createNewToken(const bool stillValid);
 
@@ -47,6 +48,7 @@ private:
     const static std::string _fifoLocation;
     const static std::string _bindDN;
     const static std::string _ldapServer;
+    const static std::string _allowedIpPrefix;
 
     int _fifoHandle = {-1};
 

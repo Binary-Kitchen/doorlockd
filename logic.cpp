@@ -22,6 +22,7 @@ const string Logic::_fifoLocation = FIFO_LOCATION;
 
 const string Logic::_ldapServer = LDAP_SERVER;
 const string Logic::_bindDN = BINDDN;
+const string Logic::_allowedIpPrefix = ALLOWEDIPPREFIX;
 
 Logic &Logic::get()
 {
@@ -45,15 +46,24 @@ Logic::Logic() :
             throw("Unable to delete Fifo file");
         }
     }
-    if (mkfifo(_fifoLocation.c_str(), 0660) != 0)
+
+    umask(0);
+
+    if (mkfifo(_fifoLocation.c_str(), 0770) != 0)
     {
         throw("Unable to create Fifo");
     }
+
 
     _fifoHandle = open(_fifoLocation.c_str(), O_RDWR | O_NONBLOCK);
     if (_fifoHandle == -1)
     {
         throw("Unable to open Fifo");
+    }
+
+    if (fchown(_fifoHandle, 0, 1001) != 0)
+    {
+        throw("Fifo chown failed");
     }
 
     _createNewToken(false);
@@ -73,26 +83,27 @@ Logic::~Logic()
     }
 }
 
-void Logic::_parseRequest(const string &str)
+int Logic::_parseRequest(const string &str)
 {
     _logger("Parsing request...");
     Json::Reader reader;
     Json::Value root;
+    int retval = 0;
+    string action, user, password, ip, token;
+    bool authenticate;
 
     bool suc = reader.parse(str, root, false);
     if (!suc)
     {
         _logger(LogLevel::error, "Request ist not valid JSON!");
-        return;
+        goto out;
     }
 
-    string action, user, password, host, token;
-    bool authenticated;
     try {
         action = getJsonOrFail<string>(root, "action");
-        host = getJsonOrFail<string>(root, "host");
-        authenticated = getJsonOrFail<bool>(root, "authenticated");
-        if (authenticated == true)
+        ip = getJsonOrFail<string>(root, "ip");
+        authenticate = getJsonOrFail<bool>(root, "authenticate");
+        if (authenticate == true)
         {
             user = getJsonOrFail<string>(root, "user");
             password = getJsonOrFail<string>(root, "password");
@@ -102,24 +113,30 @@ void Logic::_parseRequest(const string &str)
     catch (...)
     {
         _logger(LogLevel::warning, "Error parsing JSON");
-        return;
+        goto out;
     }
 
-    printf("Action: %s\nAuthenticated: %d\nHost: %s\n",action.c_str(), authenticated, host.c_str());
-    printf("User: %s\nPassword: %s\nToken: %s\n",user.c_str(), password.c_str(), token.c_str());
+    printf("Action: %s\nAuthenticate: %d\nIP: %s\n",action.c_str(), authenticate, ip.c_str());
+    printf("User: %s\nPassword: XXXXXXXXXX\nToken: %s\n",user.c_str(), token.c_str());
 
-    if (authenticated == true)
+    if (authenticate == true)
     {
         if (_checkToken(token) == false)
         {
             _logger(LogLevel::error, "User provided invalid token");
-            return;
+            goto out;
         }
 
         if (_checkLDAP(user, password) == false)
         {
             _logger(LogLevel::error, "invalid LDAP credentials");
-            return;
+            goto out;
+        }
+    } else {
+        if (_checkIP(ip) == false)
+        {
+            _logger(LogLevel::error, "IP check for non-authentication failed");
+            goto out;
         }
     }
 
@@ -131,6 +148,9 @@ void Logic::_parseRequest(const string &str)
     } else {
         _logger(LogLevel::error, "Unknown Action: %s", action.c_str());
     }
+
+out:
+    return retval;
 }
 
 void Logic::_lock()
@@ -200,8 +220,14 @@ void Logic::run()
                 throw "read() fifo failed";
             }
         }
-        _parseRequest(payload);
+
+        int rc = _parseRequest(payload);
     }
+}
+
+bool Logic::_checkIP(const string &ip)
+{
+    return true;
 }
 
 bool Logic::_checkToken(const string &strToken)
