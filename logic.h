@@ -17,12 +17,12 @@ public:
     static Logic &get();
     ~Logic();
 
-    void run();
+    int parseRequest(const std::string &str);
+    void createNewToken(const bool stillValid);
 
 private:
 
     Logic();
-    int _parseRequest(const std::string &str);
 
     void _lock();
     void _unlock();
@@ -31,7 +31,6 @@ private:
     bool _checkLDAP(const std::string &user, const std::string &password);
     bool _checkIP(const std::string &ip);
 
-    void _createNewToken(const bool stillValid);
 
     const Logger &_logger;
     Door &_door;
@@ -49,8 +48,6 @@ private:
     const static std::string _bindDN;
     const static std::string _ldapServer;
     const static std::string _allowedIpPrefix;
-
-    int _fifoHandle = {-1};
 
     static constexpr int _tokenTimeout = TOKEN_TIMEOUT;
 

@@ -1,9 +1,4 @@
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
 
 #include <cstdlib>
@@ -18,7 +13,6 @@
 using namespace std;
 
 const string Logic::_lockPagePrefix = LOCKPAGE_PREFIX;
-const string Logic::_fifoLocation = FIFO_LOCATION;
 
 const string Logic::_ldapServer = LDAP_SERVER;
 const string Logic::_bindDN = BINDDN;
@@ -36,54 +30,14 @@ Logic::Logic() :
     _epaper(Epaper::get())
 {
     srand(time(NULL));
-
-    _logger(LogLevel::debug, "Creating Fifo file");
-    if (access(_fifoLocation.c_str(), F_OK) == 0)
-    {
-        _logger(LogLevel::warning, "Fifo file aready existing, trying to delete");
-        if (unlink(_fifoLocation.c_str()) != 0)
-        {
-            throw("Unable to delete Fifo file");
-        }
-    }
-
-    umask(0);
-
-    if (mkfifo(_fifoLocation.c_str(), 0770) != 0)
-    {
-        throw("Unable to create Fifo");
-    }
-
-
-    _fifoHandle = open(_fifoLocation.c_str(), O_RDWR | O_NONBLOCK);
-    if (_fifoHandle == -1)
-    {
-        throw("Unable to open Fifo");
-    }
-
-    if (fchown(_fifoHandle, 0, 1001) != 0)
-    {
-        throw("Fifo chown failed");
-    }
-
-    _createNewToken(false);
+    createNewToken(false);
 }
 
 Logic::~Logic()
 {
-    if (_fifoHandle != -1)
-    {
-        close(_fifoHandle);
-    }
-
-    _logger(LogLevel::debug, "Removing Fifo file");
-    if (unlink(_fifoLocation.c_str()) != 0)
-    {
-        throw("Unable to delete Fifo file");
-    }
 }
 
-int Logic::_parseRequest(const string &str)
+int Logic::parseRequest(const string &str)
 {
     _logger("Parsing request...");
     Json::Reader reader;
@@ -162,7 +116,7 @@ void Logic::_lock()
     }
     _door.lock();
     _state = LOCKED;
-    _createNewToken(false);
+    createNewToken(false);
 }
 
 void Logic::_unlock()
@@ -174,55 +128,7 @@ void Logic::_unlock()
    }
    _door.unlock();
    _state = UNLOCKED;
-   _createNewToken(false);
-}
-
-void Logic::run()
-{
-    struct timeval tv;
-    fd_set set;
-
-    for (;;)
-    {
-        FD_ZERO(&set);
-        FD_SET(_fifoHandle, &set);
-        tv.tv_sec = _tokenTimeout;
-        tv.tv_usec = 0;
-
-        int i = select(_fifoHandle+1, &set, nullptr, nullptr, &tv);
-        if (i == 0)
-        {
-            _createNewToken(true);
-            continue;
-        } else if (i == -1) {
-            throw "Fifo select() failed";
-        }
-
-        if (!FD_ISSET(_fifoHandle, &set))
-        {
-            _logger(LogLevel::warning, "select(): Not my fd");
-            continue;
-        }
-
-        string payload;
-        for (;;)
-        {
-            constexpr int BUFSIZE = 2;
-            char tmp[BUFSIZE];
-            i = read(_fifoHandle, tmp, BUFSIZE);
-            if (i > 0) {
-                payload += string(tmp, i);
-            } else {
-                if (errno == EWOULDBLOCK)
-                {
-                    break;
-                }
-                throw "read() fifo failed";
-            }
-        }
-
-        int rc = _parseRequest(payload);
-    }
+   createNewToken(false);
 }
 
 bool Logic::_checkIP(const string &ip)
@@ -292,7 +198,7 @@ out2:
     return retval;
 }
 
-void Logic::_createNewToken(const bool stillValid)
+void Logic::createNewToken(const bool stillValid)
 {
     _prevToken = _curToken;
     _prevValid = stillValid;
