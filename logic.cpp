@@ -1,11 +1,12 @@
-#include <stdio.h>
-#include <errno.h>
+#include <chrono>
 
 #include <cstdlib>
 #include <json/json.h>
 
 #define LDAP_DEPRECATED 1
 #include <ldap.h>
+
+#include <errno.h>
 
 #include "util.h"
 #include "logic.h"
@@ -18,27 +19,47 @@ const string Logic::_ldapServer = LDAP_SERVER;
 const string Logic::_bindDN = BINDDN;
 const string Logic::_allowedIpPrefix = ALLOWEDIPPREFIX;
 
-Logic &Logic::get()
+Logic &Logic::get(const chrono::seconds tokenTimeout)
 {
-    static Logic l;
+    static Logic l(tokenTimeout);
     return l;
 }
 
-Logic::Logic() :
+Logic::Logic(const chrono::seconds tokenTimeout) :
     _logger(Logger::get()),
     _door(Door::get()),
-    _epaper(Epaper::get())
+    _epaper(Epaper::get()),
+    _tokenTimeout(tokenTimeout)
 {
     srand(time(NULL));
-    createNewToken(false);
+    _createNewToken(false);
+
+    _tokenUpdater = thread([this] () {
+        while (_run)
+        {
+            unique_lock<mutex> l(_mutex);
+            _c.wait_for(l, _tokenTimeout);
+            if (_run == false)
+            {
+                break;
+            } else {
+                _createNewToken(true);
+            }
+        }
+    });
 }
 
 Logic::~Logic()
 {
+    _run = false;
+    _c.notify_one();
+    _tokenUpdater.join();
 }
 
 Logic::Response Logic::parseRequest(const string &str)
 {
+    unique_lock<mutex> l(_mutex);
+
     _logger("Parsing request...");
     Json::Reader reader;
     Json::Value root;
@@ -123,7 +144,7 @@ Logic::Response Logic::_lock()
  
     _door.lock();
     _state = LOCKED;
-    createNewToken(false);
+    _createNewToken(false);
 
     return Success;
 }
@@ -138,7 +159,7 @@ Logic::Response Logic::_unlock()
 
    _door.unlock();
    _state = UNLOCKED;
-   createNewToken(false);
+   _createNewToken(false);
 
    return Success;
 }
@@ -213,7 +234,7 @@ out2:
     return retval;
 }
 
-void Logic::createNewToken(const bool stillValid)
+void Logic::_createNewToken(const bool stillValid)
 {
     _prevToken = _curToken;
     _prevValid = stillValid;

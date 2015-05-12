@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <string>
-#include <fstream>
+#include <thread>
+#include <condition_variable>
+#include <mutex>
 
 #include "config.h"
 #include "epaper.h"
@@ -14,7 +16,7 @@ class Logic
 {
 public:
 
-    static Logic &get();
+    static Logic &get(const std::chrono::seconds tokenTimeout);
     ~Logic();
 
     enum Response {
@@ -32,11 +34,10 @@ public:
     };
 
     Response parseRequest(const std::string &str);
-    void createNewToken(const bool stillValid);
 
 private:
 
-    Logic();
+    Logic(const std::chrono::seconds tokenTimeout);
 
     Response _lock();
     Response _unlock();
@@ -45,6 +46,7 @@ private:
     Response _checkLDAP(const std::string &user, const std::string &password);
     bool _checkIP(const std::string &ip);
 
+    void _createNewToken(const bool stillValid);
 
     const Logger &_logger;
     Door &_door;
@@ -56,13 +58,17 @@ private:
     bool _prevValid = { false };
     Token _prevToken = { 0x0000000000000000 };
 
+    const std::chrono::seconds _tokenTimeout;
 
     const static std::string _lockPagePrefix;
     const static std::string _bindDN;
     const static std::string _ldapServer;
     const static std::string _allowedIpPrefix;
 
-    static constexpr int _tokenTimeout = TOKEN_TIMEOUT;
+    std::thread _tokenUpdater = {};
+    std::condition_variable _c = {};
+    std::mutex _mutex = {};
+    bool _run = true;
 
     enum {LOCKED, UNLOCKED} _state = { LOCKED };
 };

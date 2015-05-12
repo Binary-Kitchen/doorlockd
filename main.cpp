@@ -2,6 +2,8 @@
 #include <sstream>
 #include <string>
 
+#include <boost/program_options.hpp>
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -12,21 +14,18 @@
 
 using namespace std;
 
+namespace po = boost::program_options;
+
 const static Logger &l = Logger::get();
 
-int main(void)
+int createFifo(const string &fifoLocation)
 {
-    int retval = -1;
-
-    l(LogLevel::notice, "Starting doorlockd");
-
-    int fifoHandle = -1;
-
+    int handle = -1;
     l(LogLevel::debug, "Creating Fifo file");
-    if (access(FIFO_LOCATION, F_OK) == 0)
+    if (access(fifoLocation.c_str(), F_OK) == 0)
     {
         l(LogLevel::warning, "Fifo file aready existing, trying to delete");
-        if (unlink(FIFO_LOCATION) != 0)
+        if (unlink(fifoLocation.c_str()) != 0)
         {
             fprintf(stderr, "Unable to delete Fifo file");
             goto out;
@@ -35,42 +34,107 @@ int main(void)
 
     umask(0);
 
-    if (mkfifo(FIFO_LOCATION, 0770) != 0)
+    if (mkfifo(fifoLocation.c_str(), 0770) != 0)
     {
         fprintf(stderr, "Unable to create Fifo");
         goto out;
     }
 
-    fifoHandle = open(FIFO_LOCATION, O_RDWR | O_NONBLOCK);
-    if (fifoHandle == -1)
+    handle = open(fifoLocation.c_str(), O_RDWR | O_NONBLOCK);
+    if (handle == -1)
     {
         fprintf(stderr, "Unable to open Fifo");
         goto out;
     }
 
-    if (fchown(fifoHandle, 0, 1001) != 0)
+    if (fchown(handle, 0, 1001) != 0)
     {
         fprintf(stderr, "Fifo chown failed");
-        goto out1;
+        close(handle);
+        handle = -1;
+        goto out;
     }
 
+out:
+    return handle;
+}
+
+int closeFifo(int handle)
+{
+    int retval = -1;
+
+    if (handle != -1)
+    {
+        close(handle);
+    }
+
+    l(LogLevel::debug, "Removing Fifo file");
+    if (unlink(FIFO_LOCATION) != 0)
+    {
+        l(LogLevel::error, "Unable to delete Fifo file");
+        retval = -1;
+        goto out;
+    }
+
+    retval = 0;
+
+out:
+    return retval;
+}
+
+int main(int argc, char** argv)
+{
+    int retval = -1;
+    int fifoHandle = -1;
+    std::chrono::seconds tokenTimeout;
 
     try {
-        Logic &logic = Logic::get();
-        struct timeval tv;
+        unsigned int timeout;
+        po::options_description desc("usage: doorlockd");
+        desc.add_options()
+            ("help,h", "print help")
+            ("tokentimeout,t", po::value<unsigned int>(&timeout)->required(), "tokentimeout in seconds");
+
+        po::variables_map vm;
+        po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+
+        if (vm.count("help"))
+        {
+            std::cout << desc << std::endl;
+            retval = 0;
+            goto out;
+        }
+
+        po::notify(vm);
+
+        tokenTimeout = std::chrono::seconds(timeout>3 ? timeout-3 : timeout); // Epaper refresh takes ~3 seconds
+    }
+    catch(const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        goto out;
+    }
+
+    l(LogLevel::notice, "Starting doorlockd");
+
+    fifoHandle = createFifo(FIFO_LOCATION);
+    if (fifoHandle == -1)
+    {
+        goto out;
+    }
+
+    try {
+        Logic &logic = Logic::get(tokenTimeout);
         fd_set set;
     
         for (;;)
         {
             FD_ZERO(&set);
             FD_SET(fifoHandle, &set);
-            tv.tv_sec = TOKEN_TIMEOUT;
-            tv.tv_usec = 0;
     
-            int i = select(fifoHandle+1, &set, nullptr, nullptr, &tv);
+            int i = select(fifoHandle+1, &set, nullptr, nullptr, nullptr);
             if (i == 0)
             {
-                logic.createNewToken(true);
                 continue;
             } else if (i == -1) {
                 throw "Fifo select() failed";
@@ -99,7 +163,7 @@ int main(void)
                 }
             }
     
-            int rc = logic.parseRequest(payload);
+            const auto rc = logic.parseRequest(payload);
         }
 
         retval = 0;
@@ -109,20 +173,13 @@ int main(void)
         str << "FATAL ERROR: " << ex;
         l(str, LogLevel::error);
         retval = -1;
+        goto out1;
     }
+
+    retval = 0;
 
 out1:
-    if (fifoHandle != -1)
-    {
-        close(fifoHandle);
-    }
-
-    l(LogLevel::debug, "Removing Fifo file");
-    if (unlink(FIFO_LOCATION) != 0)
-    {
-        throw("Unable to delete Fifo file");
-    }
-
+    retval = closeFifo(fifoHandle);
 out:
     Door::get().lock();
     l(LogLevel::notice, "Doorlockd stopped");
