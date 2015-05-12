@@ -52,9 +52,9 @@ private:
 
     using Token = uint64_t;
 
-    Token _curToken;
+    Token _curToken = { 0x0000000000000000 };
     bool _prevValid = { false };
-    Token _prevToken;
+    Token _prevToken = { 0x0000000000000000 };
 
 
     const static std::string _lockPagePrefix;

@@ -11,8 +11,6 @@ extern "C" {
 
 #include "epaper.h"
 
-#include "template.h"
-
 using namespace std;
 
 Epaper::Epaper() :

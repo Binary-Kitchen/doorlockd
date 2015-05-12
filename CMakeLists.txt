@@ -12,6 +12,12 @@ configure_file (
 
 include_directories("${PROJECT_BINARY_DIR}")
 
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Weffc++ -Wextra")
+set(CMAKE_CXX_FLAGS "-O2 -Wall -pedantic -Wextra -Weffc++")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Wextra")
+set(CMAKE_C_FLAGS "-O2 -Wall -pedantic -Wextra")
+
+
 set(SRCS
 main.cpp
 logger.cpp
