@@ -17,18 +17,32 @@ public:
     static Logic &get();
     ~Logic();
 
-    int parseRequest(const std::string &str);
+    enum Response {
+        Success = 0, // Request successful
+        Fail, // General non-specified error
+        AlreadyUnlocked, // Authentication successful, but door is already unlocked
+        AlreadyLocked, // Authentication successful, but door is already locked
+        NotJson, // Request is not a valid JSON object
+        JsonError, // Request is valid JSON, but does not contain necessary material
+        InvalidToken, // Request contains invalid token
+        InvalidCredentials, // Invalid LDAP credentials
+        InvalidIP, // IP check failure
+        UnknownAction, // Unknown action
+        LDAPInit, // Ldap initialization failed
+    };
+
+    Response parseRequest(const std::string &str);
     void createNewToken(const bool stillValid);
 
 private:
 
     Logic();
 
-    void _lock();
-    void _unlock();
+    Response _lock();
+    Response _unlock();
 
     bool _checkToken(const std::string &token);
-    bool _checkLDAP(const std::string &user, const std::string &password);
+    Response _checkLDAP(const std::string &user, const std::string &password);
     bool _checkIP(const std::string &ip);
 
 
@@ -44,7 +58,6 @@ private:
 
 
     const static std::string _lockPagePrefix;
-    const static std::string _fifoLocation;
     const static std::string _bindDN;
     const static std::string _ldapServer;
     const static std::string _allowedIpPrefix;

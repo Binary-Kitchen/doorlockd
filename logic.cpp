@@ -37,12 +37,12 @@ Logic::~Logic()
 {
 }
 
-int Logic::parseRequest(const string &str)
+Logic::Response Logic::parseRequest(const string &str)
 {
     _logger("Parsing request...");
     Json::Reader reader;
     Json::Value root;
-    int retval = 0;
+    Response retval = Fail;
     string action, user, password, ip, token;
     bool authenticate;
 
@@ -50,6 +50,7 @@ int Logic::parseRequest(const string &str)
     if (!suc)
     {
         _logger(LogLevel::error, "Request ist not valid JSON!");
+        retval = NotJson;
         goto out;
     }
 
@@ -67,6 +68,7 @@ int Logic::parseRequest(const string &str)
     catch (...)
     {
         _logger(LogLevel::warning, "Error parsing JSON");
+        retval = JsonError;
         goto out;
     }
 
@@ -78,57 +80,67 @@ int Logic::parseRequest(const string &str)
         if (_checkToken(token) == false)
         {
             _logger(LogLevel::error, "User provided invalid token");
+            retval = InvalidToken;
             goto out;
         }
 
-        if (_checkLDAP(user, password) == false)
+        retval = _checkLDAP(user,password);
+        if (retval != Success)
         {
-            _logger(LogLevel::error, "invalid LDAP credentials");
+            _logger(LogLevel::error, "Ldap error");
             goto out;
         }
     } else {
         if (_checkIP(ip) == false)
         {
             _logger(LogLevel::error, "IP check for non-authentication failed");
+            retval = InvalidIP;
             goto out;
         }
     }
 
     if (action == "lock")
     {
-        _lock();
+        retval = _lock();
     } else if (action == "unlock") {
-        _unlock();
+        retval = _unlock();
     } else {
         _logger(LogLevel::error, "Unknown Action: %s", action.c_str());
+        retval = UnknownAction;
     }
 
 out:
     return retval;
 }
 
-void Logic::_lock()
+Logic::Response Logic::_lock()
 {
     if (_state == LOCKED)
     {
-        _logger(LogLevel::warning, "Unable to lock: already locked");
-        return;
+        _logger(LogLevel::warning, "Unable to lock: already closed");
+        return AlreadyLocked;
     }
+ 
     _door.lock();
     _state = LOCKED;
     createNewToken(false);
+
+    return Success;
 }
 
-void Logic::_unlock()
+Logic::Response Logic::_unlock()
 {
     if (_state == UNLOCKED)
     {
        _logger(LogLevel::warning, "Unable to unlock: already unlocked");
-       return;
+       return AlreadyUnlocked;
    }
+
    _door.unlock();
    _state = UNLOCKED;
    createNewToken(false);
+
+   return Success;
 }
 
 bool Logic::_checkIP(const string &ip)
@@ -153,11 +165,11 @@ bool Logic::_checkToken(const string &strToken)
     return false;
 }
 
-bool Logic::_checkLDAP(const string &user, const string &password)
+Logic::Response Logic::_checkLDAP(const string &user, const string &password)
 {
     constexpr int BUFFERSIZE = 1024;
     char buffer[BUFFERSIZE];
-    bool retval = false;
+    Response retval = Fail;
     int rc = -1;
     LDAP* ld = nullptr;
     unsigned long version = LDAP_VERSION3;
@@ -169,6 +181,7 @@ bool Logic::_checkLDAP(const string &user, const string &password)
     if(rc != LDAP_SUCCESS)
     {   
         _logger(LogLevel::error, "LDAP initialize error: %s", ldap_err2string(rc));
+        retval = LDAPInit;
         goto out2;
     }
 
@@ -178,6 +191,7 @@ bool Logic::_checkLDAP(const string &user, const string &password)
     if (rc != LDAP_SUCCESS)
     {
         _logger(LogLevel::error, "LDAP set version failed");
+        retval = LDAPInit;
         goto out;
     }
 
@@ -185,11 +199,12 @@ bool Logic::_checkLDAP(const string &user, const string &password)
     if (rc != LDAP_SUCCESS)
     {   
         _logger(LogLevel::error, "Credential check for user \"%s\" failed: %s", user.c_str(), ldap_err2string(rc));
+        retval = InvalidCredentials;
         goto out;
     }
 
     _logger(LogLevel::notice, "user \"%s\" successfully authenticated", user.c_str());
-    retval = true;
+    retval = Success;
 
 out:
     ldap_unbind(ld);
