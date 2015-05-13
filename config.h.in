@@ -10,13 +10,9 @@
 #endif
 
 #define DEFAULT_PORT 5555
-
-#define LOCKPAGE_PREFIX "https://lock.binary.kitchen/"
-#define FIFO_LOCATION "/var/run/doorlockd/doorlockd"
-
-#define LDAP_SERVER "ldaps://ldap.binary.kitchen"
-#define BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
-
-#define ALLOWEDIPPREFIX "172.23.3."
+#define DEFAULT_WEB_PREFIX "https://lock.binary.kitchen/"
+#define DEFAULT_LDAP_SERVER "ldaps://ldap.binary.kitchen"
+#define DEFAULT_BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
+#define DEFAULT_ALLOWED_IP_PREFIX "172.23.3."
 
 #endif

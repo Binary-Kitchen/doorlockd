@@ -13,17 +13,19 @@
 
 using namespace std;
 
-const string Logic::_lockPagePrefix = LOCKPAGE_PREFIX;
-
-const string Logic::_ldapServer = LDAP_SERVER;
-const string Logic::_bindDN = BINDDN;
-const string Logic::_allowedIpPrefix = ALLOWEDIPPREFIX;
-
-Logic::Logic(const chrono::seconds tokenTimeout) :
+Logic::Logic(const chrono::seconds tokenTimeout,
+             const string &ldapServer,
+             const string &bindDN,
+             const string &webPrefix,
+             const string &allowedIpPrefix) :
     _logger(Logger::get()),
     _door(Door::get()),
     _epaper(Epaper::get()),
-    _tokenTimeout(tokenTimeout)
+    _tokenTimeout(tokenTimeout),
+    _ldapServer(ldapServer),
+    _bindDN(bindDN),
+    _webPrefix(webPrefix),
+    _allowedIpPrefix(allowedIpPrefix)
 {
     srand(time(NULL));
     _createNewToken(false);
@@ -235,7 +237,7 @@ void Logic::_createNewToken(const bool stillValid)
 
     _curToken = (((uint64_t)rand())<<32) | ((uint64_t)rand());
 
-    _epaper.draw(_lockPagePrefix + toHexString(_curToken));
+    _epaper.draw(_webPrefix + toHexString(_curToken));
 
     ostringstream message;
     message << "New Token generated: " << toHexString(_curToken) << " old Token: " << toHexString(_prevToken) << " is " << (_prevValid?"still":"not") << " valid";

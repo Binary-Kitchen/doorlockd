@@ -92,6 +92,10 @@ int main(int argc, char** argv)
     int retval = -1;
     short port;
     std::chrono::seconds tokenTimeout;
+    string ldapServer;
+    string bindDN;
+    string lockPagePrefix;
+    string allowedIpPrefix;
 
     try {
         unsigned int timeout;
@@ -99,7 +103,11 @@ int main(int argc, char** argv)
         desc.add_options()
             ("help,h", "print help")
             ("tokentimeout,t", po::value<unsigned int>(&timeout)->required(), "tokentimeout in seconds")
-            ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port");
+            ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port")
+            ("ldap,l", po::value<string>(&ldapServer)->default_value(DEFAULT_LDAP_SERVER), "Ldap Server")
+            ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN %s means username")
+            ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
+            ("ip,i", po::value<string>(&allowedIpPrefix)->default_value(DEFAULT_ALLOWED_IP_PREFIX), "Default allowed IP Prefix");
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -121,7 +129,11 @@ int main(int argc, char** argv)
         goto out;
     }
 
-    logic = unique_ptr<Logic>(new Logic(tokenTimeout));
+    logic = unique_ptr<Logic>(new Logic(tokenTimeout,
+                                        ldapServer,
+                                        bindDN,
+                                        lockPagePrefix,
+                                        allowedIpPrefix));
 
     l(LogLevel::notice, "Starting doorlockd");
 

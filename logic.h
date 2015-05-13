@@ -16,7 +16,11 @@ class Logic
 {
 public:
 
-    Logic(const std::chrono::seconds tokenTimeout);
+    Logic(const std::chrono::seconds tokenTimeout,
+          const std::string &ldapServer,
+          const std::string &bindDN,
+          const std::string &webPrefix,
+          const std::string &allowedIpPrefix);
     ~Logic();
 
     enum Response {
@@ -41,7 +45,8 @@ private:
     Response _unlock();
 
     bool _checkToken(const std::string &token);
-    Response _checkLDAP(const std::string &user, const std::string &password);
+    Response _checkLDAP(const std::string &user,
+                        const std::string &password);
     bool _checkIP(const std::string &ip);
 
     void _createNewToken(const bool stillValid);
@@ -57,11 +62,10 @@ private:
     Token _prevToken = { 0x0000000000000000 };
 
     const std::chrono::seconds _tokenTimeout;
-
-    const static std::string _lockPagePrefix;
-    const static std::string _bindDN;
-    const static std::string _ldapServer;
-    const static std::string _allowedIpPrefix;
+    const std::string _ldapServer;
+    const std::string _bindDN;
+    const std::string _webPrefix;
+    const std::string _allowedIpPrefix;
 
     std::thread _tokenUpdater = {};
     std::condition_variable _c = {};
