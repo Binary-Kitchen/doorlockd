@@ -19,12 +19,6 @@ const string Logic::_ldapServer = LDAP_SERVER;
 const string Logic::_bindDN = BINDDN;
 const string Logic::_allowedIpPrefix = ALLOWEDIPPREFIX;
 
-Logic &Logic::get(const chrono::seconds tokenTimeout)
-{
-    static Logic l(tokenTimeout);
-    return l;
-}
-
 Logic::Logic(const chrono::seconds tokenTimeout) :
     _logger(Logger::get()),
     _door(Door::get()),

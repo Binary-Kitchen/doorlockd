@@ -9,6 +9,8 @@
 #define DEFAULT_LOG_LEVEL LogLevel::info
 #endif
 
+#define DEFAULT_PORT 5555
+
 #define LOCKPAGE_PREFIX "https://lock.binary.kitchen/"
 #define FIFO_LOCATION "/var/run/doorlockd/doorlockd"
 

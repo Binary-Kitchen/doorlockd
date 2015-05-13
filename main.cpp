@@ -1,13 +1,11 @@
 #include <iostream>
-#include <sstream>
 #include <string>
+#include <cstdlib>
+#include <memory>
+#include <utility>
 
 #include <boost/program_options.hpp>
-
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <boost/asio.hpp>
 
 #include "config.h"
 #include "logic.h"
@@ -15,77 +13,84 @@
 using namespace std;
 
 namespace po = boost::program_options;
+using boost::asio::ip::tcp;
 
 const static Logger &l = Logger::get();
 
-int createFifo(const string &fifoLocation)
+static unique_ptr<Logic> logic = nullptr;
+
+class session
+  : public std::enable_shared_from_this<session>
 {
-    int handle = -1;
-    l(LogLevel::debug, "Creating Fifo file");
-    if (access(fifoLocation.c_str(), F_OK) == 0)
+
+public:
+
+    session(tcp::socket socket)
+        : _socket(std::move(socket))
     {
-        l(LogLevel::warning, "Fifo file aready existing, trying to delete");
-        if (unlink(fifoLocation.c_str()) != 0)
-        {
-            fprintf(stderr, "Unable to delete Fifo file");
-            goto out;
-        }
     }
 
-    umask(0);
-
-    if (mkfifo(fifoLocation.c_str(), 0770) != 0)
+    void start()
     {
-        fprintf(stderr, "Unable to create Fifo");
-        goto out;
+        auto self(shared_from_this());
+        _socket.async_read_some(boost::asio::buffer(_data, _maxLen),
+            [this, self](boost::system::error_code ec, std::size_t length)
+            {
+                if (!ec)
+                {
+                    const string payload(_data, length);
+                    const auto rc = logic->parseRequest(payload);
+                    boost::asio::write(_socket, boost::asio::buffer(to_string(rc) + "\n"));
+                }
+            });
     }
 
-    handle = open(fifoLocation.c_str(), O_RDWR | O_NONBLOCK);
-    if (handle == -1)
-    {
-        fprintf(stderr, "Unable to open Fifo");
-        goto out;
-    }
+private:
 
-    if (fchown(handle, 0, 1001) != 0)
-    {
-        fprintf(stderr, "Fifo chown failed");
-        close(handle);
-        handle = -1;
-        goto out;
-    }
+    tcp::socket _socket;
+    static constexpr int _maxLen = { 2048 };
+    char _data[_maxLen];
+};
 
-out:
-    return handle;
-}
-
-int closeFifo(int handle)
+class server
 {
-    int retval = -1;
 
-    if (handle != -1)
+public:
+
+  server(boost::asio::io_service& io_service, short port)
+    : _acceptor(io_service, tcp::endpoint(tcp::v4(), port)),
+      _socket(io_service)
+  {
+    do_accept();
+  }
+
+private:
+
+    void do_accept()
     {
-        close(handle);
+
+      _acceptor.async_accept(_socket,
+          [this](boost::system::error_code ec)
+          {
+              if (!ec)
+              {
+                  std::make_shared<session>(std::move(_socket))->start();
+              }
+
+              do_accept();
+          });
+
     }
 
-    l(LogLevel::debug, "Removing Fifo file");
-    if (unlink(FIFO_LOCATION) != 0)
-    {
-        l(LogLevel::error, "Unable to delete Fifo file");
-        retval = -1;
-        goto out;
-    }
+    tcp::acceptor _acceptor;
+    tcp::socket _socket;
+};
 
-    retval = 0;
-
-out:
-    return retval;
-}
 
 int main(int argc, char** argv)
 {
     int retval = -1;
-    int fifoHandle = -1;
+    short port;
     std::chrono::seconds tokenTimeout;
 
     try {
@@ -93,7 +98,8 @@ int main(int argc, char** argv)
         po::options_description desc("usage: doorlockd");
         desc.add_options()
             ("help,h", "print help")
-            ("tokentimeout,t", po::value<unsigned int>(&timeout)->required(), "tokentimeout in seconds");
+            ("tokentimeout,t", po::value<unsigned int>(&timeout)->required(), "tokentimeout in seconds")
+            ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port");
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -115,56 +121,14 @@ int main(int argc, char** argv)
         goto out;
     }
 
+    logic = unique_ptr<Logic>(new Logic(tokenTimeout));
+
     l(LogLevel::notice, "Starting doorlockd");
 
-    fifoHandle = createFifo(FIFO_LOCATION);
-    if (fifoHandle == -1)
-    {
-        goto out;
-    }
-
     try {
-        Logic &logic = Logic::get(tokenTimeout);
-        fd_set set;
-    
-        for (;;)
-        {
-            FD_ZERO(&set);
-            FD_SET(fifoHandle, &set);
-    
-            int i = select(fifoHandle+1, &set, nullptr, nullptr, nullptr);
-            if (i == 0)
-            {
-                continue;
-            } else if (i == -1) {
-                throw "Fifo select() failed";
-            }
-    
-            if (!FD_ISSET(fifoHandle, &set))
-            {
-                l(LogLevel::warning, "select(): Not my fd");
-                continue;
-            }
-    
-            string payload;
-            for (;;)
-            {
-                constexpr int BUFSIZE = 2;
-                char tmp[BUFSIZE];
-                i = read(fifoHandle, tmp, BUFSIZE);
-                if (i > 0) {
-                    payload += string(tmp, i);
-                } else {
-                    if (errno == EWOULDBLOCK)
-                    {
-                        break;
-                    }
-                    throw "read() fifo failed";
-                }
-            }
-    
-            const auto rc = logic.parseRequest(payload);
-        }
+        boost::asio::io_service io_service;
+        server s(io_service, port);
+        io_service.run();
 
         retval = 0;
     }
@@ -173,13 +137,11 @@ int main(int argc, char** argv)
         str << "FATAL ERROR: " << ex;
         l(str, LogLevel::error);
         retval = -1;
-        goto out1;
+        goto out;
     }
 
     retval = 0;
 
-out1:
-    retval = closeFifo(fifoHandle);
 out:
     Door::get().lock();
     l(LogLevel::notice, "Doorlockd stopped");

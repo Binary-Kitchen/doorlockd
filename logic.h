@@ -16,7 +16,7 @@ class Logic
 {
 public:
 
-    static Logic &get(const std::chrono::seconds tokenTimeout);
+    Logic(const std::chrono::seconds tokenTimeout);
     ~Logic();
 
     enum Response {
@@ -36,8 +36,6 @@ public:
     Response parseRequest(const std::string &str);
 
 private:
-
-    Logic(const std::chrono::seconds tokenTimeout);
 
     Response _lock();
     Response _unlock();
