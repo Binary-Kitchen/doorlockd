@@ -9,6 +9,7 @@
 #define DEFAULT_LOG_LEVEL LogLevel::info
 #endif
 
+#define DEFAULT_TOKEN_TIMEOUT (60*5)
 #define DEFAULT_PORT 5555
 #define DEFAULT_WEB_PREFIX "https://lock.binary.kitchen/"
 #define DEFAULT_LDAP_SERVER "ldaps://ldap.binary.kitchen"

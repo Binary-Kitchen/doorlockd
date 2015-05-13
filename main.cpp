@@ -97,15 +97,17 @@ int main(int argc, char** argv)
     string lockPagePrefix;
     string allowedIpPrefix;
 
+    l(LogLevel::notice, "Starting doorlockd");
+
     try {
         unsigned int timeout;
         po::options_description desc("usage: doorlockd");
         desc.add_options()
             ("help,h", "print help")
-            ("tokentimeout,t", po::value<unsigned int>(&timeout)->required(), "tokentimeout in seconds")
+            ("tokentimeout,t", po::value<unsigned int>(&timeout)->default_value(DEFAULT_TOKEN_TIMEOUT), "Token timeout in seconds")
             ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port")
             ("ldap,l", po::value<string>(&ldapServer)->default_value(DEFAULT_LDAP_SERVER), "Ldap Server")
-            ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN %s means username")
+            ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN, %s means username")
             ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
             ("ip,i", po::value<string>(&allowedIpPrefix)->default_value(DEFAULT_ALLOWED_IP_PREFIX), "Default allowed IP Prefix");
 
@@ -134,8 +136,6 @@ int main(int argc, char** argv)
                                         bindDN,
                                         lockPagePrefix,
                                         allowedIpPrefix));
-
-    l(LogLevel::notice, "Starting doorlockd");
 
     try {
         boost::asio::io_service io_service;
