@@ -29,6 +29,7 @@ door.cpp
 epaper.cpp
 logic.cpp
 util.cpp
+daemon.cpp
 epaper/Display_COG_Process.c
 epaper/Display_Controller.c
 epaper/Display_Hardware_Driver.c
@@ -38,9 +39,10 @@ epaper/bsp.c
 add_executable(doorlockd ${SRCS})
 target_link_libraries(doorlockd wiringPi jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-install(TARGETS doorlockd DESTINATION sbin)
-install(FILES img/template.png DESTINATION share/doorlockd)
-install(DIRECTORY scripts/ DESTINATION share/doorlockd
+install(TARGETS doorlockd DESTINATION sbin/)
+install(FILES img/template.png DESTINATION share/doorlockd/)
+install(DIRECTORY scripts/ DESTINATION share/doorlockd/
     FILES_MATCHING PATTERN "scripts/doorlockd-*"
     PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE OWNER_WRITE)
-install(FILES scripts/doorlockd.service DESTINATION /etc/systemd/system)
+install(FILES scripts/doorlockd.service DESTINATION /etc/systemd/system/)
+install(FILES scripts/doorlockd DESTINATION /etc/sysconfig/)

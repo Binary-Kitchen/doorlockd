@@ -3,10 +3,12 @@
 #include <cstdlib>
 #include <memory>
 #include <utility>
+#include <csignal>
 
 #include <boost/program_options.hpp>
 #include <boost/asio.hpp>
 
+#include "daemon.h"
 #include "config.h"
 #include "logic.h"
 
@@ -18,6 +20,15 @@ using boost::asio::ip::tcp;
 const static Logger &l = Logger::get();
 
 static unique_ptr<Logic> logic = nullptr;
+
+boost::asio::io_service io_service;
+
+void signal_handler(int signum)
+{
+    (void)signum;
+    io_service.stop();
+    logic.reset();
+}
 
 class session
   : public std::enable_shared_from_this<session>
@@ -96,6 +107,9 @@ int main(int argc, char** argv)
     string bindDN;
     string lockPagePrefix;
     string allowedIpPrefix;
+    string logfile;
+    string pidFile;
+    bool foreground = false;
 
     l(LogLevel::notice, "Starting doorlockd");
 
@@ -106,10 +120,13 @@ int main(int argc, char** argv)
             ("help,h", "print help")
             ("tokentimeout,t", po::value<unsigned int>(&timeout)->default_value(DEFAULT_TOKEN_TIMEOUT), "Token timeout in seconds")
             ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port")
-            ("ldap,l", po::value<string>(&ldapServer)->default_value(DEFAULT_LDAP_SERVER), "Ldap Server")
+            ("ldap,s", po::value<string>(&ldapServer)->default_value(DEFAULT_LDAP_SERVER), "Ldap Server")
             ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN, %s means username")
             ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
-            ("ip,i", po::value<string>(&allowedIpPrefix)->default_value(DEFAULT_ALLOWED_IP_PREFIX), "Default allowed IP Prefix");
+            ("ip,i", po::value<string>(&allowedIpPrefix)->default_value(DEFAULT_ALLOWED_IP_PREFIX), "Default allowed IP Prefix")
+            ("foreground,f", po::bool_switch(&foreground)->default_value(false), "Run in foreground")
+            ("logfile,l", po::value<string>(&logfile)->default_value(DEFAULT_LOG_FILE), "Log file")
+            ("pid,z", po::value<string>(&pidFile)->default_value(DEFAULT_PID_FILE), "PID file");
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -131,6 +148,19 @@ int main(int argc, char** argv)
         goto out;
     }
 
+    daemonize(!foreground,
+              "/",
+              "/dev/null",
+              logfile,
+              logfile,
+              pidFile);
+
+    signal(SIGINT, signal_handler);
+    signal(SIGKILL, signal_handler);
+    signal(SIGTERM, signal_handler);
+    signal(SIGUSR1, signal_handler);
+    signal(SIGUSR2, signal_handler);
+
     logic = unique_ptr<Logic>(new Logic(tokenTimeout,
                                         ldapServer,
                                         bindDN,
@@ -138,11 +168,8 @@ int main(int argc, char** argv)
                                         allowedIpPrefix));
 
     try {
-        boost::asio::io_service io_service;
         server s(io_service, port);
         io_service.run();
-
-        retval = 0;
     }
     catch (const char* const &ex) {
         ostringstream str;
