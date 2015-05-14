@@ -150,13 +150,14 @@ Logic::Response Logic::_lock()
 Logic::Response Logic::_unlock()
 {
    _door.unlock();
-   _state = UNLOCKED;
    _createNewToken(false);
 
    if (_state == UNLOCKED)
    {
        _logger(LogLevel::warning, "Unable to unlock: already unlocked");
        return AlreadyUnlocked;
+   } else {
+       _state = UNLOCKED;
    }
 
    return Success;
