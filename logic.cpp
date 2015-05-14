@@ -56,7 +56,7 @@ Logic::Response Logic::parseRequest(const string &str)
 {
     unique_lock<mutex> l(_mutex);
 
-    _logger("Parsing request...");
+    _logger(LogLevel::info, "Incoming request...");
     Json::Reader reader;
     Json::Value root;
     Response retval = Fail;
@@ -66,7 +66,7 @@ Logic::Response Logic::parseRequest(const string &str)
     bool suc = reader.parse(str, root, false);
     if (!suc)
     {
-        _logger(LogLevel::error, "Request ist not valid JSON!");
+        _logger(LogLevel::warning, "Request ist not valid JSON!");
         retval = NotJson;
         goto out;
     }
@@ -89,8 +89,10 @@ Logic::Response Logic::parseRequest(const string &str)
         goto out;
     }
 
-    printf("Action: %s\nAuthenticate: %d\nIP: %s\n",action.c_str(), authenticate, ip.c_str());
-    printf("User: %s\nPassword: XXXXXXXXXX\nToken: %s\n",user.c_str(), token.c_str());
+    _logger("  Action: " + action, LogLevel::notice);
+    _logger("  User  : " + user, LogLevel::notice);
+    _logger("  IP    : " + ip, LogLevel::notice);
+    _logger("  Token : " + token, LogLevel::notice);
 
     if (authenticate == true)
     {
