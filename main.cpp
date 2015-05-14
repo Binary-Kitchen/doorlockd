@@ -113,6 +113,9 @@ int main(int argc, char** argv)
 
     l(LogLevel::notice, "Starting doorlockd");
 
+    system("/usr/bin/gpio load spi");
+    system("/usr/bin/gpio load i2c");
+
     try {
         unsigned int timeout;
         po::options_description desc("usage: doorlockd");
