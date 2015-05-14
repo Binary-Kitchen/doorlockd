@@ -5,8 +5,8 @@ After=network.target
 [Service]
 User=root
 Group=root
-ExecStart=/usr/local/share/doorlockd/doorlockd-start
-ExecStop=/usr/local/share/doorlockd/doorlockd-stop
+EnvironmentFile=-/etc/sysconfig/doorlockd
+ExecStart=/usr/local/sbin/doorlockd -f
 
 [Install]
 WantedBy=multi-user.target
