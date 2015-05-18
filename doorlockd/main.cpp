@@ -68,18 +68,17 @@ class server
 
 public:
 
-  server(boost::asio::io_service& io_service, short port)
-    : _acceptor(io_service, tcp::endpoint(tcp::v4(), port)),
-      _socket(io_service)
-  {
-    do_accept();
-  }
+    server(boost::asio::io_service& io_service, short port)
+      : _acceptor(io_service, tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), port)),
+        _socket(io_service)
+    {
+        do_accept();
+    }
 
 private:
 
     void do_accept()
     {
-
       _acceptor.async_accept(_socket,
           [this](boost::system::error_code ec)
           {
