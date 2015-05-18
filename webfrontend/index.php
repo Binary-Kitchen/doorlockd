@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-
 <?php
 	function tellLock( $pAction, $pUser, $pPass, $pToken, $pIp ){
-
-		$pAuthenticated = true;
 
 		$json = '{
 			"user":' . json_encode( $pUser ) . ',
 			"password":' . json_encode( $pPass ) . ',
 			"action":' . json_encode( $pAction ) . ',
 			"token":' . json_encode( $pToken ) . ',
-			"ip":' . json_encode( $pIp ) . ',
-			"authenticate":' . json_encode( $pAuthenticated ) . '
+			"ip":' . json_encode( $pIp ) . '
 		}'."\n";
 
 		$address = "127.0.0.1";
@@ -80,37 +75,57 @@
 	$showLoginForm = false;
 	$showSuccess = false;
 	$showFailure = false;
+	$isApi = false;
 
 	$pIp = $_SERVER[ 'REMOTE_ADDR' ];
-
+	
 	if( $_SERVER[ 'REQUEST_METHOD' ] == "POST" ) {
 
-		$pUser = $_POST[ 'user' ];
-		$pPass = $_POST[ 'pass' ];
-		$pToken = $_POST[ 'token' ];
-		$pAction = $_POST[ 'action' ];
-
-		$lSuccess = tellLock( $pAction, $pUser, $pPass, $pToken, $pIp );
-
-		if ($lSuccess == 0) {
-			$showSuccess = true;
+		if (array_key_exists("user", $_POST) 
+			&& array_key_exists('pass', $_POST)
+			&& array_key_exists('token', $_POST)
+			&& array_key_exists('action', $_POST)
+			&& array_key_exists('api', $_POST))
+		{
+			$pUser = $_POST[ 'user' ];
+			$pPass = $_POST[ 'pass' ];
+			$pToken = $_POST[ 'token' ];
+			$pAction = $_POST[ 'action' ];
+			$pApi = $_POST[ 'api' ];
+	
+			if ($pApi == "true")
+			{
+				$isApi = true;
+			}
+	
+			$lSuccess = tellLock( $pAction, $pUser, $pPass, $pToken, $pIp );
+	
+			if ($lSuccess == 0) {
+				$showSuccess = true;
+			} else {
+				$failureMsg = err2str($lSuccess);
+				$showFailure = true;
+			}
 		} else {
-			http_response_code( 401 );
-			$failureMsg = err2str($lSuccess);
+			$failureMsg = 'Invalid Request';
 			$showFailure = true;
 		}
+
 	} else {
 		// This is done by apache mod_rewrite
 		$pToken = $_GET[ 'token' ];
-		$lToken = preg_replace( '/[^0-9a-f]/i', "", $pToken );
-		if(strlen($lToken) != 16) {
-			http_response_code( 404 );
-			$showFailure = true;
-		}
-		$showLoginForm = true;
-	}
-?>
+		$lToken = preg_replace( '/[^0-9a-fA-F]/i', "", $pToken );
 
+		if(strlen($lToken) != 16) {
+			$showFailure = true;
+			$failureMsg = "Please provide Token";
+		} else {
+			$showLoginForm = true;
+		}
+	}
+if ($isApi == false) {
+?>
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -161,6 +176,7 @@
 			<input id="pass" type="password" name="pass">
 
 			<input type="hidden" name="token" value="<?php echo $lToken;?>">
+			<input type="hidden" name="api" value="false">
 
 			<button name="action" value="unlock">Open</button>
 			<hr/>
@@ -180,3 +196,8 @@
 </body>
 
 </html>
+<?php
+} else {
+	echo $lSuccess;
+}
+?>
