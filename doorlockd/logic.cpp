@@ -61,7 +61,6 @@ Logic::Response Logic::parseRequest(const string &str)
     Json::Value root;
     Response retval = Fail;
     string action, user, password, ip, token;
-    bool authenticate;
 
     bool suc = reader.parse(str, root, false);
     if (!suc)
@@ -74,13 +73,9 @@ Logic::Response Logic::parseRequest(const string &str)
     try {
         action = getJsonOrFail<string>(root, "action");
         ip = getJsonOrFail<string>(root, "ip");
-        authenticate = getJsonOrFail<bool>(root, "authenticate");
-        if (authenticate == true)
-        {
-            user = getJsonOrFail<string>(root, "user");
-            password = getJsonOrFail<string>(root, "password");
-            token = getJsonOrFail<string>(root, "token");
-        }
+        user = getJsonOrFail<string>(root, "user");
+        password = getJsonOrFail<string>(root, "password");
+        token = getJsonOrFail<string>(root, "token");
     }
     catch (...)
     {
@@ -94,28 +89,18 @@ Logic::Response Logic::parseRequest(const string &str)
     _logger("  IP    : " + ip, LogLevel::notice);
     _logger("  Token : " + token, LogLevel::notice);
 
-    if (authenticate == true)
+    if (_checkToken(token) == false)
     {
-        if (_checkToken(token) == false)
-        {
-            _logger(LogLevel::error, "User provided invalid token");
-            retval = InvalidToken;
-            goto out;
-        }
+        _logger(LogLevel::error, "User provided invalid token");
+        retval = InvalidToken;
+        goto out;
+    }
 
-        retval = _checkLDAP(user,password);
-        if (retval != Success)
-        {
-            _logger(LogLevel::error, "Ldap error");
-            goto out;
-        }
-    } else {
-        if (_checkIP(ip) == false)
-        {
-            _logger(LogLevel::error, "IP check for non-authentication failed");
-            retval = InvalidIP;
-            goto out;
-        }
+    retval = _checkLDAP(user,password);
+    if (retval != Success)
+    {
+        _logger(LogLevel::error, "Ldap error");
+        goto out;
     }
 
     if (action == "lock")
@@ -161,11 +146,6 @@ Logic::Response Logic::_unlock()
    }
 
    return Success;
-}
-
-bool Logic::_checkIP(const string &ip)
-{
-    return true;
 }
 
 bool Logic::_checkToken(const string &strToken)
