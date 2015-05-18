@@ -38,6 +38,8 @@ void Door::lock()
         _open = false;
         _heartbeat.join();
     }
+
+    system("wget -O /dev/null --timeout 3 \"http://homer.binary.kitchen:8080/set?color=000000\" 2>&1 > /dev/null");
 }
 
 void Door::unlock()
