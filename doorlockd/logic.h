@@ -47,8 +47,6 @@ private:
     bool _checkToken(const std::string &token);
     Response _checkLDAP(const std::string &user,
                         const std::string &password);
-    bool _checkIP(const std::string &ip);
-
     void _createNewToken(const bool stillValid);
 
     const Logger &_logger;
