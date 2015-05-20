@@ -14,6 +14,9 @@
 #define RED_ON (PORTB &= ~(1<<PB0))
 #define RED_OFF (PORTB |= (1<<PB0))
 
+#define DOORLIGHT_ON (PORTD &= ~(1<<PD6))
+#define DOORLIGHT_OFF (PORTD |= (1<<PD6))
+
 #define OPEN_BOLZEN (PORTD &= ~(1<<PD4))
 #define CLOSE_BOLZEN (PORTD |= (1<<PD4))
 
@@ -22,9 +25,6 @@
 
 #define IS_RESCUE (!(PIND & (1<<PD3)))
 #define IS_SWITCH (!(PIND & (1<<PD2)))
-
-#define DE_RX (PORTD &= ~(1<<PD2))
-#define DE_TX (PORTD |= (1<<PD2))
 
 #define IS_SCK (!(PINB & (1<<PB7)))
 
@@ -35,6 +35,7 @@ void open_door()
     RED_OFF;
     GREEN_ON;
     OPEN_BOLZEN;
+    DOORLIGHT_ON;
     _delay_ms(200);
 }
 
@@ -53,9 +54,9 @@ void close_door()
 {
     RED_ON;
     GREEN_OFF;
+    DOORLIGHT_OFF;
     CLOSE_SCHNAPPER;
     CLOSE_BOLZEN;
-    RED_ON;
 }
 
 uint8_t klacker = 0;
@@ -77,8 +78,8 @@ int main(void) {
     // disable all interrupts
     cli();
 
-    // PD5, PD4 Output
-    DDRD = (1<<PD5)|(1<<PD4);
+    // PD5, PD4, PD6 Output
+    DDRD = (1<<PD5)|(1<<PD4)|(1<<PD6);
 
     DDRB = (1<<PB0)|(1<<PB1);
     PORTB |= (1<<PB7)|(1<<PB5);
@@ -101,6 +102,7 @@ int main(void) {
     CLOSE_SCHNAPPER;
     GREEN_OFF;
     RED_ON;
+    DOORLIGHT_OFF;
 
     _delay_ms(1000);
 
