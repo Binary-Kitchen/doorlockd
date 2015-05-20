@@ -26,9 +26,8 @@
 #define IS_RESCUE (!(PIND & (1<<PD3)))
 #define IS_SWITCH (!(PIND & (1<<PD2)))
 
-#define IS_SCK (!(PINB & (1<<PB7)))
-
-uint8_t open = 0;
+static uint8_t open = 0;
+static uint8_t klacker = 0;
 
 void open_door()
 {
@@ -36,7 +35,15 @@ void open_door()
     GREEN_ON;
     OPEN_BOLZEN;
     DOORLIGHT_ON;
-    _delay_ms(200);
+}
+
+void close_door()
+{
+    RED_ON;
+    GREEN_OFF;
+    DOORLIGHT_OFF;
+    CLOSE_SCHNAPPER;
+    CLOSE_BOLZEN;
 }
 
 void schnapper(unsigned int i)
@@ -50,23 +57,20 @@ void schnapper(unsigned int i)
     }
 }
 
-void close_door()
-{
-    RED_ON;
-    GREEN_OFF;
-    DOORLIGHT_OFF;
-    CLOSE_SCHNAPPER;
-    CLOSE_BOLZEN;
-}
-
-uint8_t klacker = 0;
-
 ISR(USI_OVERFLOW_vect)
 {
-    USISR = (1<<USIOIF);
-    open = 1;
+    // Clear interrupt flag
+    USISR |= (1<<USIOIF);
+    // Reset counter
     TCNT1 = 0;
-    klacker = USIDR ? 0 : 1;
+    open = 1;
+
+    uint8_t in = USIDR;
+    // Depending on the clock, a klacker either can be 10101010 or 01010101
+    if (in == 0x55 || in == 0xAA)
+    {
+        klacker = 1;
+    }
 }
 
 ISR(TIMER1_OVF_vect)
@@ -78,34 +82,33 @@ int main(void) {
     // disable all interrupts
     cli();
 
-    // PD5, PD4, PD6 Output
+    // PD4-6 as Output
     DDRD = (1<<PD5)|(1<<PD4)|(1<<PD6);
+    // PD2,3 Pullup
+    PORTD |= (1<<PD2)|(1<<PD3);
 
+    // PB0-1 as Output
     DDRB = (1<<PB0)|(1<<PB1);
+    // PB5,7 Pullup
     PORTB |= (1<<PB7)|(1<<PB5);
 
-    // PD2,3 as input + pull up
-    DDRD &= ~((1<<PD2)|(1<<PD3));
-    PORTD |= (1<<PD3)|(1<<PD3);
+    // first action: close door
+    close_door();
 
+    // Configure USI
     USICR = (1<<USICS1) | (1<<USIOIE) | (1<<USIWM0);
 
+    // Configure Timer
     TIMSK |= (1<<TOIE1);
     TIFR |= (1<<TOV1);
     TCNT1 = 0;
     TCCR1A = 0;
     TCCR1B = (1<<CS01)|(1<<CS00);
 
+    // wait a bit to settle down
     _delay_ms(1000);
 
-    CLOSE_BOLZEN;
-    CLOSE_SCHNAPPER;
-    GREEN_OFF;
-    RED_ON;
-    DOORLIGHT_OFF;
-
-    _delay_ms(1000);
-
+    // enable interrupts
     sei();
 
     for(;;) {
@@ -113,13 +116,12 @@ int main(void) {
 	    close_door();
 	} else if (open == 1) {
 	    open_door();
-	}
-
-	if (open == 1 && klacker == 1)
-	{
-	    schnapper(20);
-	    klacker = 0;
-	}
+	    if (klacker == 1)
+  	    {
+	        schnapper(20);
+	        klacker = 0;
+	    }
+        }
 
         if (IS_RESCUE) {
             cli();

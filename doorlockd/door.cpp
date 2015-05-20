@@ -53,18 +53,24 @@ void Door::unlock()
 
     _open = true;
     _heartbeat = std::thread([this] () {
-        digitalWrite(_SCHNAPPER, HIGH);
         auto beat = [] () {
             digitalWrite(_LOCKPIN, HIGH);
             usleep(10000);
             digitalWrite(_LOCKPIN, LOW);
             usleep(10000);
         };
+
+        digitalWrite(_SCHNAPPER, HIGH);
         while (_open) {
             if (_schnapper == true)
             {
-                digitalWrite(_SCHNAPPER, LOW);
-                for (int i = 0; i < 32 ; i++) beat();
+                for (int i = 0; i < 32 ; i++)
+                {
+                    digitalWrite(_SCHNAPPER, LOW);
+                    beat();
+                    digitalWrite(_SCHNAPPER, HIGH);
+                    beat();
+                }
                 digitalWrite(_SCHNAPPER, HIGH);
                 _schnapper = false;
             }
