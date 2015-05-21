@@ -16,7 +16,8 @@ using namespace std;
 Epaper::Epaper() :
     _logger(Logger::get())
 {
-    memset(_prevImg, 0xFF, ARRAY_SIZE);
+    memset(_prevImg, 0xFF, _ARRAY_SIZE);
+    // Initialize Epaper library
     bsp_init();
 }
 
@@ -32,12 +33,12 @@ Epaper &Epaper::get()
 
 void Epaper::draw(const string &uri)
 {
-    unsigned char buffer[ARRAY_SIZE];
-    snprintf((char*)buffer, ARRAY_SIZE, "qrencode -l M -d 100 -s 5 \"%s\" -o /tmp/qr.png", uri.c_str());
+    unsigned char buffer[_ARRAY_SIZE];
+    snprintf((char*)buffer, _ARRAY_SIZE, "qrencode -l M -d 100 -s 5 \"%s\" -o /tmp/qr.png", uri.c_str());
     system((char*)buffer);
 
     FILE* f = popen("composite -geometry +90+0 /tmp/qr.png /usr/local/share/doorlockd/template.png -colorspace gray -depth 1 gray:-", "r");
-    int i = fread(buffer, ARRAY_SIZE, 1, f);
+    int i = fread(buffer, _ARRAY_SIZE, 1, f);
     if (i != 1)
     {
         _logger(LogLevel::error, "Image format error");
@@ -47,5 +48,5 @@ void Epaper::draw(const string &uri)
     pclose(f);
 
     epd_DisplayImg(EPDType_270, buffer, _prevImg);
-    memcpy(_prevImg, buffer, ARRAY_SIZE);
+    memcpy(_prevImg, buffer, _ARRAY_SIZE);
 }

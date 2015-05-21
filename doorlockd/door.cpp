@@ -13,8 +13,8 @@ Door::Door() :
 {
     _l(LogLevel::info, "Initializing Raspberry Pi GPIOs");
     wiringPiSetup();
-    pinMode(_LOCKPIN, OUTPUT);
-    pinMode(_SCHNAPPER, OUTPUT);
+    pinMode(_HEARTBEATPIN, OUTPUT);
+    pinMode(_SCHNAPPERPIN, OUTPUT);
     lock();
 }
 
@@ -31,49 +31,73 @@ Door &Door::get()
 
 void Door::lock()
 {
-    digitalWrite(_SCHNAPPER, HIGH);
+    digitalWrite(_SCHNAPPERPIN, HIGH);
     _l(LogLevel::info, "Door closed");
-    if (_open == true)
+
+    if (_state == State::Unlocked)
     {
-        _open = false;
+        // Stop the Heartbeat Thread
+        _state = State::Locked;
         _heartbeat.join();
     }
 
+    // Turn off all lights
     system("wget -O /dev/null --timeout 3 \"http://homer.binary.kitchen:8080/set?color=000000\" > /dev/null 2>&1");
 }
 
 void Door::unlock()
 {
+    // In any case, klacker the schnapper
     _schnapper = true;
 
-    if (_open == true) 
+    // If heartbeat is already running, return
+    if (_state == State::Unlocked)
     {
         return;
     }
 
-    _open = true;
+    // If not, first set state to unlocked
+    _state = State::Unlocked;
+
+    // Start the Heartbeat Thread
     _heartbeat = std::thread([this] () {
+
+        // One "beat" is one complete cycle of the heartbeat clock
         auto beat = [] () {
-            digitalWrite(_LOCKPIN, HIGH);
+            digitalWrite(_HEARTBEATPIN, HIGH);
             usleep(10000);
-            digitalWrite(_LOCKPIN, LOW);
+            digitalWrite(_HEARTBEATPIN, LOW);
             usleep(10000);
         };
 
-        digitalWrite(_SCHNAPPER, HIGH);
-        while (_open) {
+        // The default of the Schnapperpin: always high
+        digitalWrite(_SCHNAPPERPIN, HIGH);
+
+        // Heartbeat while the state is unlocked
+        while (_state == State::Unlocked) {
+
+            // In case of schnapper, send 0x55 resp. 0xaa to the schnapperpin
             if (_schnapper == true)
             {
                 for (int i = 0; i < 32 ; i++)
                 {
-                    digitalWrite(_SCHNAPPER, LOW);
+                    // Set '0'
+                    digitalWrite(_SCHNAPPERPIN, LOW);
+                    // cycle and send
                     beat();
-                    digitalWrite(_SCHNAPPER, HIGH);
+                    // Set '1'
+                    digitalWrite(_SCHNAPPERPIN, HIGH);
+                    // cycle and send
                     beat();
                 }
-                digitalWrite(_SCHNAPPER, HIGH);
+
+                // Reset schnapperpin
+                digitalWrite(_SCHNAPPERPIN, HIGH);
+                // and deactivate schnapper for the next round
                 _schnapper = false;
             }
+
+            // Heartbeat
             beat();
         }
     });
