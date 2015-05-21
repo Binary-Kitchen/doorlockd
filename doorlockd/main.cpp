@@ -30,6 +30,9 @@ void signal_handler(int signum)
     logic.reset();
 }
 
+/*
+ * Session class handles asynchronosly handles one incoming TCP session
+ */
 class session
   : public std::enable_shared_from_this<session>
 {
@@ -63,6 +66,9 @@ private:
     char _data[_maxLen];
 };
 
+/*
+ * The TCP server
+ */
 class server
 {
 
@@ -105,13 +111,13 @@ int main(int argc, char** argv)
     string ldapServer;
     string bindDN;
     string lockPagePrefix;
-    string allowedIpPrefix;
     string logfile;
     string pidFile;
     bool foreground = false;
 
     l(LogLevel::notice, "Starting doorlockd");
 
+    // Load SPI and I2C modules
     system("/usr/bin/gpio load spi");
     system("/usr/bin/gpio load i2c");
 
@@ -125,7 +131,6 @@ int main(int argc, char** argv)
             ("ldap,s", po::value<string>(&ldapServer)->default_value(DEFAULT_LDAP_SERVER), "Ldap Server")
             ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN, %s means username")
             ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
-            ("ip,i", po::value<string>(&allowedIpPrefix)->default_value(DEFAULT_ALLOWED_IP_PREFIX), "Default allowed IP Prefix")
             ("foreground,f", po::bool_switch(&foreground)->default_value(false), "Run in foreground")
             ("logfile,l", po::value<string>(&logfile)->default_value(DEFAULT_LOG_FILE), "Log file")
             ("pid,z", po::value<string>(&pidFile)->default_value(DEFAULT_PID_FILE), "PID file");
@@ -166,8 +171,7 @@ int main(int argc, char** argv)
     logic = unique_ptr<Logic>(new Logic(tokenTimeout,
                                         ldapServer,
                                         bindDN,
-                                        lockPagePrefix,
-                                        allowedIpPrefix));
+                                        lockPagePrefix));
 
     try {
         server s(io_service, port);

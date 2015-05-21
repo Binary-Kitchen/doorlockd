@@ -16,16 +16,14 @@ using namespace std;
 Logic::Logic(const chrono::seconds tokenTimeout,
              const string &ldapServer,
              const string &bindDN,
-             const string &webPrefix,
-             const string &allowedIpPrefix) :
+             const string &webPrefix) :
     _logger(Logger::get()),
     _door(Door::get()),
     _epaper(Epaper::get()),
     _tokenTimeout(tokenTimeout),
     _ldapServer(ldapServer),
     _bindDN(bindDN),
-    _webPrefix(webPrefix),
-    _allowedIpPrefix(allowedIpPrefix)
+    _webPrefix(webPrefix)
 {
     srand(time(NULL));
     _createNewToken(false);
@@ -34,7 +32,7 @@ Logic::Logic(const chrono::seconds tokenTimeout,
         while (_run)
         {
             unique_lock<mutex> l(_mutex);
-            _c.wait_for(l, _tokenTimeout);
+            _tokenCondition.wait_for(l, _tokenTimeout);
             if (_run == false)
             {
                 break;
@@ -48,7 +46,7 @@ Logic::Logic(const chrono::seconds tokenTimeout,
 Logic::~Logic()
 {
     _run = false;
-    _c.notify_one();
+    _tokenCondition.notify_one();
     _tokenUpdater.join();
 }
 
@@ -119,14 +117,14 @@ out:
 
 Logic::Response Logic::_lock()
 {
-    if (_state == LOCKED)
+    if (_state == Door::State::Locked)
     {
         _logger(LogLevel::warning, "Unable to lock: already closed");
         return AlreadyLocked;
     }
  
     _door.lock();
-    _state = LOCKED;
+    _state = Door::State::Locked;
     _createNewToken(false);
 
     return Success;
@@ -137,12 +135,12 @@ Logic::Response Logic::_unlock()
    _door.unlock();
    _createNewToken(false);
 
-   if (_state == UNLOCKED)
+   if (_state == Door::State::Unlocked)
    {
        _logger(LogLevel::warning, "Unable to unlock: already unlocked");
        return AlreadyUnlocked;
    } else {
-       _state = UNLOCKED;
+       _state = Door::State::Unlocked;
    }
 
    return Success;

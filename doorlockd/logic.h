@@ -12,6 +12,12 @@
 #include "door.h"
 #include "logger.h"
 
+/* The "Logic" class
+ *
+ * This class is initilized by all settings.
+ *
+ * It parses incoming JSON-Requests and returns the Response Code.
+ */
 class Logic
 {
 public:
@@ -19,8 +25,7 @@ public:
     Logic(const std::chrono::seconds tokenTimeout,
           const std::string &ldapServer,
           const std::string &bindDN,
-          const std::string &webPrefix,
-          const std::string &allowedIpPrefix);
+          const std::string &webPrefix);
     ~Logic();
 
     enum Response {
@@ -37,40 +42,63 @@ public:
         LDAPInit, // Ldap initialization failed
     };
 
+    // Parse incoming JSON Requests
     Response parseRequest(const std::string &str);
 
 private:
 
+    // Internal lock wrapper
     Response _lock();
+    // Internal unlock wrapper
     Response _unlock();
 
+    // Checks if the incoming token is valid
     bool _checkToken(const std::string &token);
+
+    // Checks if incoming credentials against LDAP
     Response _checkLDAP(const std::string &user,
                         const std::string &password);
+
+    // Creates a new random token and draws it on the epaper.
+    // stillValid indicates whether the old (previous) token is still valid
     void _createNewToken(const bool stillValid);
 
     const Logger &_logger;
+
+    // Door reference
     Door &_door;
+    // Epaper reference
     Epaper &_epaper;
 
+    // Tokens are 64-bit hexadecimal values
     using Token = uint64_t;
 
+    // The current token
     Token _curToken = { 0x0000000000000000 };
-    bool _prevValid = { false };
+    // The previous token
     Token _prevToken = { 0x0000000000000000 };
+    // Indicates whether the previous token is valid
+    bool _prevValid = { false };
 
+    // Tokens are refreshed all tokenTimout seconds
     const std::chrono::seconds _tokenTimeout;
-    const std::string _ldapServer;
-    const std::string _bindDN;
-    const std::string _webPrefix;
-    const std::string _allowedIpPrefix;
-
+    // Thread for asynchronosly updating tokens
     std::thread _tokenUpdater = {};
-    std::condition_variable _c = {};
-    std::mutex _mutex = {};
+    // Thread can be force-triggered for updates using the condition variable
+    std::condition_variable _tokenCondition = {};
+    // stop indicator for the thread
     bool _run = true;
+    // Token mutex
+    std::mutex _mutex = {};
 
-    enum {LOCKED, UNLOCKED} _state = { LOCKED };
+    // The URI of the ldap server
+    const std::string _ldapServer;
+    // LDAP bindDN
+    const std::string _bindDN;
+    // Prefix of the website
+    const std::string _webPrefix;
+
+    Door::State _state = { Door::State::Locked };
 };
 
 #endif
