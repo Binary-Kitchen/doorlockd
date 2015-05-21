@@ -10,6 +10,7 @@ extern "C" {
 }
 
 #include "epaper.h"
+#include "config.h"
 
 using namespace std;
 
@@ -34,10 +35,12 @@ Epaper &Epaper::get()
 void Epaper::draw(const string &uri)
 {
     unsigned char buffer[_ARRAY_SIZE];
-    snprintf((char*)buffer, _ARRAY_SIZE, "qrencode -l M -d 100 -s 5 \"%s\" -o /tmp/qr.png", uri.c_str());
-    system((char*)buffer);
+    snprintf((char*)buffer, _ARRAY_SIZE,
+             "qrencode -l M -d 100 -s 5 \"%s\" -t png -o -"
+             "| composite -geometry +90+0 /dev/stdin " TEMPLATE_LOCATION " -colorspace gray -depth 1 gray:-",
+             uri.c_str());
 
-    FILE* f = popen("composite -geometry +90+0 /tmp/qr.png /usr/local/share/doorlockd/template.png -colorspace gray -depth 1 gray:-", "r");
+    FILE* f = popen((const char*)buffer, "r");
     int i = fread(buffer, _ARRAY_SIZE, 1, f);
     if (i != 1)
     {

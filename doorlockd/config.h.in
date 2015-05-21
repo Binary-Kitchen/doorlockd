@@ -17,4 +17,6 @@
 #define DEFAULT_LOG_FILE "/var/log/doorlockd.log"
 #define DEFAULT_PID_FILE "/var/run/doorlockd.pid"
 
+#define TEMPLATE_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/template.png"
+
 #endif
