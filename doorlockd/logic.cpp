@@ -14,14 +14,14 @@
 using namespace std;
 
 Logic::Logic(const chrono::seconds tokenTimeout,
-             const string &ldapServer,
+             const string &ldapUri,
              const string &bindDN,
              const string &webPrefix) :
     _logger(Logger::get()),
     _door(Door::get()),
     _epaper(Epaper::get()),
     _tokenTimeout(tokenTimeout),
-    _ldapServer(ldapServer),
+    _ldapUri(ldapUri),
     _bindDN(bindDN),
     _webPrefix(webPrefix)
 {
@@ -175,7 +175,7 @@ Logic::Response Logic::_checkLDAP(const string &user, const string &password)
     _logger(LogLevel::notice, "Trying to authenticate as user \"%s\"", user.c_str());
     snprintf(buffer, BUFFERSIZE, _bindDN.c_str(), user.c_str());
 
-    rc = ldap_initialize(&ld, _ldapServer.c_str());
+    rc = ldap_initialize(&ld, _ldapUri.c_str());
     if(rc != LDAP_SUCCESS)
     {   
         _logger(LogLevel::error, "LDAP initialize error: %s", ldap_err2string(rc));
