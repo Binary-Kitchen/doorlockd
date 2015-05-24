@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     int retval = -1;
     short port;
     std::chrono::seconds tokenTimeout;
-    string ldapServer;
+    string ldapUri;
     string bindDN;
     string lockPagePrefix;
     string logfile;
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
             ("help,h", "print help")
             ("tokentimeout,t", po::value<unsigned int>(&timeout)->default_value(DEFAULT_TOKEN_TIMEOUT), "Token timeout in seconds")
             ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port")
-            ("ldap,s", po::value<string>(&ldapServer)->default_value(DEFAULT_LDAP_SERVER), "Ldap Server")
+            ("ldap,s", po::value<string>(&ldapUri)->default_value(DEFAULT_LDAP_URI), "Ldap Server")
             ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN, %s means username")
             ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
             ("foreground,f", po::bool_switch(&foreground)->default_value(false), "Run in foreground")
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
     signal(SIGUSR2, signal_handler);
 
     logic = unique_ptr<Logic>(new Logic(tokenTimeout,
-                                        ldapServer,
+                                        ldapUri,
                                         bindDN,
                                         lockPagePrefix));
 

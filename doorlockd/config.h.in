@@ -12,7 +12,7 @@
 #define DEFAULT_TOKEN_TIMEOUT (60*5)
 #define DEFAULT_PORT 5555
 #define DEFAULT_WEB_PREFIX "https://lock.binary.kitchen/"
-#define DEFAULT_LDAP_SERVER "ldaps://ldap.binary.kitchen"
+#define DEFAULT_LDAP_URI "ldaps://ldap1.binary.kitchen/ ldaps://ldap2.binary.kitchen/ ldaps://ldapm.binary.kitchen/"
 #define DEFAULT_BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
 #define DEFAULT_LOG_FILE "/var/log/doorlockd.log"
 #define DEFAULT_PID_FILE "/var/run/doorlockd.pid"

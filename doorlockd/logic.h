@@ -23,7 +23,7 @@ class Logic
 public:
 
     Logic(const std::chrono::seconds tokenTimeout,
-          const std::string &ldapServer,
+          const std::string &ldapUri,
           const std::string &bindDN,
           const std::string &webPrefix);
     ~Logic();
@@ -92,7 +92,7 @@ private:
     std::mutex _mutex = {};
 
     // The URI of the ldap server
-    const std::string _ldapServer;
+    const std::string _ldapUri;
     // LDAP bindDN
     const std::string _bindDN;
     // Prefix of the website
