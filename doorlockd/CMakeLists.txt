@@ -45,7 +45,6 @@ install(DIRECTORY scripts/ DESTINATION share/doorlockd/
     FILES_MATCHING PATTERN "scripts/doorlockd-*"
     PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE OWNER_WRITE)
 install(FILES scripts/doorlockd.service DESTINATION /etc/systemd/system/)
-install(FILES scripts/doorlockd DESTINATION /etc/sysconfig/)
 
 install(DIRECTORY scripts/ DESTINATION etc/doorlockd/
     FILES_MATCHING PATTERN "scripts/pre_*lock"
