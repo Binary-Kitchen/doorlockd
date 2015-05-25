@@ -3,6 +3,7 @@
 #include <wiringPi.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "logger.h"
 #include "door.h"
 
@@ -31,6 +32,9 @@ Door &Door::get()
 
 void Door::lock()
 {
+    _l(LogLevel::notice, "Executing Pre Lock Script");
+    system(PRE_LOCK_SCRIPT);
+
     digitalWrite(_SCHNAPPERPIN, HIGH);
     _l(LogLevel::info, "Door closed");
 
@@ -41,12 +45,15 @@ void Door::lock()
         _heartbeat.join();
     }
 
-    // Turn off all lights
-    system("wget -O /dev/null --timeout 3 \"http://homer.binary.kitchen:8080/set?color=000000\" > /dev/null 2>&1");
+    _l(LogLevel::notice, "Executing Post Lock Script");
+    system(POST_LOCK_SCRIPT);
 }
 
 void Door::unlock()
 {
+    _l(LogLevel::notice, "Executing Pre Unlock Script");
+    system(PRE_UNLOCK_SCRIPT);
+
     // In any case, klacker the schnapper
     _schnapper = true;
 
@@ -103,4 +110,7 @@ void Door::unlock()
     });
 
     _l(LogLevel::info, "Door opened");
+
+    _l(LogLevel::notice, "Executing Post Unlock Script");
+    system(POST_UNLOCK_SCRIPT);
 }
