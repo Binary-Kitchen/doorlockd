@@ -48,13 +48,12 @@ void close_door()
 
 void schnapper(unsigned int i)
 {
-    while(i--)
-    {
-       OPEN_SCHNAPPER;
-       _delay_ms(125);
-       CLOSE_SCHNAPPER;
-       _delay_ms(125);
+    OPEN_SCHNAPPER;
+    while (i--) {
+        _delay_ms(1000);
     }
+    CLOSE_SCHNAPPER;
+    _delay_ms(100);
 }
 
 ISR(USI_OVERFLOW_vect)
@@ -118,7 +117,7 @@ int main(void) {
 	    open_door();
 	    if (klacker == 1)
   	    {
-	        schnapper(20);
+	        schnapper(3);
 	        klacker = 0;
 	    }
         }
@@ -126,16 +125,14 @@ int main(void) {
         if (IS_RESCUE) {
             cli();
             open_door();
-	    schnapper(30);
-            _delay_ms(2000);
+	    schnapper(3);
             sei();
         } else if (IS_SWITCH && open == 0) {
             _delay_ms(300);
             if(IS_SWITCH && open == 0) {
 	        cli();
 		open_door();
-		schnapper(20);
-		_delay_ms(3000);
+		schnapper(5);
 		sei();
             }
 	} 
