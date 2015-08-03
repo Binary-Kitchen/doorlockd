@@ -52,6 +52,7 @@ private:
     // WiringPi GPIO Pins
     static constexpr int _HEARTBEATPIN = 10;
     static constexpr int _SCHNAPPERPIN = 7;
+    static constexpr int _LOCKPIN = 15;
 };
 
 #endif
