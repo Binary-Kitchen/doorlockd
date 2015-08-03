@@ -16,6 +16,8 @@ Door::Door() :
     wiringPiSetup();
     pinMode(_HEARTBEATPIN, OUTPUT);
     pinMode(_SCHNAPPERPIN, OUTPUT);
+    pinMode(_LOCKPIN, INPUT);
+    pullUpDnControl(_LOCKPIN, PUD_UP);
     lock();
 }
 
@@ -70,11 +72,17 @@ void Door::unlock()
     _heartbeat = std::thread([this] () {
 
         // One "beat" is one complete cycle of the heartbeat clock
-        auto beat = [] () {
+        auto beat = [this] () {
             digitalWrite(_HEARTBEATPIN, HIGH);
             usleep(10000);
             digitalWrite(_HEARTBEATPIN, LOW);
             usleep(10000);
+
+            if (digitalRead(_LOCKPIN)) {
+                std::thread([this] () {
+                    lock();
+                }).detach();
+            }
         };
 
         // The default of the Schnapperpin: always high
