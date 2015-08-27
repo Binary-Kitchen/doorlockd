@@ -78,7 +78,7 @@ void Door::unlock()
             digitalWrite(_HEARTBEATPIN, LOW);
             usleep(10000);
 
-            if (digitalRead(_LOCKPIN)) {
+            if (!digitalRead(_LOCKPIN)) {
                 std::thread([this] () {
                     lock();
                 }).detach();
