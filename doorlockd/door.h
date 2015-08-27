@@ -28,6 +28,9 @@ public:
 
     enum class State {Locked, Unlocked};
 
+    // Current state of the door
+    const State &state() const;
+
     // Lock the door
     void lock();
     // Unlock the door
