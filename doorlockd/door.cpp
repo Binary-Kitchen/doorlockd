@@ -32,6 +32,11 @@ Door &Door::get()
     return d;
 }
 
+const Door::State &Door::state() const
+{
+    return _state;
+}
+
 void Door::lock()
 {
     _l(LogLevel::notice, "Executing Pre Lock Script");

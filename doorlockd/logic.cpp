@@ -117,14 +117,13 @@ out:
 
 Logic::Response Logic::_lock()
 {
-    if (_state == Door::State::Locked)
+    if (_door.state() == Door::State::Locked)
     {
         _logger(LogLevel::warning, "Unable to lock: already closed");
         return AlreadyLocked;
     }
  
     _door.lock();
-    _state = Door::State::Locked;
     _createNewToken(false);
 
     return Success;
@@ -132,18 +131,17 @@ Logic::Response Logic::_lock()
 
 Logic::Response Logic::_unlock()
 {
-   _door.unlock();
-   _createNewToken(false);
+    const auto state = _door.state();
+    _door.unlock();
+    _createNewToken(false);
 
-   if (_state == Door::State::Unlocked)
-   {
-       _logger(LogLevel::warning, "Unable to unlock: already unlocked");
-       return AlreadyUnlocked;
-   } else {
-       _state = Door::State::Unlocked;
-   }
+    if (state == Door::State::Unlocked)
+    {
+        _logger(LogLevel::warning, "Unable to unlock: already unlocked");
+        return AlreadyUnlocked;
+    }
 
-   return Success;
+    return Success;
 }
 
 bool Logic::_checkToken(const string &strToken)

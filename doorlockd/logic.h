@@ -97,8 +97,6 @@ private:
     const std::string _bindDN;
     // Prefix of the website
     const std::string _webPrefix;
-
-    Door::State _state = { Door::State::Locked };
 };
 
 #endif
