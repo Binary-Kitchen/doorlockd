@@ -29,7 +29,7 @@ public:
     enum class State {Locked, Unlocked};
 
     // Current state of the door
-    const State &state() const;
+    State state() const;
 
     // Lock the door
     void lock();
@@ -44,7 +44,7 @@ private:
     const Logger &_l;
 
     // Indicates the internal state: Door is open or locked
-    State _state = { Door::State::Locked };
+    volatile State _state = { Door::State::Locked };
 
     // A Heartbeat thread is started when the door is unlocked
     std::thread _heartbeat = { };
