@@ -85,6 +85,7 @@ void Door::unlock()
 
             if (!digitalRead(_LOCKPIN)) {
                 std::thread([this] () {
+                    _l(LogLevel::info, "Incoming door close request on button press");
                     lock();
                 }).detach();
             }
