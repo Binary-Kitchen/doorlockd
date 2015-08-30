@@ -32,7 +32,7 @@ Door &Door::get()
     return d;
 }
 
-const Door::State &Door::state() const
+Door::State Door::state() const
 {
     return _state;
 }
@@ -82,13 +82,6 @@ void Door::unlock()
             usleep(10000);
             digitalWrite(_HEARTBEATPIN, LOW);
             usleep(10000);
-
-            if (!digitalRead(_LOCKPIN)) {
-                std::thread([this] () {
-                    _l(LogLevel::info, "Incoming door close request on button press");
-                    lock();
-                }).detach();
-            }
         };
 
         // The default of the Schnapperpin: always high
@@ -120,6 +113,16 @@ void Door::unlock()
 
             // Heartbeat
             beat();
+
+            if (!digitalRead(_LOCKPIN)) {
+                std::thread([this] () {
+                    _l(LogLevel::info, "Incoming door close request on button press");
+                    lock();
+                }).detach();
+
+                // Busy wait till door is locked
+                while(_state == State::Unlocked);
+            }
         }
     });
 
