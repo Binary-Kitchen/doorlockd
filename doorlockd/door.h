@@ -3,6 +3,7 @@
 
 #include <string>
 #include <thread>
+#include <mutex>
 
 #include "logger.h"
 
@@ -51,6 +52,9 @@ private:
 
     // Read by the Heartbeat thread if it should klacker the schnapper or not
     bool _schnapper = { false };
+
+    // Mutex to avoid concurrent locks
+    std::mutex _mutex = { };
 
     // WiringPi GPIO Pins
     static constexpr int _HEARTBEATPIN = 10;

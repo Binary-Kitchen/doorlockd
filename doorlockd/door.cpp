@@ -39,6 +39,8 @@ Door::State Door::state() const
 
 void Door::lock()
 {
+    std::lock_guard<std::mutex> l(_mutex);
+
     _l(LogLevel::notice, "Executing Pre Lock Script");
     system(PRE_LOCK_SCRIPT);
 
