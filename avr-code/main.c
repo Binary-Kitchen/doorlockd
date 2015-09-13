@@ -14,8 +14,8 @@
 #define RED_ON (PORTB &= ~(1<<PB0))
 #define RED_OFF (PORTB |= (1<<PB0))
 
-#define DOORLIGHT_ON (PORTD &= ~(1<<PD6))
-#define DOORLIGHT_OFF (PORTD |= (1<<PD6))
+#define DOORLIGHT_ON (PORTD |= (1<<PD6))
+#define DOORLIGHT_OFF (PORTD &= ~(1<<PD6))
 
 #define OPEN_BOLZEN (PORTD &= ~(1<<PD4))
 #define CLOSE_BOLZEN (PORTD |= (1<<PD4))
