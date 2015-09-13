@@ -20,6 +20,9 @@ set(CMAKE_C_FLAGS "-O2 -Wall -pedantic -Wextra")
 
 find_package(Boost 1.55.0 COMPONENTS program_options system REQUIRED)
 
+set(JSON_INCLUDE_DIR "/usr/include/jsoncpp" CACHE PATH "path to jsoncpp includes")
+include_directories(${JSON_INCLUDE_DIR})
+
 find_package (Threads)
 
 set(SRCS
