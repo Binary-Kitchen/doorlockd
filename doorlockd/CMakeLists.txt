@@ -29,18 +29,13 @@ set(SRCS
 main.cpp
 logger.cpp
 door.cpp
-epaper.cpp
 logic.cpp
 util.cpp
 daemon.cpp
-epaper/Display_COG_Process.c
-epaper/Display_Controller.c
-epaper/Display_Hardware_Driver.c
-epaper/bsp.c
 )
 
 add_executable(doorlockd ${SRCS})
-target_link_libraries(doorlockd wiringPi jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(doorlockd jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(FILES img/template.png DESTINATION share/doorlockd/)
