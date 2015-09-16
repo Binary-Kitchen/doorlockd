@@ -16,10 +16,10 @@ using namespace std;
 Logic::Logic(const chrono::seconds tokenTimeout,
              const string &ldapUri,
              const string &bindDN,
-             const string &webPrefix) :
+             const string &webPrefix,
+             const string &serDev) :
     _logger(Logger::get()),
-    _door(Door::get()),
-    _epaper(Epaper::get()),
+    _door(serDev),
     _tokenTimeout(tokenTimeout),
     _ldapUri(ldapUri),
     _bindDN(bindDN),
@@ -131,11 +131,11 @@ Logic::Response Logic::_lock()
 
 Logic::Response Logic::_unlock()
 {
-    const auto state = _door.state();
+    const auto oldState = _door.state();
     _door.unlock();
     _createNewToken(false);
 
-    if (state == Door::State::Unlocked)
+    if (oldState == Door::State::Unlocked)
     {
         _logger(LogLevel::warning, "Unable to unlock: already unlocked");
         return AlreadyUnlocked;
@@ -211,12 +211,22 @@ out2:
 
 void Logic::_createNewToken(const bool stillValid)
 {
+    // Todo Mutex einführen
+
     _prevToken = _curToken;
     _prevValid = stillValid;
 
     _curToken = (((uint64_t)rand())<<32) | ((uint64_t)rand());
 
-    _epaper.draw(_webPrefix + toHexString(_curToken));
+    // TODO make things more pretty
+    const string uri = _webPrefix + toHexString(_curToken);
+
+    const int ARRAY_SIZE=1024;
+    char buffer[ARRAY_SIZE];
+    snprintf(buffer, ARRAY_SIZE,
+             "qrencode -l M -d 100 -s 5 \"%s\" -t png -o /tmp/qr.png", uri.c_str());
+    system(buffer);
+
 
     ostringstream message;
     message << "New Token generated: " << toHexString(_curToken) << " old Token: " << toHexString(_prevToken) << " is " << (_prevValid?"still":"not") << " valid";

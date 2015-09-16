@@ -11,12 +11,10 @@
 
 using namespace std;
 
-void daemonize(const bool daemonize,
-               const string &dir,
+void daemonize(const string &dir,
                const string &stdinfile,
                const string &stdoutfile,
-               const string &stderrfile,
-               const string &pidFile)
+               const string &stderrfile)
 {
     umask(0);
 
@@ -24,24 +22,6 @@ void daemonize(const bool daemonize,
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0)
     {
         throw runtime_error(strerror(errno));
-    }
-
-    if (daemonize == true)
-    {
-        pid_t pid;
-        if ((pid = fork()) < 0)
-        {
-            throw runtime_error(strerror(errno));
-        } else if (pid != 0) {
-            exit(0);
-        }
-
-        pid = setsid();
-
-        ofstream pidStream;
-        pidStream.exceptions(ofstream::failbit | ofstream::badbit);
-        pidStream.open(pidFile, ofstream::trunc);
-        pidStream << pid << endl;
     }
 
     if (!dir.empty() && chdir(dir.c_str()) < 0)

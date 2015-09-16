@@ -8,7 +8,6 @@
 #include <mutex>
 
 #include "config.h"
-#include "epaper.h"
 #include "door.h"
 #include "logger.h"
 
@@ -25,7 +24,8 @@ public:
     Logic(const std::chrono::seconds tokenTimeout,
           const std::string &ldapUri,
           const std::string &bindDN,
-          const std::string &webPrefix);
+          const std::string &webPrefix,
+          const std::string &serDev);
     ~Logic();
 
     enum Response {
@@ -65,10 +65,8 @@ private:
 
     const Logger &_logger;
 
-    // Door reference
-    Door &_door;
-    // Epaper reference
-    Epaper &_epaper;
+    // The door
+    Door _door;
 
     // Tokens are 64-bit hexadecimal values
     using Token = uint64_t;

@@ -15,7 +15,7 @@
 #define DEFAULT_LDAP_URI "ldaps://ldap1.binary.kitchen/ ldaps://ldap2.binary.kitchen/ ldaps://ldapm.binary.kitchen/"
 #define DEFAULT_BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
 #define DEFAULT_LOG_FILE "/var/log/doorlockd.log"
-#define DEFAULT_PID_FILE "/var/run/doorlockd.pid"
+#define DEFAULT_SERIAL_DEVICE "/dev/ttyUSB0"
 
 #define TEMPLATE_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/template.png"
 

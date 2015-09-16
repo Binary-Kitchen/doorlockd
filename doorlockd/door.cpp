@@ -1,35 +1,89 @@
-#include <iostream>
-
-#include <wiringPi.h>
-#include <unistd.h>
-
-#include "config.h"
-#include "logger.h"
 #include "door.h"
 
-using namespace std;
-
-Door::Door() :
-    _l(Logger::get())
+Door::Door(const std::string &serDev,
+           unsigned int baudrate) :
+    _baudrate(baudrate),
+    _port(_ioService, serDev),
+    _logger(Logger::get())
 {
-    _l(LogLevel::info, "Initializing Raspberry Pi GPIOs");
-    wiringPiSetup();
-    pinMode(_HEARTBEATPIN, OUTPUT);
-    pinMode(_SCHNAPPERPIN, OUTPUT);
-    pinMode(_LOCKPIN, INPUT);
-    pullUpDnControl(_LOCKPIN, PUD_UP);
-    lock();
+    // Configure serial port
+    _port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
+    _port.set_option(boost::asio::serial_port_base::character_size(8));
+    _port.set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
+    _port.set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
+    _port.set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
+
+    _asyncRead();
+
+    _ioThread = std::thread([this] () {
+        _ioService.run();
+    });
+
+    // TODO Ping device
 }
 
 Door::~Door()
 {
     lock();
+
+    _ioService.stop();
+    _ioService.reset();
+
+    _port.cancel();
+    _port.close();
+
+    _ioThread.join();
 }
 
-Door &Door::get()
+bool Door::readByte(char &byte, std::chrono::milliseconds timeout)
 {
-    static Door d;
-    return d;
+    std::unique_lock<std::mutex> lock(_receiveLock);
+    _receivedCondition.wait_for(lock, timeout);
+    if (_byteReady) {
+        byte = recvBuf;
+        _byteReady = false;
+        return true;
+    }
+    return false;
+}
+
+void Door::_asyncRead()
+{
+    _port.async_read_some(
+        boost::asio::buffer(&recvBuf, sizeof(recvBuf)),
+        [this] (const boost::system::error_code &ec, size_t bytes_transferred) {
+            if (ec) {
+                // Operation canceled occurs on system shutdown
+                // So we return without invoking an additional asyncRead()
+                if (ec == boost::system::errc::operation_canceled)
+                    return;
+
+                _logger(LogLevel::error, "Serialport error: %s", ec.message().c_str());
+                goto out;
+            }
+
+            if (bytes_transferred != 1) {
+                _logger(LogLevel::error, "Fatal serial error");
+                goto out;
+            }
+
+            if (recvBuf == 'U') {
+                _logger(LogLevel::notice, "Someone pushed the unlock button");
+            }
+            if (recvBuf == 'L') {
+                _logger(LogLevel::notice, "Someone pushed the lock button");
+                _logger(LogLevel::notice, "Locking...");
+                lock();
+                goto out;
+            }
+            // TODO EMERGENCY DOOR BUTTON
+
+            _byteReady = true;
+            _receivedCondition.notify_one();
+
+        out:
+            _asyncRead();
+        });
 }
 
 Door::State Door::state() const
@@ -39,97 +93,66 @@ Door::State Door::state() const
 
 void Door::lock()
 {
-    std::lock_guard<std::mutex> l(_mutex);
+    _stateMutex.lock();
 
-    _l(LogLevel::notice, "Executing Pre Lock Script");
-    system(PRE_LOCK_SCRIPT);
-
-    digitalWrite(_SCHNAPPERPIN, HIGH);
-    _l(LogLevel::info, "Door closed");
-
-    if (_state == State::Unlocked)
-    {
-        // Stop the Heartbeat Thread
-        _state = State::Locked;
-        _heartbeat.join();
+    if (_state == State::Locked) {
+        _stateMutex.unlock();
+        return;
     }
 
-    _l(LogLevel::notice, "Executing Post Lock Script");
-    system(POST_LOCK_SCRIPT);
+    _state = State::Locked;
+    _stateMutex.unlock();
+    _heartbeatCondition.notify_one();
+    _heartbeatThread.join();
 }
 
 void Door::unlock()
 {
-    _l(LogLevel::notice, "Executing Pre Unlock Script");
-    system(PRE_UNLOCK_SCRIPT);
-
-    // In any case, klacker the schnapper
+    _stateMutex.lock();
     _schnapper = true;
 
-    // If heartbeat is already running, return
-    if (_state == State::Unlocked)
-    {
+    if(_state == State::Unlocked) {
+        _stateMutex.unlock();
         return;
     }
 
-    // If not, first set state to unlocked
     _state = State::Unlocked;
+    _stateMutex.unlock();
 
-    // Start the Heartbeat Thread
-    _heartbeat = std::thread([this] () {
+    _heartbeatThread = std::thread([this] () {
+        std::unique_lock<std::mutex> lock(_heartbeatMutex);
 
-        // One "beat" is one complete cycle of the heartbeat clock
-        auto beat = [this] () {
-            digitalWrite(_HEARTBEATPIN, HIGH);
-            usleep(10000);
-            digitalWrite(_HEARTBEATPIN, LOW);
-            usleep(10000);
-        };
-
-        // The default of the Schnapperpin: always high
-        digitalWrite(_SCHNAPPERPIN, HIGH);
-
-        // Heartbeat while the state is unlocked
         while (_state == State::Unlocked) {
+            if (_state == State::Unlocked) {
+                writeCMD('u');
 
-            // In case of schnapper, send 0x55 resp. 0xaa to the schnapperpin
-            if (_schnapper == true)
-            {
-                for (int i = 0; i < 32 ; i++)
-                {
-                    // Set '0'
-                    digitalWrite(_SCHNAPPERPIN, LOW);
-                    // cycle and send
-                    beat();
-                    // Set '1'
-                    digitalWrite(_SCHNAPPERPIN, HIGH);
-                    // cycle and send
-                    beat();
+                if (_schnapper) {
+                    _schnapper = false;
+                    writeCMD('s');
                 }
-
-                // Reset schnapperpin
-                digitalWrite(_SCHNAPPERPIN, HIGH);
-                // and deactivate schnapper for the next round
-                _schnapper = false;
             }
 
-            // Heartbeat
-            beat();
-
-            if (!digitalRead(_LOCKPIN)) {
-                std::thread([this] () {
-                    _l(LogLevel::info, "Incoming door close request on button press");
-                    lock();
-                }).detach();
-
-                // Busy wait till door is locked
-                while(_state == State::Unlocked);
-            }
+            _heartbeatCondition.wait_for(lock, Milliseconds(400));
         }
+        writeCMD('l');
     });
-
-    _l(LogLevel::info, "Door opened");
-
-    _l(LogLevel::notice, "Executing Post Unlock Script");
-    system(POST_UNLOCK_SCRIPT);
 }
+
+bool Door::writeCMD(char c)
+{
+    std::lock_guard<std::mutex> l(_serialMutex);
+
+    _port.write_some(boost::asio::buffer(&c, sizeof(c)));
+    char response;
+    if (readByte(response, Milliseconds(100)))
+    {
+        if (c != response) {
+            _logger(LogLevel::error, "Sent command '%c' but gor response '%c'", c, response);
+            return false;
+        }
+        return true;
+    }
+    _logger(LogLevel::error, "Sent Serial command, but got no response!");
+    return false;
+}
+

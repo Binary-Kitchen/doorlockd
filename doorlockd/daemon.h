@@ -8,11 +8,9 @@
 //
 // This function will also redirect stdin, out and err to the
 // specified files
-void daemonize(const bool daemonize,
-               const std::string &dir,
+void daemonize(const std::string &dir,
                const std::string &stdinfile,
                const std::string &stdoutfile,
-               const std::string &stderrfile,
-               const std::string &pidFile);
+               const std::string &stderrfile);
 
 #endif

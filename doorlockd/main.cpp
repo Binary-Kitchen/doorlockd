@@ -102,6 +102,10 @@ private:
     tcp::socket _socket;
 };
 
+void emergencyCB()
+{
+    cout << "EMERGENCY!" << endl;
+}
 
 int main(int argc, char** argv)
 {
@@ -112,14 +116,9 @@ int main(int argc, char** argv)
     string bindDN;
     string lockPagePrefix;
     string logfile;
-    string pidFile;
-    bool foreground = false;
+    string serDev;
 
     l(LogLevel::notice, "Starting doorlockd");
-
-    // Load SPI and I2C modules
-    system("/usr/bin/gpio load spi");
-    system("/usr/bin/gpio load i2c");
 
     try {
         unsigned int timeout;
@@ -131,9 +130,8 @@ int main(int argc, char** argv)
             ("ldap,s", po::value<string>(&ldapUri)->default_value(DEFAULT_LDAP_URI), "Ldap Server")
             ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN, %s means username")
             ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
-            ("foreground,f", po::bool_switch(&foreground)->default_value(false), "Run in foreground")
             ("logfile,l", po::value<string>(&logfile)->default_value(DEFAULT_LOG_FILE), "Log file")
-            ("pid,z", po::value<string>(&pidFile)->default_value(DEFAULT_PID_FILE), "PID file");
+			("serial,i", po::value<string>(&serDev)->default_value(DEFAULT_SERIAL_DEVICE), "Serial port");
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -155,12 +153,10 @@ int main(int argc, char** argv)
         goto out;
     }
 
-    daemonize(!foreground,
-              "/",
+    daemonize("/",
               "/dev/null",
               logfile,
-              logfile,
-              pidFile);
+              logfile);
 
     signal(SIGINT, signal_handler);
     signal(SIGKILL, signal_handler);
@@ -171,7 +167,8 @@ int main(int argc, char** argv)
     logic = unique_ptr<Logic>(new Logic(tokenTimeout,
                                         ldapUri,
                                         bindDN,
-                                        lockPagePrefix));
+                                        lockPagePrefix,
+										serDev));
 
     try {
         server s(io_service, port);
@@ -188,7 +185,6 @@ int main(int argc, char** argv)
     retval = 0;
 
 out:
-    Door::get().lock();
     l(LogLevel::notice, "Doorlockd stopped");
     return retval;
 }
