@@ -1,15 +1,15 @@
 RS232 (female)
 
 Innenschalter:
-1 - GND
-2 - Schalter Notauf (active LOW)
-3 - Schalter Notzu (active LOW)
+1 - GND <-> gelbgruen
+2 - Schalter Notauf (active LOW) <-> Ader 1
+3 - Schalter Notzu (active LOW) <-> Ader 2
 
 Tuersystem:
-1 - GND
-2 - Notsperre
-3 - Bolzen (12VDC)
-4 - Schnapper (12VAC)
+1 - GND <-> Ader 1
+2 - Notsperre <-> Ader 3
+3 - Bolzen (12VDC) <-> gelbgruen
+4 - Schnapper (12VAC) <-> Ader 2
 
 Stromversorgung:
 1 - Status
