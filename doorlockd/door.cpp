@@ -1,3 +1,4 @@
+#include "config.h"
 #include "door.h"
 
 Door::Door(const std::string &serDev,
@@ -95,15 +96,26 @@ void Door::lock()
 {
     _stateMutex.lock();
 
+
+    _logger(LogLevel::notice, "Executing Pre Lock Script");
+    system(PRE_LOCK_SCRIPT);
+
     if (_state == State::Locked) {
         _stateMutex.unlock();
-        return;
+        _logger(LogLevel::info, "Door already closed");
+        goto out;
     }
 
     _state = State::Locked;
     _stateMutex.unlock();
     _heartbeatCondition.notify_one();
     _heartbeatThread.join();
+
+    _logger(LogLevel::info, "Door closed");
+
+out:
+    _logger(LogLevel::notice, "Executing Post Lock Script");
+    system(POST_LOCK_SCRIPT);
 }
 
 void Door::unlock()
@@ -111,9 +123,13 @@ void Door::unlock()
     _stateMutex.lock();
     _schnapper = true;
 
+    _logger(LogLevel::notice, "Executing Pre Unlock Script");
+    system(PRE_UNLOCK_SCRIPT);
+
     if(_state == State::Unlocked) {
         _stateMutex.unlock();
-        return;
+        _logger(LogLevel::info, "Door already opened");
+        goto out;
     }
 
     _state = State::Unlocked;
@@ -136,6 +152,12 @@ void Door::unlock()
         }
         writeCMD('l');
     });
+
+    _logger(LogLevel::info, "Door opened");
+
+    out:
+    _logger(LogLevel::notice, "Executing Post Unlock Script");
+    system(POST_UNLOCK_SCRIPT);
 }
 
 bool Door::writeCMD(char c)
