@@ -69,15 +69,20 @@ void Door::_asyncRead()
             }
 
             if (recvBuf == 'U') {
+                // In case that someone pushed the unlock button - just log it.
+                // No further actions required
                 _logger(LogLevel::notice, "Someone pushed the unlock button");
-            }
-            if (recvBuf == 'L') {
+                goto out;
+            } else if (recvBuf == 'L') {
                 _logger(LogLevel::notice, "Someone pushed the lock button");
                 _logger(LogLevel::notice, "Locking...");
                 lock();
                 goto out;
+            } else if (recvBuf == 'E') {
+                _logger(LogLevel::warning, "Someone did an emergency unlock!");
+                // TODO: Trigger Emergency unlock script
+                goto out;
             }
-            // TODO EMERGENCY DOOR BUTTON
 
             _byteReady = true;
             _receivedCondition.notify_one();
