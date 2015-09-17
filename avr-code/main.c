@@ -56,13 +56,14 @@ void uart_handler(const unsigned char c)
 	uart_putc(retval);
 }
 
-// Alle 1.137 Sekunden
+// Timeroverflow interrupts occurs each 1.137 seconds
+// UART receive interrupts is used to prevent timer overflows
 ISR(TIMER1_OVF_vect)
 {
 	state = LOCKED;
 }
 
-// Notzu
+// Button Lock
 ISR(INT0_vect)
 {
 	cli();
@@ -79,7 +80,7 @@ out:
 	sei();
 }
 
-// Notauf
+// Button Unlock
 ISR(INT1_vect)
 {
 	cli();
@@ -112,15 +113,18 @@ int main(void)
 	uart_init();
 	uart_set_recv_handler(uart_handler);
 
-	// Timer config
+	// Config the timer
+	// The 16bit Timer1 is used for resetting the lock state,
+	// if the UART stops receiving the unlock command
 	TIMSK |= (1<<TOIE1);
 	TIFR |= (1<<TOV1);
 	TCCR1A = 0;
 	TCCR1B = (1<<CS12);
 
-	TCNT1 = 0;
+	reset_timeout();
 
-	// falling edge
+	// Configure external interrupts
+	// External interrupts are used for Button Unlock an Lock
 	MCUCR = (1<<ISC11)|(1<<ISC01);
 	GIMSK |= (1<<INT0)|(1<<INT1);
 
@@ -131,7 +135,10 @@ int main(void)
 			bolzen_on();
 			schnapper = false;
 
+			// Check if someone used the emergency unlock
 			if (is_emergency_unlock()) {
+
+				// If so, wait 200ms and double check
 				_delay_ms(200);
 				if (is_emergency_unlock()) {
 					uart_putc(DOOR_EMERGENCY_UNLOCK);
