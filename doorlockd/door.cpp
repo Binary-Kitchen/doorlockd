@@ -169,7 +169,7 @@ bool Door::writeCMD(char c)
     if (readByte(response, Milliseconds(100)))
     {
         if (c != response) {
-            _logger(LogLevel::error, "Sent command '%c' but gor response '%c'", c, response);
+            _logger(LogLevel::error, "Sent command '%c' but got response '%c'", c, response);
             return false;
         }
         return true;
