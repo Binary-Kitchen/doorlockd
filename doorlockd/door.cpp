@@ -1,6 +1,8 @@
 #include "config.h"
 #include "door.h"
 
+#include "../doorcmds.h"
+
 Door::Door(const std::string &serDev,
            unsigned int baudrate) :
     _baudrate(baudrate),
@@ -68,17 +70,17 @@ void Door::_asyncRead()
                 goto out;
             }
 
-            if (recvBuf == 'U') {
+            if (recvBuf == DOOR_BUTTON_UNLOCK) {
                 // In case that someone pushed the unlock button - just log it.
                 // No further actions required
                 _logger(LogLevel::notice, "Someone pushed the unlock button");
                 goto out;
-            } else if (recvBuf == 'L') {
+            } else if (recvBuf == DOOR_BUTTON_LOCK) {
                 _logger(LogLevel::notice, "Someone pushed the lock button");
                 _logger(LogLevel::notice, "Locking...");
                 lock();
                 goto out;
-            } else if (recvBuf == 'E') {
+            } else if (recvBuf == DOOR_EMERGENCY_UNLOCK) {
                 _logger(LogLevel::warning, "Someone did an emergency unlock!");
                 // TODO: Trigger Emergency unlock script
                 goto out;
@@ -145,17 +147,17 @@ void Door::unlock()
 
         while (_state == State::Unlocked) {
             if (_state == State::Unlocked) {
-                writeCMD('u');
+                writeCMD(DOOR_CMD_UNLOCK);
 
                 if (_schnapper) {
                     _schnapper = false;
-                    writeCMD('s');
+                    writeCMD(DOOR_CMD_SCHNAPER);
                 }
             }
 
             _heartbeatCondition.wait_for(lock, Milliseconds(400));
         }
-        writeCMD('l');
+        writeCMD(DOOR_CMD_LOCK);
     });
 
     _logger(LogLevel::info, "Door opened");
