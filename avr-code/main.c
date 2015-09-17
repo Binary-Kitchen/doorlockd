@@ -149,6 +149,7 @@ int main(void)
 	for(;;) {
 		if (state == LOCKED) {
 			bolzen_on();
+			status_off();
 			schnapper = false;
 
 			// Check if someone used the emergency unlock
@@ -173,6 +174,7 @@ int main(void)
 			}
 		} else if (state == UNLOCKED) {
 			bolzen_off();
+			status_on();
 			if (schnapper == true) {
 				schnapper = false;
 				schnapper_on();
