@@ -16,9 +16,28 @@
 static volatile enum {LOCKED, UNLOCKED} state = LOCKED;
 static volatile bool schnapper = false;
 
+static inline void timer_init(void)
+{
+	// Config the timer
+	// The 16bit Timer1 is used for resetting the lock state,
+	// if the UART stops receiving the unlock command
+	TIMSK |= (1<<TOIE1);
+	TIFR |= (1<<TOV1);
+	TCCR1A = 0;
+	TCCR1B = (1<<CS12);
+}
+
 static inline void reset_timeout(void)
 {
 	TCNT1 = 0;
+}
+
+static inline void extint_init(void)
+{
+	// Configure external interrupts
+	// External interrupts are used for Button Unlock an Lock
+	MCUCR = (1<<ISC11)|(1<<ISC01);
+	GIMSK |= (1<<INT0)|(1<<INT1);
 }
 
 void uart_handler(const unsigned char c)
@@ -105,29 +124,26 @@ out:
 
 int main(void)
 {
+	// Disable all interrupts
 	cli();
+	// Init IO
 	io_init();
 
 	// Wait a bit to settle down
 	_delay_ms(1000);
+
+	// Init Uart
 	uart_init();
 	uart_set_recv_handler(uart_handler);
 
-	// Config the timer
-	// The 16bit Timer1 is used for resetting the lock state,
-	// if the UART stops receiving the unlock command
-	TIMSK |= (1<<TOIE1);
-	TIFR |= (1<<TOV1);
-	TCCR1A = 0;
-	TCCR1B = (1<<CS12);
-
+	// Init Timer
+	timer_init();
 	reset_timeout();
 
-	// Configure external interrupts
-	// External interrupts are used for Button Unlock an Lock
-	MCUCR = (1<<ISC11)|(1<<ISC01);
-	GIMSK |= (1<<INT0)|(1<<INT1);
+	// Init external interrupts
+	extint_init();
 
+	// Enable all interrupts
 	sei();
 
 	for(;;) {
