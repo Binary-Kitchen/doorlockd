@@ -11,6 +11,8 @@
 #include "io.h"
 #include "uart.h"
 
+#include "../doorcmds.h"
+
 static volatile enum {LOCKED, UNLOCKED} state = LOCKED;
 static volatile bool schnapper = false;
 
@@ -23,26 +25,26 @@ void uart_handler(const unsigned char c)
 {
 	char retval = c;
 	switch ((char)c) {
-		case 'u':
+		case DOOR_CMD_UNLOCK:
 			state = UNLOCKED;
 			reset_timeout();
 			break;
 
-		case 'l':
+		case DOOR_CMD_LOCK:
 			state = LOCKED;
 			break;
 
-		case 'p':
+		case DOOR_CMD_PING:
 			break;
 
-		case 's':
+		case DOOR_CMD_SCHNAPER:
 			if (state == UNLOCKED)
 				schnapper = true;
 			else
 				retval = '?';
 			break;
 
-		case 'i':
+		case DOOR_CMD_STATUS:
 			retval = (state == LOCKED) ? 'l' : 'u';
 			break;
 
@@ -70,7 +72,7 @@ ISR(INT0_vect)
 	if (!is_button_lock())
 		goto out;
 
-	uart_putc('L');
+	uart_putc(DOOR_BUTTON_LOCK);
 	state = LOCKED;
 
 out:
@@ -87,7 +89,7 @@ ISR(INT1_vect)
 	if (!is_button_unlock())
 		goto out;
 
-	uart_putc('U');
+	uart_putc(DOOR_BUTTON_UNLOCK);
 
 	bolzen_off();
 	schnapper_on();
@@ -128,10 +130,11 @@ int main(void)
 		if (state == LOCKED) {
 			bolzen_on();
 			schnapper = false;
+
 			if (is_emergency_unlock()) {
 				_delay_ms(200);
 				if (is_emergency_unlock()) {
-					uart_putc('N');
+					uart_putc(DOOR_EMERGENCY_UNLOCK);
 					cli();
 
 					bolzen_off();
