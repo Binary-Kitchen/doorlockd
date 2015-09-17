@@ -82,7 +82,7 @@ void Door::_asyncRead()
                 goto out;
             } else if (recvBuf == DOOR_EMERGENCY_UNLOCK) {
                 _logger(LogLevel::warning, "Someone did an emergency unlock!");
-                // TODO: Trigger Emergency unlock script
+                system(EMERGENCY_UNLOCK_SCRIPT);
                 goto out;
             }
 
@@ -184,4 +184,3 @@ bool Door::writeCMD(char c)
     _logger(LogLevel::error, "Sent Serial command, but got no response!");
     return false;
 }
-

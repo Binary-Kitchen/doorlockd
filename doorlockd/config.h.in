@@ -23,5 +23,6 @@
 #define POST_LOCK_SCRIPT "@CMAKE_INSTALL_PREFIX@/etc/doorlockd/post_lock &"
 #define PRE_UNLOCK_SCRIPT "@CMAKE_INSTALL_PREFIX@/etc/doorlockd/pre_unlock &"
 #define POST_UNLOCK_SCRIPT "@CMAKE_INSTALL_PREFIX@/etc/doorlockd/post_unlock &"
+#define EMERGENCY_UNLOCK_SCRIPT "@CMAKE_INSTALL_PREFIX@/etc/doorlockd/emergency_unlock &"
 
 #endif
