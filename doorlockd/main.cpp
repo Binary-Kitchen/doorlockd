@@ -102,11 +102,6 @@ private:
     tcp::socket _socket;
 };
 
-void emergencyCB()
-{
-    cout << "EMERGENCY!" << endl;
-}
-
 int main(int argc, char** argv)
 {
     int retval = -1;
