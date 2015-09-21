@@ -6,7 +6,7 @@ After=network.target
 User=root
 Group=root
 EnvironmentFile=-/etc/sysconfig/doorlockd
-ExecStart=/usr/local/sbin/doorlockd -f
+ExecStart=/usr/local/sbin/doorlockd
 
 [Install]
 WantedBy=multi-user.target
