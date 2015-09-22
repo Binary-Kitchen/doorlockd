@@ -75,7 +75,6 @@ Response Logic::parseRequest(const Json::Value &root)
         goto out;
     }
 
-    _logger("  Command: " + command, LogLevel::notice);
     _logger("  User   : " + user, LogLevel::notice);
     _logger("  IP     : " + ip, LogLevel::notice);
     _logger("  Token  : " + token, LogLevel::notice);

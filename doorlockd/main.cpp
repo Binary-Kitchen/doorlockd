@@ -13,6 +13,7 @@
 #include "daemon.h"
 #include "config.h"
 #include "logic.h"
+#include "util.h"
 
 namespace po = boost::program_options;
 using boost::asio::ip::tcp;
@@ -61,12 +62,31 @@ static void session(tcp::socket &&sock)
             response.code = Response::Code::JsonError;
             l(response.message, LogLevel::warning);
         } else {
-            response = logic->parseRequest(root);
+            std::string command;
+            try {
+                command = getJsonOrFail<std::string>(root, "command");
+            }
+            catch (...)
+            {
+                response.code = Response::Code::JsonError;
+                response.message = "Error parsing JSON";
+                l(response.message, LogLevel::warning);
+                goto out;
+            }
+
+            l("  Command: " + command, LogLevel::notice);
+            if (command == "lock" || command == "unlock") {
+                response = logic->parseRequest(root);
+            } else {
+                response.code = Response::Code::UnknownCommand;
+                response.message = "Received unknown command " + command;
+                l(response.message, LogLevel::warning);
+            }
         }
 
+    out:
         sock.write_some(boost::asio::buffer(response.toJson()),
                         error);
-
         if (error == boost::asio::error::eof)
             return;
         else if (error)
