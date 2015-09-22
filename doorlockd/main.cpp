@@ -179,8 +179,6 @@ int main(int argc, char** argv)
         }
 
         po::notify(vm);
-
-        tokenTimeout = std::chrono::seconds(timeout>3 ? timeout-3 : timeout); // Epaper refresh takes ~3 seconds
     }
     catch(const std::exception &e)
     {
