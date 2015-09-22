@@ -7,6 +7,8 @@
 #include <condition_variable>
 #include <mutex>
 
+#include <json/json.h>
+
 #include "config.h"
 #include "door.h"
 #include "logger.h"
@@ -44,7 +46,7 @@ public:
     };
 
     // Parse incoming JSON Requests
-    Response parseRequest(const std::string &str);
+    Response parseRequest(const Json::Value &root);
 
     // Returns the current Token
     std::string getCurrentToken() const;

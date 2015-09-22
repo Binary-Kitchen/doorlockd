@@ -8,6 +8,8 @@
 #include <boost/program_options.hpp>
 #include <boost/asio.hpp>
 
+#include <json/json.h>
+
 #include "daemon.h"
 #include "config.h"
 #include "logic.h"
@@ -47,8 +49,19 @@ static void session(tcp::socket &&sock)
         else if (error)
             throw boost::system::system_error(error);
 
-        std::string request(data.begin(), data.begin()+length);
-        const auto rc = logic->parseRequest(request);
+        const std::string request(data.begin(), data.begin()+length);
+
+        Json::Reader reader;
+        Json::Value root;
+        Logic::Response rc = Logic::Response::Fail;
+
+        if (reader.parse(request, root, false))
+        {
+            l(LogLevel::warning, "Request ist not valid JSON!");
+        } else {
+            rc = logic->parseRequest(root);
+        }
+
         sock.write_some(boost::asio::buffer(std::to_string(rc) + "\n"),
                         error);
 

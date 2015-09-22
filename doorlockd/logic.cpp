@@ -22,10 +22,10 @@ Logic::Logic(const chrono::seconds tokenTimeout,
     _logger(Logger::get()),
     _door(serDev),
     _tokenTimeout(tokenTimeout),
+    _onTokenUpdate(onTokenUpdate),
     _ldapUri(ldapUri),
     _bindDN(bindDN),
-    _webPrefix(webPrefix),
-    _onTokenUpdate(onTokenUpdate)
+    _webPrefix(webPrefix)
 {
     srand(time(NULL));
     _createNewToken(false);
@@ -52,23 +52,13 @@ Logic::~Logic()
     _tokenUpdater.join();
 }
 
-Logic::Response Logic::parseRequest(const string &str)
+Logic::Response Logic::parseRequest(const Json::Value &root)
 {
     unique_lock<mutex> l(_mutex);
 
     _logger(LogLevel::info, "Incoming request...");
-    Json::Reader reader;
-    Json::Value root;
     Response retval = Fail;
     string action, user, password, ip, token;
-
-    bool suc = reader.parse(str, root, false);
-    if (!suc)
-    {
-        _logger(LogLevel::warning, "Request ist not valid JSON!");
-        retval = NotJson;
-        goto out;
-    }
 
     try {
         action = getJsonOrFail<string>(root, "action");
