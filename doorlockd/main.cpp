@@ -17,90 +17,75 @@ using namespace std;
 namespace po = boost::program_options;
 using boost::asio::ip::tcp;
 
+// The receive buffer length of the TCP socket
+const int constexpr SOCKET_BUFFERLENGTH = 2048;
+
 const static Logger &l = Logger::get();
 
 static unique_ptr<Logic> logic = nullptr;
+static boost::asio::io_service io_service;
 
-boost::asio::io_service io_service;
-
-void signal_handler(int signum)
+static void signal_handler(int signum)
 {
-    (void)signum;
+    l((std::string)"Received Signal " + std::to_string(signum),
+      LogLevel::warning);
     io_service.stop();
-    logic.reset();
 }
 
-/*
- * Session class handles asynchronosly handles one incoming TCP session
- */
-class session
-  : public std::enable_shared_from_this<session>
+static void session(tcp::socket &&sock)
 {
+    boost::system::error_code error;
 
-public:
+    std::vector<char> data;
+    data.resize(SOCKET_BUFFERLENGTH);
 
-    session(tcp::socket socket)
-        : _socket(std::move(socket))
-    {
+    try {
+        size_t length = sock.read_some(boost::asio::buffer(data), error);
+        if (error == boost::asio::error::eof)
+            return;
+        else if (error)
+            throw boost::system::system_error(error);
+
+        string request(data.begin(), data.begin()+length);
+        const auto rc = logic->parseRequest(request);
+        sock.write_some(boost::asio::buffer(to_string(rc) + "\n"), error);
+
+        if (error == boost::asio::error::eof)
+            return;
+        else if (error)
+            throw boost::system::system_error(error);
     }
+    catch (std::exception& e) {
+      std::cerr << "Exception in thread: " << e.what() << "\n";
+    }
+}
 
-    void start()
-    {
-        auto self(shared_from_this());
-        _socket.async_read_some(boost::asio::buffer(_data, _maxLen),
-            [this, self](boost::system::error_code ec, std::size_t length)
+static void server(unsigned short port)
+{
+    l(LogLevel::info, "Starting TCP Server");
+
+    const auto endpoint = tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), port);
+    tcp::acceptor a(io_service, endpoint);
+
+    tcp::socket sock(io_service);
+
+    std::function<void(void)> accept_connection = [&] () {
+        a.async_accept(sock,
+                       [&] (boost::system::error_code ec) {
+            if (ec)
             {
-                if (!ec)
-                {
-                    const string payload(_data, length);
-                    const auto rc = logic->parseRequest(payload);
-                    boost::asio::write(_socket, boost::asio::buffer(to_string(rc) + "\n"));
-                }
-            });
-    }
+                return;
+            }
+            std::thread(session, std::move(sock)).detach();
+            accept_connection();
+        });
+    };
 
-private:
+    accept_connection();
 
-    tcp::socket _socket;
-    static constexpr int _maxLen = { 2048 };
-    char _data[_maxLen];
-};
-
-/*
- * The TCP server
- */
-class server
-{
-
-public:
-
-    server(boost::asio::io_service& io_service, short port)
-      : _acceptor(io_service, tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), port)),
-        _socket(io_service)
-    {
-        do_accept();
-    }
-
-private:
-
-    void do_accept()
-    {
-      _acceptor.async_accept(_socket,
-          [this](boost::system::error_code ec)
-          {
-              if (!ec)
-              {
-                  std::make_shared<session>(std::move(_socket))->start();
-              }
-
-              do_accept();
-          });
-
-    }
-
-    tcp::acceptor _acceptor;
-    tcp::socket _socket;
-};
+    io_service.run();
+    l(LogLevel::info, "Stopped TCP Server");
+}
 
 int main(int argc, char** argv)
 {
@@ -159,6 +144,7 @@ int main(int argc, char** argv)
     signal(SIGUSR1, signal_handler);
     signal(SIGUSR2, signal_handler);
 
+    l(LogLevel::info, "Starting Doorlock Logic");
     logic = unique_ptr<Logic>(new Logic(tokenTimeout,
                                         ldapUri,
                                         bindDN,
@@ -166,8 +152,7 @@ int main(int argc, char** argv)
 										serDev));
 
     try {
-        server s(io_service, port);
-        io_service.run();
+        server(port);
     }
     catch (const char* const &ex) {
         ostringstream str;
@@ -180,6 +165,8 @@ int main(int argc, char** argv)
     retval = 0;
 
 out:
+    l(LogLevel::info, "Stopping Doorlock Logic");
+    logic.reset();
     l(LogLevel::notice, "Doorlockd stopped");
     return retval;
 }
