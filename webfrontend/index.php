@@ -1,5 +1,5 @@
 <?php
-	function tellLock($pAction, $pUser, $pPass, $pToken, $pIp) {
+	function tellLock( $pAction, $pUser, $pPass, $pToken, $pIp ){
 
 		$json = '{
 			"user":' . json_encode( $pUser ) . ',
@@ -98,7 +98,7 @@
 				$isApi = true;
 			}
 	
-			$lSuccess = tellLock($pAction, $pUser, $pPass, $pToken, $pIp);
+			$lSuccess = tellLock( $pAction, $pUser, $pPass, $pToken, $pIp );
 	
 			if ($lSuccess == 0) {
 				$showSuccess = true;
@@ -114,7 +114,7 @@
 	} else {
 		// This is done by apache mod_rewrite
 		$pToken = $_GET[ 'token' ];
-		$lToken = preg_replace('/[^0-9a-fA-F]/i', "", $pToken);
+		$lToken = preg_replace( '/[^0-9a-fA-F]/i', "", $pToken );
 
 		if(strlen($lToken) != 16) {
 			$showFailure = true;
@@ -166,7 +166,7 @@ if ($isApi == false) {
 		}
 	</style>
 
-	<?php if ($showLoginForm): ?>
+	<?php if( $showLoginForm ): ?>
 
 		<form name="login" method="post" action="/">
 			<label for="user">User</label>
@@ -183,11 +183,11 @@ if ($isApi == false) {
 			<button name="action" value="lock">Lock</button>
 		</form>
 
-	<?php elseif($showSuccess): ?>
+	<?php elseif( $showSuccess ): ?>
 
 		<h1>Welcome Cpt. Cook</h1>
 
-	<?php elseif ($showFailure): ?>
+	<?php elseif( $showFailure ): ?>
 
 		<h1>Something went wrong: <?php echo $failureMsg; ?></h1>
 
