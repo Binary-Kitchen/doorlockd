@@ -25,7 +25,8 @@ public:
           const std::string &ldapUri,
           const std::string &bindDN,
           const std::string &webPrefix,
-          const std::string &serDev);
+          const std::string &serDev,
+          std::condition_variable &onTokenUpdate);
     ~Logic();
 
     enum Response {
@@ -44,6 +45,9 @@ public:
 
     // Parse incoming JSON Requests
     Response parseRequest(const std::string &str);
+
+    // Returns the current Token
+    std::string getCurrentToken() const;
 
 private:
 
@@ -88,6 +92,9 @@ private:
     bool _run = true;
     // Token mutex
     std::mutex _mutex = {};
+
+    // This variable gets notified on token updates
+    std::condition_variable &_onTokenUpdate;
 
     // The URI of the ldap server
     const std::string _ldapUri;

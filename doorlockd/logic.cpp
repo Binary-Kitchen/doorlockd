@@ -17,13 +17,15 @@ Logic::Logic(const chrono::seconds tokenTimeout,
              const string &ldapUri,
              const string &bindDN,
              const string &webPrefix,
-             const string &serDev) :
+             const string &serDev,
+             condition_variable &onTokenUpdate) :
     _logger(Logger::get()),
     _door(serDev),
     _tokenTimeout(tokenTimeout),
     _ldapUri(ldapUri),
     _bindDN(bindDN),
-    _webPrefix(webPrefix)
+    _webPrefix(webPrefix),
+    _onTokenUpdate(onTokenUpdate)
 {
     srand(time(NULL));
     _createNewToken(false);
@@ -218,17 +220,14 @@ void Logic::_createNewToken(const bool stillValid)
 
     _curToken = (((uint64_t)rand())<<32) | ((uint64_t)rand());
 
-    // TODO make things more pretty
-    const string uri = _webPrefix + toHexString(_curToken);
-
-    const int ARRAY_SIZE=1024;
-    char buffer[ARRAY_SIZE];
-    snprintf(buffer, ARRAY_SIZE,
-             "qrencode -l M -d 100 -s 5 \"%s\" -t png -o /tmp/qr.png", uri.c_str());
-    system(buffer);
-
-
     ostringstream message;
     message << "New Token generated: " << toHexString(_curToken) << " old Token: " << toHexString(_prevToken) << " is " << (_prevValid?"still":"not") << " valid";
     _logger(message, LogLevel::info);
+
+    _onTokenUpdate.notify_all();
+}
+
+std::string Logic::getCurrentToken() const
+{
+    return _webPrefix + toHexString(_curToken);
 }

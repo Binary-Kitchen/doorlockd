@@ -23,6 +23,8 @@ const static Logger &l = Logger::get();
 static std::unique_ptr<Logic> logic = nullptr;
 static boost::asio::io_service io_service;
 
+static std::condition_variable onTokenUpdate;
+
 static void signal_handler(int signum)
 {
     l((std::string)"Received Signal " + std::to_string(signum),
@@ -159,14 +161,14 @@ int main(int argc, char** argv)
     signal(SIGUSR1, signal_handler);
     signal(SIGUSR2, signal_handler);
 
-
     l(LogLevel::info, "Starting Doorlock Logic");
     try {
         logic = std::unique_ptr<Logic>(new Logic(tokenTimeout,
                                                  ldapUri,
                                                  bindDN,
                                                  lockPagePrefix,
-                                                 serDev));
+                                                 serDev,
+                                                 onTokenUpdate));
         server(port);
     }
     catch (...) {
