@@ -178,8 +178,10 @@ int main(int argc, char** argv)
     retval = 0;
 
 out:
-    l(LogLevel::info, "Stopping Doorlock Logic");
-    logic.reset();
+    if (logic) {
+        l(LogLevel::info, "Stopping Doorlock Logic");
+        logic.reset();
+    }
     l(LogLevel::notice, "Doorlockd stopped");
     return retval;
 }
