@@ -53,16 +53,18 @@ static void session(tcp::socket &&sock)
 
         Json::Reader reader;
         Json::Value root;
-        Logic::Response rc = Logic::Response::Fail;
+        Response response;
 
         if (reader.parse(request, root, false))
         {
-            l(LogLevel::warning, "Request ist not valid JSON!");
+            response.message = "Request is no valid JSON";
+            response.code = Response::Code::JsonError;
+            l(response.message, LogLevel::warning);
         } else {
-            rc = logic->parseRequest(root);
+            response = logic->parseRequest(root);
         }
 
-        sock.write_some(boost::asio::buffer(std::to_string(rc) + "\n"),
+        sock.write_some(boost::asio::buffer(response.toJson()),
                         error);
 
         if (error == boost::asio::error::eof)

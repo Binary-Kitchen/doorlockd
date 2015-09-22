@@ -7,11 +7,10 @@
 #include <condition_variable>
 #include <mutex>
 
-#include <json/json.h>
-
 #include "config.h"
 #include "door.h"
 #include "logger.h"
+#include "response.h"
 
 /* The "Logic" class
  *
@@ -30,20 +29,6 @@ public:
           const std::string &serDev,
           std::condition_variable &onTokenUpdate);
     ~Logic();
-
-    enum Response {
-        Success = 0, // Request successful
-        Fail, // General non-specified error
-        AlreadyUnlocked, // Authentication successful, but door is already unlocked
-        AlreadyLocked, // Authentication successful, but door is already locked
-        NotJson, // Request is not a valid JSON object
-        JsonError, // Request is valid JSON, but does not contain necessary material
-        InvalidToken, // Request contains invalid token
-        InvalidCredentials, // Invalid LDAP credentials
-        InvalidIP, // IP check failure
-        UnknownAction, // Unknown action
-        LDAPInit, // Ldap initialization failed
-    };
 
     // Parse incoming JSON Requests
     Response parseRequest(const Json::Value &root);
