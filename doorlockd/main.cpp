@@ -57,33 +57,34 @@ static void session(tcp::socket &&sock)
         Json::Reader reader;
         Json::Value root;
         Response response;
+        std::string command;
 
         if (reader.parse(request, root, false))
         {
             response.message = "Request is no valid JSON";
             response.code = Response::Code::JsonError;
             l(response.message, LogLevel::warning);
-        } else {
-            std::string command;
-            try {
-                command = getJsonOrFail<std::string>(root, "command");
-            }
-            catch (...)
-            {
-                response.code = Response::Code::JsonError;
-                response.message = "Error parsing JSON";
-                l(response.message, LogLevel::warning);
-                goto out;
-            }
+            goto out;
+        }
 
-            l("  Command: " + command, LogLevel::notice);
-            if (command == "lock" || command == "unlock") {
-                response = logic->parseRequest(root);
-            } else {
-                response.code = Response::Code::UnknownCommand;
-                response.message = "Received unknown command " + command;
-                l(response.message, LogLevel::warning);
-            }
+        try {
+            command = getJsonOrFail<std::string>(root, "command");
+        }
+        catch (...)
+        {
+            response.code = Response::Code::JsonError;
+            response.message = "Error parsing JSON";
+            l(response.message, LogLevel::warning);
+            goto out;
+        }
+
+        l("  Command: " + command, LogLevel::notice);
+        if (command == "lock" || command == "unlock") {
+            response = logic->parseRequest(root);
+        } else {
+            response.code = Response::Code::UnknownCommand;
+            response.message = "Received unknown command " + command;
+            l(response.message, LogLevel::warning);
         }
 
     out:
