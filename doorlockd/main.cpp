@@ -38,9 +38,11 @@ static void signal_handler(int signum)
 static void session(tcp::socket &&sock)
 {
     boost::system::error_code error;
-
+    const auto remoteIP = sock.remote_endpoint().address();
     std::vector<char> data;
     data.resize(SOCKET_BUFFERLENGTH);
+
+    l("Incoming TCP connection from " + remoteIP.to_string(), LogLevel::notice);
 
     try {
         size_t length = sock.read_some(boost::asio::buffer(data),
