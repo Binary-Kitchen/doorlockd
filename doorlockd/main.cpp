@@ -12,8 +12,6 @@
 #include "config.h"
 #include "logic.h"
 
-using namespace std;
-
 namespace po = boost::program_options;
 using boost::asio::ip::tcp;
 
@@ -22,7 +20,7 @@ const int constexpr SOCKET_BUFFERLENGTH = 2048;
 
 const static Logger &l = Logger::get();
 
-static unique_ptr<Logic> logic = nullptr;
+static std::unique_ptr<Logic> logic = nullptr;
 static boost::asio::io_service io_service;
 
 static void signal_handler(int signum)
@@ -40,15 +38,17 @@ static void session(tcp::socket &&sock)
     data.resize(SOCKET_BUFFERLENGTH);
 
     try {
-        size_t length = sock.read_some(boost::asio::buffer(data), error);
+        size_t length = sock.read_some(boost::asio::buffer(data),
+                                       error);
         if (error == boost::asio::error::eof)
             return;
         else if (error)
             throw boost::system::system_error(error);
 
-        string request(data.begin(), data.begin()+length);
+        std::string request(data.begin(), data.begin()+length);
         const auto rc = logic->parseRequest(request);
-        sock.write_some(boost::asio::buffer(to_string(rc) + "\n"), error);
+        sock.write_some(boost::asio::buffer(std::to_string(rc) + "\n"),
+                        error);
 
         if (error == boost::asio::error::eof)
             return;
@@ -92,11 +92,11 @@ int main(int argc, char** argv)
     int retval = -1;
     short port;
     std::chrono::seconds tokenTimeout;
-    string ldapUri;
-    string bindDN;
-    string lockPagePrefix;
-    string logfile;
-    string serDev;
+    std::string ldapUri;
+    std::string bindDN;
+    std::string lockPagePrefix;
+    std::string logfile;
+    std::string serDev;
 
     l(LogLevel::notice, "Starting doorlockd");
 
@@ -104,14 +104,29 @@ int main(int argc, char** argv)
         unsigned int timeout;
         po::options_description desc("usage: doorlockd");
         desc.add_options()
-            ("help,h", "print help")
-            ("tokentimeout,t", po::value<unsigned int>(&timeout)->default_value(DEFAULT_TOKEN_TIMEOUT), "Token timeout in seconds")
-            ("port,p", po::value<short>(&port)->default_value(DEFAULT_PORT), "Port")
-            ("ldap,s", po::value<string>(&ldapUri)->default_value(DEFAULT_LDAP_URI), "Ldap Server")
-            ("bidndn,b", po::value<string>(&bindDN)->default_value(DEFAULT_BINDDN), "Bind DN, %s means username")
-            ("web,w", po::value<string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX), "Prefix of the webpage")
-            ("logfile,l", po::value<string>(&logfile)->default_value(DEFAULT_LOG_FILE), "Log file")
-			("serial,i", po::value<string>(&serDev)->default_value(DEFAULT_SERIAL_DEVICE), "Serial port");
+            ("help,h",
+                "print help")
+            ("tokentimeout,t",
+                po::value<unsigned int>(&timeout)->default_value(DEFAULT_TOKEN_TIMEOUT),
+                "Token timeout in seconds")
+            ("port,p",
+                po::value<short>(&port)->default_value(DEFAULT_PORT),
+                "Port")
+            ("ldap,s",
+                po::value<std::string>(&ldapUri)->default_value(DEFAULT_LDAP_URI),
+                "Ldap Server")
+            ("bidndn,b",
+                po::value<std::string>(&bindDN)->default_value(DEFAULT_BINDDN),
+                "Bind DN, %s means username")
+            ("web,w",
+                po::value<std::string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX),
+                "Prefix of the webpage")
+            ("logfile,l",
+                po::value<std::string>(&logfile)->default_value(DEFAULT_LOG_FILE),
+                "Log file")
+            ("serial,i",
+                po::value<std::string>(&serDev)->default_value(DEFAULT_SERIAL_DEVICE),
+                "Serial port");
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -147,11 +162,11 @@ int main(int argc, char** argv)
 
     l(LogLevel::info, "Starting Doorlock Logic");
     try {
-        logic = unique_ptr<Logic>(new Logic(tokenTimeout,
-                                            ldapUri,
-                                            bindDN,
-                                            lockPagePrefix,
-                                            serDev));
+        logic = std::unique_ptr<Logic>(new Logic(tokenTimeout,
+                                                 ldapUri,
+                                                 bindDN,
+                                                 lockPagePrefix,
+                                                 serDev));
         server(port);
     }
     catch (...) {
