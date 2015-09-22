@@ -144,20 +144,18 @@ int main(int argc, char** argv)
     signal(SIGUSR1, signal_handler);
     signal(SIGUSR2, signal_handler);
 
-    l(LogLevel::info, "Starting Doorlock Logic");
-    logic = unique_ptr<Logic>(new Logic(tokenTimeout,
-                                        ldapUri,
-                                        bindDN,
-                                        lockPagePrefix,
-										serDev));
 
+    l(LogLevel::info, "Starting Doorlock Logic");
     try {
+        logic = unique_ptr<Logic>(new Logic(tokenTimeout,
+                                            ldapUri,
+                                            bindDN,
+                                            lockPagePrefix,
+                                            serDev));
         server(port);
     }
-    catch (const char* const &ex) {
-        ostringstream str;
-        str << "FATAL ERROR: " << ex;
-        l(str, LogLevel::error);
+    catch (...) {
+        l(LogLevel::error, "Fatal error, shutting down");
         retval = -1;
         goto out;
     }
