@@ -15,7 +15,7 @@ struct Response
         InvalidToken, // Request contains invalid token
         InvalidCredentials, // Invalid LDAP credentials
         InvalidIP, // IP check failure
-        UnknownAction, // Unknown action
+        UnknownCommand, // Unknown action
         LDAPInit, // Ldap initialization failed
     } code;
 

@@ -58,10 +58,10 @@ Response Logic::parseRequest(const Json::Value &root)
 
     _logger(LogLevel::info, "Incoming request...");
     Response response;
-    string action, user, password, ip, token;
+    string command, user, password, ip, token;
 
     try {
-        action = getJsonOrFail<string>(root, "action");
+        command = getJsonOrFail<string>(root, "command");
         ip = getJsonOrFail<string>(root, "ip");
         user = getJsonOrFail<string>(root, "user");
         password = getJsonOrFail<string>(root, "password");
@@ -75,10 +75,10 @@ Response Logic::parseRequest(const Json::Value &root)
         goto out;
     }
 
-    _logger("  Action: " + action, LogLevel::notice);
-    _logger("  User  : " + user, LogLevel::notice);
-    _logger("  IP    : " + ip, LogLevel::notice);
-    _logger("  Token : " + token, LogLevel::notice);
+    _logger("  Command: " + command, LogLevel::notice);
+    _logger("  User   : " + user, LogLevel::notice);
+    _logger("  IP     : " + ip, LogLevel::notice);
+    _logger("  Token  : " + token, LogLevel::notice);
 
     if (_checkToken(token) == false)
     {
@@ -95,14 +95,14 @@ Response Logic::parseRequest(const Json::Value &root)
         goto out;
     }
 
-    if (action == "lock")
+    if (command == "lock")
     {
         response = _lock();
-    } else if (action == "unlock") {
+    } else if (command == "unlock") {
         response = _unlock();
     } else {
-        response.code = Response::Code::UnknownAction;
-        response.message = "Unknown Action: " + action;
+        response.code = Response::Code::UnknownCommand;
+        response.message = "Unknown Command: " + command;
         _logger(response.message, LogLevel::error);
     }
 

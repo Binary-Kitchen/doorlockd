@@ -1,10 +1,10 @@
 <?php
-	function tellLock( $pAction, $pUser, $pPass, $pToken, $pIp ){
+	function tellLock( $pCommand, $pUser, $pPass, $pToken, $pIp ){
 
 		$json = '{
 			"user":' . json_encode( $pUser ) . ',
 			"password":' . json_encode( $pPass ) . ',
-			"action":' . json_encode( $pAction ) . ',
+			"command":' . json_encode( $pCommand ) . ',
 			"token":' . json_encode( $pToken ) . ',
 			"ip":' . json_encode( $pIp ) . '
 		}'."\n";
@@ -61,7 +61,7 @@
 				return "Invalid IP";
 				break;
 			case 9:
-				return "Unknown Action"; // Unknown action
+				return "Unknown Command"; // Unknown command
 				break;
 			case 10:
 				return "LDAP Init error"; // Ldap initialization failed
@@ -84,13 +84,13 @@
 		if (array_key_exists("user", $_POST) 
 			&& array_key_exists('pass', $_POST)
 			&& array_key_exists('token', $_POST)
-			&& array_key_exists('action', $_POST)
+			&& array_key_exists('command', $_POST)
 			&& array_key_exists('api', $_POST))
 		{
 			$pUser = $_POST[ 'user' ];
 			$pPass = $_POST[ 'pass' ];
 			$pToken = $_POST[ 'token' ];
-			$pAction = $_POST[ 'action' ];
+			$pCommand = $_POST[ 'command' ];
 			$pApi = $_POST[ 'api' ];
 	
 			if ($pApi == "true")
@@ -98,7 +98,7 @@
 				$isApi = true;
 			}
 	
-			$lSuccess = tellLock( $pAction, $pUser, $pPass, $pToken, $pIp );
+			$lSuccess = tellLock($pCommand, $pUser, $pPass, $pToken, $pIp);
 	
 			if ($lSuccess == 0) {
 				$showSuccess = true;
@@ -178,9 +178,9 @@ if ($isApi == false) {
 			<input type="hidden" name="token" value="<?php echo $lToken;?>">
 			<input type="hidden" name="api" value="false">
 
-			<button name="action" value="unlock">Open</button>
+			<button name="command" value="unlock">Open</button>
 			<hr/>
-			<button name="action" value="lock">Lock</button>
+			<button name="command" value="lock">Lock</button>
 		</form>
 
 	<?php elseif( $showSuccess ): ?>
