@@ -30,6 +30,7 @@ main.cpp
 logger.cpp
 door.cpp
 logic.cpp
+response.cpp
 util.cpp
 daemon.cpp
 )
