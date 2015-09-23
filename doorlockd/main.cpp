@@ -18,6 +18,13 @@
 namespace po = boost::program_options;
 using boost::asio::ip::tcp;
 
+// Info about doorlockd version
+const static std::string version =
+        (std::string)"doorlockd-" + DOORLOCKD_VERSION_MAJOR + "."
+        + DOORLOCKD_VERSION_MINOR + "-" + DOORLOCKD_VERSION_PATCH;
+const static std::string gitversion =
+        DOORLOCKD_GIT_BRANCH  "-" DOORLOCKD_GIT_COMMIT_HASH;
+
 // The receive buffer length of the TCP socket
 const int constexpr SOCKET_BUFFERLENGTH = 2048;
 
@@ -139,11 +146,13 @@ int main(int argc, char** argv)
     std::string serDev;
     unsigned int baudrate;
 
+    l((std::string)"Hello, this is " + version + " built on " + gitversion,
+      LogLevel::info);
     l(LogLevel::notice, "Starting doorlockd");
 
     try {
         unsigned int timeout;
-        po::options_description desc("usage: doorlockd");
+        po::options_description desc("doorlockd (" + version + " built on " + gitversion + ")");
         desc.add_options()
             ("help,h",
                 "print help")
