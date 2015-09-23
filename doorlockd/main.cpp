@@ -192,6 +192,8 @@ int main(int argc, char** argv)
         }
 
         po::notify(vm);
+
+        tokenTimeout = std::chrono::seconds(timeout);
     }
     catch(const std::exception &e)
     {
