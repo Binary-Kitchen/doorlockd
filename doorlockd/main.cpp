@@ -205,6 +205,9 @@ int main(int argc, char** argv)
               "/dev/null",
               logfile,
               logfile);
+    // Resend version string after redirection stdout
+    l((std::string)"Hello, this is " + version + " built on " + gitversion,
+      LogLevel::info);
 
     signal(SIGINT, signal_handler);
     signal(SIGKILL, signal_handler);
