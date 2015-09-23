@@ -20,8 +20,7 @@ using boost::asio::ip::tcp;
 
 // Info about doorlockd version
 const static std::string version =
-        (std::string)"doorlockd-" + DOORLOCKD_VERSION_MAJOR + "."
-        + DOORLOCKD_VERSION_MINOR + "-" + DOORLOCKD_VERSION_PATCH;
+        "doorlockd-" DOORLOCKD_VERSION;
 const static std::string gitversion =
         DOORLOCKD_GIT_BRANCH  "-" DOORLOCKD_GIT_COMMIT_HASH;
 
