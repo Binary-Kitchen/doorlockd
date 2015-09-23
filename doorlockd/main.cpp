@@ -65,7 +65,7 @@ static void session(tcp::socket &&sock)
         Response response;
         std::string command;
 
-        if (reader.parse(request, root, false))
+        if (!reader.parse(request, root, false))
         {
             response.message = "Request is no valid JSON";
             response.code = Response::Code::JsonError;
