@@ -27,6 +27,7 @@ public:
           const std::string &bindDN,
           const std::string &webPrefix,
           const std::string &serDev,
+          const unsigned int baudrate,
           std::condition_variable &onTokenUpdate);
     ~Logic();
 

@@ -16,6 +16,7 @@
 #define DEFAULT_BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
 #define DEFAULT_LOG_FILE "/var/log/doorlockd.log"
 #define DEFAULT_SERIAL_DEVICE "/dev/ttyAMA0"
+#define DEFAULT_SERIAL_BAUDRATE 9600UL
 
 #define TEMPLATE_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/template.png"
 

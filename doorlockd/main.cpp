@@ -137,6 +137,7 @@ int main(int argc, char** argv)
     std::string lockPagePrefix;
     std::string logfile;
     std::string serDev;
+    unsigned int baudrate;
 
     l(LogLevel::notice, "Starting doorlockd");
 
@@ -166,7 +167,11 @@ int main(int argc, char** argv)
                 "Log file")
             ("serial,i",
                 po::value<std::string>(&serDev)->default_value(DEFAULT_SERIAL_DEVICE),
-                "Serial port");
+                "Serial port")
+
+            ("baud,r",
+                po::value<unsigned int>(&baudrate)->default_value((DEFAULT_SERIAL_BAUDRATE)),
+                "Serial baudrate");
 
         po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
@@ -204,6 +209,7 @@ int main(int argc, char** argv)
                                                  bindDN,
                                                  lockPagePrefix,
                                                  serDev,
+                                                 baudrate,
                                                  onTokenUpdate));
         server(port);
     }

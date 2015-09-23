@@ -17,7 +17,7 @@ class Door final
 public:
 
     Door(const std::string &serDev,
-         unsigned int baudrate = 9600);
+         unsigned int baudrate);
     ~Door();
 
     enum class State {Unlocked, Locked};
