@@ -1,5 +1,5 @@
 <?php
-	function tellLock( $pCommand, $pUser, $pPass, $pToken, $pIp ){
+	function tellLock($pCommand, $pUser, $pPass, $pToken, $pIp){
 
 		$json = '{
 			"user":' . json_encode( $pUser ) . ',
@@ -98,13 +98,15 @@
 				$isApi = true;
 			}
 	
-			$lSuccess = tellLock($pCommand, $pUser, $pPass, $pToken, $pIp);
-	
-			if ($lSuccess == 0) {
-				$showSuccess = true;
-			} else {
-				$failureMsg = err2str($lSuccess);
+			$jsonResponse = json_decode(tellLock($pCommand, $pUser, $pPass, $pToken, $pIp), true);
+			if ($jsonResponse == null || !isset($jsonResponse['message']) || !isset($jsonResponse['code'])) {
 				$showFailure = true;
+				$failureMsg = 'Error parsing JSON response';
+			} else {
+				$failureMsg = $jsonResponse['message'];
+				$code = $jsonResponse['code'];
+				$showSuccess = ($code == 0);
+				$showFailure = !$showSuccess;
 			}
 		} else {
 			$failureMsg = 'Invalid Request';
@@ -198,6 +200,6 @@ if ($isApi == false) {
 </html>
 <?php
 } else {
-	echo $lSuccess;
+	echo $code;
 }
 ?>
