@@ -22,7 +22,7 @@ using boost::asio::ip::tcp;
 const static std::string version =
         "doorlockd-" DOORLOCKD_VERSION;
 const static std::string gitversion =
-        DOORLOCKD_GIT_BRANCH  "-" DOORLOCKD_GIT_COMMIT_HASH;
+        DOORLOCKD_GIT_BRANCH "-" DOORLOCKD_GIT_COMMIT_HASH;
 
 // The receive buffer length of the TCP socket
 const int constexpr SOCKET_BUFFERLENGTH = 2048;
@@ -176,7 +176,6 @@ int main(int argc, char** argv)
             ("serial,i",
                 po::value<std::string>(&serDev)->default_value(DEFAULT_SERIAL_DEVICE),
                 "Serial port")
-
             ("baud,r",
                 po::value<unsigned int>(&baudrate)->default_value((DEFAULT_SERIAL_BAUDRATE)),
                 "Serial baudrate");
