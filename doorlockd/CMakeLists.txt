@@ -74,13 +74,14 @@ set(DOORLOCKD_SRCS
 set(DOORLOCK_CLIENT_SRCS
     src/clientmessage.cpp
     src/clientmessage.h
-    src/doorlock-client.cpp
     src/logger.cpp
     src/logger.h
     src/response.cpp
     src/response.h
     src/util.cpp
     src/util.h
+
+    src/doorlock-client.cpp
 )
 
 add_executable(doorlockd ${DOORLOCKD_SRCS})
@@ -90,6 +91,8 @@ add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
 target_link_libraries(doorlock-client jsoncpp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS doorlockd DESTINATION sbin/)
+install(TARGETS doorlock-client DESTINATION bin/)
+
 install(FILES img/template.png DESTINATION share/doorlockd/)
 install(DIRECTORY scripts/ DESTINATION share/doorlockd/
     FILES_MATCHING PATTERN "scripts/doorlockd-*"
