@@ -1,4 +1,5 @@
 #include <chrono>
+#include <functional>
 
 #include <cstdlib>
 #include <json/json.h>
@@ -30,6 +31,10 @@ Logic::Logic(const chrono::seconds tokenTimeout,
 {
     srand(time(NULL));
     _createNewToken(false);
+
+    _door.setDoorCallback(std::bind(&Logic::_doorCallback,
+                                    this,
+                                    std::placeholders::_1));
 
     _tokenUpdater = thread([this] () {
         while (_run)
@@ -235,7 +240,25 @@ void Logic::_createNewToken(const bool stillValid)
     _onClientUpdate.notify_all();
 }
 
-std::string Logic::getClientMessage() const
+std::string Logic::getClientMessage()
 {
-    return _webPrefix + toHexString(_curToken);
+    std::lock_guard<std::mutex> l(_mutex);
+    Json::Value message;
+    Json::StyledWriter writer;
+
+    message["token"] = _webPrefix + toHexString(_curToken);
+    message["unlockButton"] = _doormessage.isUnlockButton;
+    message["lockButton"] = _doormessage.isLockButton;
+    message["emergencyUnlock"] = _doormessage.isEmergencyUnlock;
+
+    // Reset doormessage
+    _doormessage = Door::Doormessage();
+
+    return writer.write(message);
+}
+
+void Logic::_doorCallback(Door::Doormessage doormessage)
+{
+    std::lock_guard<std::mutex> l(_mutex);
+    _doormessage = doormessage;
 }

@@ -35,7 +35,7 @@ public:
     Response parseRequest(const Json::Value &root);
 
     // Returns the current Token
-    std::string getClientMessage() const;
+    std::string getClientMessage();
 
 private:
 
@@ -54,6 +54,8 @@ private:
     // Creates a new random token and draws it on the epaper.
     // stillValid indicates whether the old (previous) token is still valid
     void _createNewToken(const bool stillValid);
+
+    void _doorCallback(Door::Doormessage doormessage);
 
     const Logger &_logger;
 
@@ -78,8 +80,10 @@ private:
     std::condition_variable _tokenCondition = {};
     // stop indicator for the thread
     bool _run = true;
-    // Token mutex
-    std::mutex _mutex = {};
+    // General mutex for concurrent data access
+    mutable std::mutex _mutex = {};
+
+    Door::Doormessage _doormessage = {};
 
     // This variable gets notified on token updates
     std::condition_variable &_onClientUpdate;
