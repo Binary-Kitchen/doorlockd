@@ -17,6 +17,7 @@ struct Response
         InvalidIP, // IP check failure
         UnknownCommand, // Unknown action
         LDAPInit, // Ldap initialization failed
+        AccessDenied, // Access denied
     } code;
 
     std::string message;
