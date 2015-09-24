@@ -51,28 +51,35 @@ include_directories(${JSON_INCLUDE_DIR})
 
 find_package (Threads)
 
-set(SRCS
-clientmessage.cpp
-clientmessage.h
-daemon.cpp
-daemon.h
-door.cpp
-door.h
-doormessage.h
-logger.cpp
-logger.h
-logic.cpp
-logic.h
-response.cpp
-response.h
-util.cpp
-util.h
+set(DOORLOCKD_SRCS
+    src/clientmessage.cpp
+    src/clientmessage.h
+    src/daemon.cpp
+    src/daemon.h
+    src/door.cpp
+    src/door.h
+    src/doormessage.h
+    src/logger.cpp
+    src/logger.h
+    src/logic.cpp
+    src/logic.h
+    src/response.cpp
+    src/response.h
+    src/util.cpp
+    src/util.h
 
-doorlockd.cpp
+    src/doorlockd.cpp
 )
 
-add_executable(doorlockd ${SRCS})
+set(DOORLOCK_CLIENT_SRCS
+    src/doorlock-client.cpp
+)
+
+add_executable(doorlockd ${DOORLOCKD_SRCS})
 target_link_libraries(doorlockd jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
+target_link_libraries(doorlock-client jsoncpp)
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(FILES img/template.png DESTINATION share/doorlockd/)
