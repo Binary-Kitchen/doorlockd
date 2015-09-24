@@ -18,11 +18,9 @@ struct Response
         UnknownCommand, // Unknown action
         LDAPInit, // Ldap initialization failed
         AccessDenied, // Access denied
+        RESPONSE_NUM_ITEMS
     } code;
-
     std::string message;
-    std::string toJson() const;
-    operator bool() const;
 
     Response() :
         code(Fail),
@@ -35,6 +33,12 @@ struct Response
         message(message)
     {
     }
+
+    static Response fromJson(const std::string &json);
+    std::string toJson() const;
+
+    // Returns true if code is success
+    operator bool() const;
 
 private:
 
