@@ -31,47 +31,6 @@
 		return $result;
 	}
 
-	function err2str( $code ) {
-		switch ( $code ) {
-			case 0:
-				return "Success";
-				break;
-			case 1:
-				return "Fail";
-				break;
-			case 2:
-				return "Already Unlocked"; // Authentication successful, but door is already unlocked
-				break;
-			case 3:
-				return "Already Locked"; // Authentication successful, but door is already locked
-				break;
-			case 4:
-				return "NotJson"; // Request is not a valid JSON object
-				break;
-			case 5:
-				return "Json Error"; // Request is valid JSON, but does not contain necessary material
-				break;
-			case 6:
-				return "Invalid Token"; // Request contains invalid token
-				break;
-			case 7:
-				return "Invalid Credentials"; // Invalid LDAP credentials
-				break;
-			case 8:
-				return "Invalid IP";
-				break;
-			case 9:
-				return "Unknown Command"; // Unknown command
-				break;
-			case 10:
-				return "LDAP Init error"; // Ldap initialization failed
-				break;
-			default:
-				return "Unknown error";
-				break;
-		}
-	}
-
 	$showLoginForm = false;
 	$showSuccess = false;
 	$showFailure = false;
