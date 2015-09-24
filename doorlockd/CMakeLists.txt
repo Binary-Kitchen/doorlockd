@@ -72,7 +72,15 @@ set(DOORLOCKD_SRCS
 )
 
 set(DOORLOCK_CLIENT_SRCS
+    src/clientmessage.cpp
+    src/clientmessage.h
     src/doorlock-client.cpp
+    src/logger.cpp
+    src/logger.h
+    src/response.cpp
+    src/response.h
+    src/util.cpp
+    src/util.h
 )
 
 add_executable(doorlockd ${DOORLOCKD_SRCS})
