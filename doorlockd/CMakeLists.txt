@@ -68,7 +68,7 @@ response.h
 util.cpp
 util.h
 
-main.cpp
+doorlockd.cpp
 )
 
 add_executable(doorlockd ${SRCS})
