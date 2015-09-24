@@ -105,20 +105,20 @@ static void session(tcp::socket &&sock)
                 l(response.message, LogLevel::warning);
                 goto out;
             }
+
+            response.code = Response::Code::Success;
+            response .message = "";
+            sock.write_some(boost::asio::buffer(response.toJson()),
+                            error);
+
             while (run) {
                 std::unique_lock<std::mutex> lock(mutex);
                 onClientMessage.wait(lock);
-
-                if (sock.is_open() == false) {
-                    goto out;
-                }
 
                 if (run) {
                     sock.write_some(boost::asio::buffer(logic->getClientMessage().toJson()));
                 }
             };
-
-            response.code = Response::Code::Success;
         } else {
             response.code = Response::Code::UnknownCommand;
             response.message = "Received unknown command " + command;
@@ -126,14 +126,12 @@ static void session(tcp::socket &&sock)
         }
 
     out:
-        if (sock.is_open()) {
-            sock.write_some(boost::asio::buffer(response.toJson()),
-                            error);
-            if (error == boost::asio::error::eof)
-                return;
-            else if (error)
-                throw boost::system::system_error(error);
-        }
+        sock.write_some(boost::asio::buffer(response.toJson()),
+                        error);
+        if (error == boost::asio::error::eof)
+            return;
+        else if (error)
+            throw boost::system::system_error(error);
     }
     catch (const std::exception &e) {
         std::string message = "Exception in session " + remoteAddress.to_string()
