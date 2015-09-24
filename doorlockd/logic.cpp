@@ -240,25 +240,21 @@ void Logic::_createNewToken(const bool stillValid)
     _onClientUpdate.notify_all();
 }
 
-std::string Logic::getClientMessage()
+Clientmessage Logic::getClientMessage()
 {
     std::lock_guard<std::mutex> l(_mutex);
-    Json::Value message;
-    Json::StyledWriter writer;
-
-    message["token"] = _webPrefix + toHexString(_curToken);
-    message["unlockButton"] = _doormessage.isUnlockButton;
-    message["lockButton"] = _doormessage.isLockButton;
-    message["emergencyUnlock"] = _doormessage.isEmergencyUnlock;
+    Clientmessage retval(_webPrefix + toHexString(_curToken),
+                         _doormessage);
 
     // Reset doormessage
-    _doormessage = Door::Doormessage();
+    _doormessage = Doormessage();
 
-    return writer.write(message);
+    return retval;
 }
 
-void Logic::_doorCallback(Door::Doormessage doormessage)
+void Logic::_doorCallback(Doormessage doormessage)
 {
     std::lock_guard<std::mutex> l(_mutex);
     _doormessage = doormessage;
+    _onClientUpdate.notify_all();
 }

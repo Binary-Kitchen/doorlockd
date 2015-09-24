@@ -11,17 +11,11 @@
 #include <boost/asio/serial_port.hpp>
 
 #include "logger.h"
+#include "doormessage.h"
 
 class Door final
 {
 public:
-
-    struct Doormessage {
-        bool isUnlockButton = { false };
-        bool isLockButton = { false };
-        bool isEmergencyUnlock = { false };
-    };
-
     using DoorCallback = std::function<void(Doormessage)>;
     enum class State {Unlocked, Locked};
 

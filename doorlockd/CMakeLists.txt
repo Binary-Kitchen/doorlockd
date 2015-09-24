@@ -52,13 +52,23 @@ include_directories(${JSON_INCLUDE_DIR})
 find_package (Threads)
 
 set(SRCS
-main.cpp
-logger.cpp
-door.cpp
-logic.cpp
-response.cpp
-util.cpp
+clientmessage.cpp
+clientmessage.h
 daemon.cpp
+daemon.h
+door.cpp
+door.h
+doormessage.h
+logger.cpp
+logger.h
+logic.cpp
+logic.h
+response.cpp
+response.h
+util.cpp
+util.h
+
+main.cpp
 )
 
 add_executable(doorlockd ${SRCS})

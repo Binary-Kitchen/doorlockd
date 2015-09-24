@@ -107,7 +107,7 @@ static void session(tcp::socket &&sock)
                 }
 
                 if (run) {
-                    sock.write_some(boost::asio::buffer(logic->getClientMessage()));
+                    sock.write_some(boost::asio::buffer(logic->getClientMessage().toJson()));
                 }
             };
 

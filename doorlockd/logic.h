@@ -11,6 +11,7 @@
 #include "door.h"
 #include "logger.h"
 #include "response.h"
+#include "clientmessage.h"
 
 /* The "Logic" class
  *
@@ -35,7 +36,7 @@ public:
     Response parseRequest(const Json::Value &root);
 
     // Returns the current Token
-    std::string getClientMessage();
+    Clientmessage getClientMessage();
 
 private:
 
@@ -55,7 +56,7 @@ private:
     // stillValid indicates whether the old (previous) token is still valid
     void _createNewToken(const bool stillValid);
 
-    void _doorCallback(Door::Doormessage doormessage);
+    void _doorCallback(Doormessage doormessage);
 
     const Logger &_logger;
 
@@ -83,7 +84,7 @@ private:
     // General mutex for concurrent data access
     mutable std::mutex _mutex = {};
 
-    Door::Doormessage _doormessage = {};
+    Doormessage _doormessage = {};
 
     // This variable gets notified on token updates
     std::condition_variable &_onClientUpdate;
