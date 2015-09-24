@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <algorithm>
+#include <exception>
 #include <json/json.h>
 
 template <typename T>
@@ -13,7 +14,7 @@ T getJsonOrFail(const Json::Value &root, const std::string &key)
     const auto members = root.getMemberNames();
     if (std::find(members.begin(), members.end(), key) == members.end())
     {
-        throw "Json key not existing";
+        throw std::runtime_error("Json key not existing");
     }
 
     return getJson<T>(root, key);

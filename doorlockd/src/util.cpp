@@ -8,7 +8,7 @@ int getJson(const Json::Value &root, const string &key)
     auto val = root.get(key, Json::Value());
     if (val.isInt())
         return val.asInt();
-    throw "Json Type error";
+    throw std::runtime_error("Json Type error");
 }
 
 template <>
@@ -17,7 +17,7 @@ string getJson(const Json::Value &root, const string &key)
     auto val = root.get(key, Json::Value());
     if (val.isString())
         return val.asString();
-    throw "Json Type error";
+    throw std::runtime_error("Json Type error");
 }
 
 template <>
@@ -26,7 +26,7 @@ size_t getJson(const Json::Value &root, const string &key)
     auto val = root.get(key, Json::Value());
     if (val.isInt())
         return val.asUInt64();
-    throw "Json Type error";
+    throw std::runtime_error("Json Type error");
 }
 
 template <>
@@ -35,7 +35,7 @@ bool getJson(const Json::Value &root, const string &key)
     auto val = root.get(key, Json::Value());
     if (val.isBool())
         return val.asBool();
-    throw "Json Type error";
+    throw std::runtime_error("Json Type error");
 }
 
 template <>
@@ -90,14 +90,14 @@ unsigned char hex2uchar(const char input)
     } else if(input >= 'a' && input <= 'f') {
         return input - 'a' + 10;
     }
-    throw("Malformed hexadecimal input");
+    throw std::runtime_error("Malformed hexadecimal input");
 }
 
 uint64_t toUint64(const string &s)
 {
     if (s.length() != (64/4))
     {
-        throw("Hex string has invalid length");
+        throw std::runtime_error("Hex string has invalid length");
     }
 
     uint64_t retval = 0;
