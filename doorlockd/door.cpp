@@ -55,6 +55,8 @@ void Door::_asyncRead()
     _port.async_read_some(
         boost::asio::buffer(&recvBuf, sizeof(recvBuf)),
         [this] (const boost::system::error_code &ec, size_t bytes_transferred) {
+            Doormessage m;
+
             if (ec) {
                 // Operation canceled occurs on system shutdown
                 // So we return without invoking an additional asyncRead()
@@ -74,15 +76,27 @@ void Door::_asyncRead()
                 // In case that someone pushed the unlock button - just log it.
                 // No further actions required
                 _logger(LogLevel::notice, "Someone pushed the unlock button");
+                if (_doorCallback) {
+                    m.isUnlockButton = true;
+                    _doorCallback(m);
+                }
                 goto out;
             } else if (recvBuf == DOOR_BUTTON_LOCK) {
                 _logger(LogLevel::notice, "Someone pushed the lock button");
                 _logger(LogLevel::notice, "Locking...");
                 lock();
+                if (_doorCallback) {
+                    m.isLockButton = true;
+                    _doorCallback(m);
+                }
                 goto out;
             } else if (recvBuf == DOOR_EMERGENCY_UNLOCK) {
                 _logger(LogLevel::warning, "Someone did an emergency unlock!");
                 system(EMERGENCY_UNLOCK_SCRIPT);
+                if (_doorCallback) {
+                    m.isEmergencyUnlock = true;
+                    _doorCallback(m);
+                }
                 goto out;
             }
 
@@ -183,4 +197,9 @@ bool Door::writeCMD(char c)
     }
     _logger(LogLevel::error, "Sent Serial command, but got no response!");
     return false;
+}
+
+void Door::setDoorCallback(DoorCallback doorCallback)
+{
+    _doorCallback = doorCallback;
 }

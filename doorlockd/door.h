@@ -16,13 +16,23 @@ class Door final
 {
 public:
 
+    struct Doormessage {
+        bool isUnlockButton = { false };
+        bool isLockButton = { false };
+        bool isEmergencyUnlock = { false };
+    };
+
+    using DoorCallback = std::function<void(Doormessage)>;
+    enum class State {Unlocked, Locked};
+
+
+
     Door(const std::string &serDev,
          unsigned int baudrate);
     ~Door();
 
-    enum class State {Unlocked, Locked};
-
     State state() const;
+    void setDoorCallback(DoorCallback doorCallback);
 
     void lock();
     void unlock();
@@ -58,6 +68,8 @@ private:
 
     std::condition_variable _receivedCondition = { };
     std::mutex _receiveLock = { };
+
+    DoorCallback _doorCallback = { };
 
     const Logger &_logger;
 
