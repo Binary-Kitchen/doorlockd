@@ -47,14 +47,21 @@ static void signal_handler(int signum)
 
 static void session(tcp::socket &&sock)
 {
-    boost::system::error_code error;
-    const auto remoteIP = sock.remote_endpoint().address();
-    std::vector<char> data;
-    data.resize(SOCKET_BUFFERLENGTH);
-
-    l("Incoming TCP connection from " + remoteIP.to_string(), LogLevel::notice);
+    boost::asio::ip::address remoteAddress;
+    unsigned short remotePort;
 
     try {
+        boost::system::error_code error;
+        std::vector<char> data;
+        data.resize(SOCKET_BUFFERLENGTH);
+
+        remoteAddress = sock.remote_endpoint().address();
+        remotePort = sock.remote_endpoint().port();
+
+        l("Incoming TCP connection from " + remoteAddress.to_string() + "("
+          + std::to_string(remotePort) + ")",
+          LogLevel::notice);
+
         size_t length = sock.read_some(boost::asio::buffer(data),
                                        error);
         if (error == boost::asio::error::eof)
@@ -92,7 +99,7 @@ static void session(tcp::socket &&sock)
         if (command == "lock" || command == "unlock") {
             response = logic->parseRequest(root);
         } else if (command == "subscribe") {
-            if (remoteIP.is_loopback() == false) {
+            if (remoteAddress.is_loopback() == false) {
                 response.code = Response::Code::AccessDenied;
                 response.message = "Subscriptions are only allowed from localhost";
                 l(response.message, LogLevel::warning);
@@ -129,11 +136,11 @@ static void session(tcp::socket &&sock)
         }
     }
     catch (const std::exception &e) {
-        std::string message = "Exception in session " + remoteIP.to_string()
-                + ": " + e.what();
+        std::string message = "Exception in session " + remoteAddress.to_string()
+                + ":" + std::to_string(remotePort) + " : " + e.what();
         l(message, LogLevel::error);
     }
-    l("Closing TCP connection from " + remoteIP.to_string(), LogLevel::notice);
+    l("Closing TCP connection from " + remoteAddress.to_string(), LogLevel::notice);
 }
 
 static void server(unsigned short port)
