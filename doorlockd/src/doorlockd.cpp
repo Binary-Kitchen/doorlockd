@@ -20,9 +20,9 @@ using boost::asio::ip::tcp;
 
 // Info about doorlockd version
 const static std::string version =
-        "doorlockd-" DOORLOCKD_VERSION;
+        "doorlockd-" DOORLOCK_VERSION;
 const static std::string gitversion =
-        DOORLOCKD_GIT_BRANCH "-" DOORLOCKD_GIT_COMMIT_HASH;
+        DOORLOCK_GIT_BRANCH "-" DOORLOCK_GIT_COMMIT_HASH;
 
 // The receive buffer length of the TCP socket
 const int constexpr SOCKET_BUFFERLENGTH = 2048;

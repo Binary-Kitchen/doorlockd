@@ -79,7 +79,7 @@ add_executable(doorlockd ${DOORLOCKD_SRCS})
 target_link_libraries(doorlockd jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
-target_link_libraries(doorlock-client jsoncpp)
+target_link_libraries(doorlock-client jsoncpp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(FILES img/template.png DESTINATION share/doorlockd/)
