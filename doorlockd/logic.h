@@ -28,14 +28,14 @@ public:
           const std::string &webPrefix,
           const std::string &serDev,
           const unsigned int baudrate,
-          std::condition_variable &onTokenUpdate);
+          std::condition_variable &onClientUpdate);
     ~Logic();
 
     // Parse incoming JSON Requests
     Response parseRequest(const Json::Value &root);
 
     // Returns the current Token
-    std::string getCurrentToken() const;
+    std::string getClientMessage() const;
 
 private:
 
@@ -82,7 +82,7 @@ private:
     std::mutex _mutex = {};
 
     // This variable gets notified on token updates
-    std::condition_variable &_onTokenUpdate;
+    std::condition_variable &_onClientUpdate;
 
     // The URI of the ldap server
     const std::string _ldapUri;

@@ -19,11 +19,11 @@ Logic::Logic(const chrono::seconds tokenTimeout,
              const string &webPrefix,
              const string &serDev,
              const unsigned int baudrate,
-             condition_variable &onTokenUpdate) :
+             condition_variable &onClientUpdate) :
     _logger(Logger::get()),
     _door(serDev, baudrate),
     _tokenTimeout(tokenTimeout),
-    _onTokenUpdate(onTokenUpdate),
+    _onClientUpdate(onClientUpdate),
     _ldapUri(ldapUri),
     _bindDN(bindDN),
     _webPrefix(webPrefix)
@@ -232,10 +232,10 @@ void Logic::_createNewToken(const bool stillValid)
     message << "New Token generated: " << toHexString(_curToken) << " old Token: " << toHexString(_prevToken) << " is " << (_prevValid?"still":"not") << " valid";
     _logger(message, LogLevel::info);
 
-    _onTokenUpdate.notify_all();
+    _onClientUpdate.notify_all();
 }
 
-std::string Logic::getCurrentToken() const
+std::string Logic::getClientMessage() const
 {
     return _webPrefix + toHexString(_curToken);
 }
