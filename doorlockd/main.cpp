@@ -32,13 +32,17 @@ const static Logger &l = Logger::get();
 static std::unique_ptr<Logic> logic = nullptr;
 static boost::asio::io_service io_service;
 
-static std::condition_variable onTokenUpdate;
+static std::mutex mutex;
+static std::condition_variable onClientMessage;
+static volatile bool run = true;
 
 static void signal_handler(int signum)
 {
     l((std::string)"Received Signal " + std::to_string(signum),
       LogLevel::warning);
     io_service.stop();
+    run = false;
+    onClientMessage.notify_all();
 }
 
 static void session(tcp::socket &&sock)
@@ -87,6 +91,27 @@ static void session(tcp::socket &&sock)
         l("  Command: " + command, LogLevel::notice);
         if (command == "lock" || command == "unlock") {
             response = logic->parseRequest(root);
+        } else if (command == "subscribe") {
+            if (remoteIP.is_loopback() == false) {
+                response.code = Response::Code::AccessDenied;
+                response.message = "Subscriptions are only allowed from localhost";
+                l(response.message, LogLevel::warning);
+                goto out;
+            }
+            while (run) {
+                std::unique_lock<std::mutex> lock(mutex);
+                onClientMessage.wait(lock);
+
+                if (sock.is_open() == false) {
+                    goto out;
+                }
+
+                if (run) {
+                    sock.write_some(boost::asio::buffer(logic->getClientMessage()));
+                }
+            };
+
+            response.code = Response::Code::Success;
         } else {
             response.code = Response::Code::UnknownCommand;
             response.message = "Received unknown command " + command;
@@ -94,16 +119,21 @@ static void session(tcp::socket &&sock)
         }
 
     out:
-        sock.write_some(boost::asio::buffer(response.toJson()),
-                        error);
-        if (error == boost::asio::error::eof)
-            return;
-        else if (error)
-            throw boost::system::system_error(error);
+        if (sock.is_open()) {
+            sock.write_some(boost::asio::buffer(response.toJson()),
+                            error);
+            if (error == boost::asio::error::eof)
+                return;
+            else if (error)
+                throw boost::system::system_error(error);
+        }
     }
-    catch (std::exception& e) {
-      std::cerr << "Exception in thread: " << e.what() << "\n";
+    catch (const std::exception &e) {
+        std::string message = "Exception in session " + remoteIP.to_string()
+                + ": " + e.what();
+        l(message, LogLevel::error);
     }
+    l("Closing TCP connection from " + remoteIP.to_string(), LogLevel::notice);
 }
 
 static void server(unsigned short port)
@@ -222,7 +252,7 @@ int main(int argc, char** argv)
                                                  lockPagePrefix,
                                                  serDev,
                                                  baudrate,
-                                                 onTokenUpdate));
+                                                 onClientMessage));
         server(port);
     }
     catch (...) {
