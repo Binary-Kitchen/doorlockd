@@ -58,7 +58,7 @@ find_package (Threads)
 
 find_package(Qt5Widgets)
 
-set(DOORLOCKD_SRCS
+set(LIBDOORLOCK_SRCS
     src/clientmessage.cpp
     src/clientmessage.h
     src/daemon.cpp
@@ -73,32 +73,24 @@ set(DOORLOCKD_SRCS
     src/response.cpp
     src/response.h
     src/util.cpp
-    src/util.h
+    src/util.h)
 
-    src/doorlockd.cpp
-)
+set(DOORLOCKD_SRCS
+    src/doorlockd.cpp)
 
 set(DOORLOCK_CLIENT_SRCS
-    src/clientmessage.cpp
-    src/clientmessage.h
-    src/logger.cpp
-    src/logger.h
-    src/response.cpp
-    src/response.h
-    src/util.cpp
-    src/util.h
     src/qrwidget.cpp
     src/qrwidget.h
+    src/doorlock-client.cpp)
 
-    src/doorlock-client.cpp
-)
+add_library(doorlock STATIC ${LIBDOORLOCK_SRCS})
+target_link_libraries(doorlock jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(doorlockd ${DOORLOCKD_SRCS})
-target_link_libraries(doorlockd jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(doorlockd doorlock)
 
 add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
-target_link_libraries(doorlock-client jsoncpp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-                      qrencode Qt5::Widgets)
+target_link_libraries(doorlock-client doorlock qrencode Qt5::Widgets)
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(TARGETS doorlock-client DESTINATION bin/)
