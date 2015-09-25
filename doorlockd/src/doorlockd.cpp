@@ -110,6 +110,7 @@ static void session(tcp::socket &&sock)
             response .message = "";
             sock.write_some(boost::asio::buffer(response.toJson()),
                             error);
+            sock.write_some(boost::asio::buffer(logic->getClientMessage().toJson()));
 
             while (run) {
                 std::unique_lock<std::mutex> lock(mutex);
