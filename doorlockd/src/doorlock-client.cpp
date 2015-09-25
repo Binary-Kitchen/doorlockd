@@ -1,6 +1,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
@@ -9,6 +10,9 @@
 #include "config.h"
 #include "logger.h"
 #include "response.h"
+
+#include <QApplication>
+#include "qrwidget.h"
 
 // Info about doorlock-client version
 const static std::string version =
@@ -29,20 +33,37 @@ const static std::string subscriptionCommand =
 // The receive buffer length of the TCP socket
 const int constexpr SOCKET_BUFFERLENGTH = 2048;
 
+static volatile bool run = true;
+
+static std::unique_ptr<QRWidget> qrWidget = nullptr;
+
 static void doorlock_update(const Clientmessage &msg)
 {
-    // TODO develop small X application to show the QR code
-    char buffer[1024];
-    snprintf(buffer, sizeof(buffer),
-             "qrencode -t ansi %s",
-             msg.token().c_str());
-    system(buffer);
+    if (qrWidget) {
+        qrWidget->setQRData(msg.token());
+    }
+}
+
+static int startGui(int argc, char** argv)
+{
+    QApplication app(argc, argv);
+
+    app.setOrganizationName("Binary Kitchen");
+    app.setApplicationName("doorlock-client");
+
+    qrWidget = std::unique_ptr<QRWidget>(new QRWidget);
+    qrWidget->showFullScreen();
+
+    int retval = app.exec();
+    run = false;
+    return retval;
 }
 
 static int doorlock_client(const std::string &hostname,
                            const unsigned short port)
 {
     int retval = 0;
+    std::thread guiThread;
 
     try {
         tcp::resolver resolver(io_service);
@@ -75,7 +96,11 @@ static int doorlock_client(const std::string &hostname,
         if (!response)
             throw std::runtime_error("Invalid response from server");
 
-        for (;;) {
+        guiThread = std::thread([] () {
+            startGui(0, nullptr);
+        });
+
+        for (;run;) {
             length = socket.read_some(boost::asio::buffer(data), error);
             if (error)
                 throw boost::system::system_error(error);
@@ -94,6 +119,9 @@ static int doorlock_client(const std::string &hostname,
     }
 
 out:
+    if (guiThread.joinable()) {
+        guiThread.join();
+    }
     return retval;
 }
 
@@ -137,7 +165,8 @@ int main(int argc, char** argv)
     }
 
     l(LogLevel::notice, "Starting doorlock-client");
-    retval = doorlock_client(hostname, port);
+
+    doorlock_client(hostname, port);
 
 out:
     l(LogLevel::notice, "Stopping doorlock-client");

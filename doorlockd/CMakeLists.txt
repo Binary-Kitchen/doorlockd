@@ -9,6 +9,11 @@ set(DOORLOCK_VERSION_PATCH 0)
 
 set(DOORLOCK_VERSION "${DOORLOCK_VERSION_MAJOR}.${DOORLOCK_VERSION_MINOR}-${DOORLOCK_VERSION_PATCH}")
 
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
 MESSAGE(STATUS "doorlockd version: ${DOORLOCK_VERSION}")
 
 # Get the current working branch
@@ -51,6 +56,8 @@ include_directories(${JSON_INCLUDE_DIR})
 
 find_package (Threads)
 
+find_package(Qt5Widgets)
+
 set(DOORLOCKD_SRCS
     src/clientmessage.cpp
     src/clientmessage.h
@@ -80,6 +87,8 @@ set(DOORLOCK_CLIENT_SRCS
     src/response.h
     src/util.cpp
     src/util.h
+    src/qrwidget.cpp
+    src/qrwidget.h
 
     src/doorlock-client.cpp
 )
@@ -88,7 +97,8 @@ add_executable(doorlockd ${DOORLOCKD_SRCS})
 target_link_libraries(doorlockd jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
-target_link_libraries(doorlock-client jsoncpp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(doorlock-client jsoncpp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+                      qrencode Qt5::Widgets)
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(TARGETS doorlock-client DESTINATION bin/)
