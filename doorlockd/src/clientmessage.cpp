@@ -7,6 +7,7 @@ const std::string Clientmessage::_tokenKey = "token";
 const std::string Clientmessage::_unlockButtonKey = "unlockButton";
 const std::string Clientmessage::_lockButtonKey = "lockButton";
 const std::string Clientmessage::_emergencyUnlockKey = "emergencyUnlock";
+const std::string Clientmessage::_isOpenKey = "isOpen";
 
 Clientmessage::Clientmessage(std::string token,
                              Doormessage doormessage) :
@@ -24,6 +25,7 @@ std::string Clientmessage::toJson() const
     message[_unlockButtonKey] = _doormessage.isUnlockButton;
     message[_lockButtonKey] = _doormessage.isLockButton;
     message[_emergencyUnlockKey] = _doormessage.isEmergencyUnlock;
+    message[_isOpenKey] = _doormessage.isOpen;
 
     return writer.write(message);
 }
@@ -52,6 +54,7 @@ Clientmessage Clientmessage::fromJson(const std::string &json)
     doormessage.isLockButton = getJsonOrFail<bool>(root, _lockButtonKey);
     doormessage.isUnlockButton = getJsonOrFail<bool>(root, _unlockButtonKey);
     doormessage.isEmergencyUnlock = getJsonOrFail<bool>(root, _emergencyUnlockKey);
+    doormessage.isOpen = getJsonOrFail<bool>(root, _isOpenKey);
 
     return Clientmessage(token, doormessage);
 }

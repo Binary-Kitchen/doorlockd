@@ -28,6 +28,7 @@ private:
     const static std::string _unlockButtonKey;
     const static std::string _lockButtonKey;
     const static std::string _emergencyUnlockKey;
+    const static std::string _isOpenKey;
 };
 
 #endif

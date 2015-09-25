@@ -56,6 +56,7 @@ void Door::_asyncRead()
         boost::asio::buffer(&recvBuf, sizeof(recvBuf)),
         [this] (const boost::system::error_code &ec, size_t bytes_transferred) {
             Doormessage m;
+            m.isOpen = _state == Door::State::Unlocked;
 
             if (ec) {
                 // Operation canceled occurs on system shutdown
