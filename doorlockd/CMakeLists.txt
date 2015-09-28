@@ -12,7 +12,6 @@ set(DOORLOCK_VERSION "${DOORLOCK_VERSION_MAJOR}.${DOORLOCK_VERSION_MINOR}-${DOOR
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
-include_directories(${CMAKE_SOURCE_DIR}/src)
 
 MESSAGE(STATUS "doorlockd version: ${DOORLOCK_VERSION}")
 

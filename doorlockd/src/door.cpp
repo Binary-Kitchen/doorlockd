@@ -1,7 +1,7 @@
 #include "config.h"
 #include "door.h"
 
-#include "../doorcmds.h"
+#include "../../doorcmds.h"
 
 Door::Door(const std::string &serDev,
            unsigned int baudrate) :
