@@ -11,8 +11,7 @@
 #include "logger.h"
 #include "response.h"
 
-#include <QApplication>
-#include "qrwidget.h"
+#include "mainwindow.h"
 
 // Info about doorlock-client version
 const static std::string version =
@@ -35,12 +34,13 @@ const int constexpr SOCKET_BUFFERLENGTH = 2048;
 
 static volatile bool run = true;
 
-static std::unique_ptr<QRWidget> qrWidget = nullptr;
+std::unique_ptr<MainWindow> mainWindow = nullptr;
 
 static void doorlock_update(const Clientmessage &msg)
 {
-    if (qrWidget) {
-        qrWidget->setQRData(msg.token());
+    if (mainWindow) {
+        mainWindow->setQRCode(QString::fromStdString(msg.token()));
+        mainWindow->setLabel(QString::fromStdString(msg.token()));
     }
 }
 
@@ -51,8 +51,7 @@ static int startGui(int argc, char** argv)
     app.setOrganizationName("Binary Kitchen");
     app.setApplicationName("doorlock-client");
 
-    qrWidget = std::unique_ptr<QRWidget>(new QRWidget);
-    qrWidget->showFullScreen();
+    mainWindow = std::unique_ptr<MainWindow>(new MainWindow);
 
     int retval = app.exec();
     run = false;
