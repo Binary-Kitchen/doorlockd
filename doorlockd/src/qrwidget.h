@@ -9,7 +9,7 @@ class QRWidget : public QWidget
 
 public:
     explicit QRWidget(QWidget *parent = nullptr);
-    void setQRData(const std::string &data);
+    void setQRData(const QString &data);
 
 private:
     QString _data;

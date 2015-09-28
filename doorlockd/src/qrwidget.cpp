@@ -14,9 +14,9 @@ QRWidget::QRWidget(QWidget* parent) :
 {
 }
 
-void QRWidget::setQRData(const std::string &data)
+void QRWidget::setQRData(const QString &data)
 {
-    _data = QString::fromStdString(data);
+    _data = data;
     update();
 }
 
