@@ -80,7 +80,8 @@ set(DOORLOCKD_SRCS
 set(DOORLOCK_CLIENT_SRCS
     src/qrwidget.cpp
     src/qrwidget.h
-    src/doorlock-client.cpp)
+    src/doorlock-client.cpp
+    src/mainwindow.h)
 
 add_library(doorlock STATIC ${LIBDOORLOCK_SRCS})
 target_link_libraries(doorlock jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
