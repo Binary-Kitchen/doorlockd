@@ -1,6 +1,8 @@
 #ifndef QRWIDGET_H
 #define QRWIDGET_H
 
+#include <string>
+
 #include <QWidget>
 
 class QRWidget : public QWidget
@@ -9,10 +11,10 @@ class QRWidget : public QWidget
 
 public:
     explicit QRWidget(QWidget *parent = nullptr);
-    void setQRData(const QString &data);
+    void setQRData(const std::string &data);
 
 private:
-    QString _data;
+    std::string _data;
 
 protected:
     void paintEvent(QPaintEvent *);

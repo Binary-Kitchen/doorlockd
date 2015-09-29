@@ -14,7 +14,7 @@ QRWidget::QRWidget(QWidget* parent) :
 {
 }
 
-void QRWidget::setQRData(const QString &data)
+void QRWidget::setQRData(const std::string &data)
 {
     _data = data;
     update();
@@ -25,7 +25,7 @@ void QRWidget::paintEvent(QPaintEvent*)
     QPainter painter(this);
 
     std::unique_ptr<QRcode, void(*)(QRcode*)> qr(
-                QRcode_encodeString(_data.toStdString().c_str(), 1, QR_ECLEVEL_L, QR_MODE_8, 0),
+                QRcode_encodeString(_data.c_str(), 1, QR_ECLEVEL_L, QR_MODE_8, 1),
                 [] (QRcode* ptr) {
         if (ptr)
             QRcode_free(ptr);
