@@ -39,7 +39,18 @@ std::unique_ptr<MainWindow> mainWindow = nullptr;
 
 static void onDoorlockUpdate(const Clientmessage &msg)
 {
-    l("Updated to current token: " + msg.token(), LogLevel::info);
+    const auto& doormessage = msg.doormessage();
+    l("Received message", LogLevel::info);
+    l((std::string)"  token" + msg.token(),
+      LogLevel::info);
+    l((std::string)"  open: " + std::to_string(doormessage.isOpen),
+      LogLevel::info);
+    l((std::string)"  button lock: " + std::to_string(doormessage.isLockButton),
+      LogLevel::info);
+    l((std::string)"  button unlock: " + std::to_string(doormessage.isUnlockButton),
+      LogLevel::info);
+    l((std::string)"  emergency open: " + std::to_string(doormessage.isEmergencyUnlock),
+      LogLevel::info);
     if (mainWindow) {
         mainWindow->setQRCode(msg.token());
     }

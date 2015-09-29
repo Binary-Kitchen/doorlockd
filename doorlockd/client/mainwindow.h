@@ -2,9 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QApplication>
+#include <QHBoxLayout>
 #include <QMainWindow>
 #include <QStatusBar>
-#include <QHBoxLayout>
 
 #include "qrwidget.h"
 
@@ -14,12 +14,9 @@ public:
     MainWindow() :
         QMainWindow()
     {
+        layout = new QHBoxLayout;
+
         _qrWidget = new QRWidget;
-
-        statusBar()->showMessage(tr("Boofar"));
-
-        QHBoxLayout *layout = new QHBoxLayout;
-
         layout->addWidget(_qrWidget);
 
         QWidget* window = new QWidget;
@@ -38,6 +35,7 @@ public:
 
 private:
 
+    QHBoxLayout* layout = { nullptr };
     QRWidget* _qrWidget = { nullptr };
 };
 
