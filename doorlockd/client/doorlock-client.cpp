@@ -155,6 +155,9 @@ int main(int argc, char** argv)
         // In normal operation, it never returns
         doorlock_client(hostname, port);
 
+        mainWindow->hide();
+        mainWindow.reset();
+
         // Stop the QT application
         app.quit();
     });
