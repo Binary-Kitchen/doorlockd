@@ -36,33 +36,18 @@ static volatile bool run = true;
 
 std::unique_ptr<MainWindow> mainWindow = nullptr;
 
-static void doorlock_update(const Clientmessage &msg)
+static void onDoorlockUpdate(const Clientmessage &msg)
 {
+    l("Updated to current token: " + msg.token(), LogLevel::info);
     if (mainWindow) {
-        mainWindow->setQRCode(QString::fromStdString(msg.token()));
-        mainWindow->setLabel(QString::fromStdString(msg.token()));
+        mainWindow->setQRCode(msg.token());
     }
-}
-
-static int startGui(int argc, char** argv)
-{
-    QApplication app(argc, argv);
-
-    app.setOrganizationName("Binary Kitchen");
-    app.setApplicationName("doorlock-client");
-
-    mainWindow = std::unique_ptr<MainWindow>(new MainWindow);
-
-    int retval = app.exec();
-    run = false;
-    return retval;
 }
 
 static int doorlock_client(const std::string &hostname,
                            const unsigned short port)
 {
     int retval = 0;
-    std::thread guiThread;
 
     try {
         tcp::resolver resolver(io_service);
@@ -87,28 +72,13 @@ static int doorlock_client(const std::string &hostname,
             throw boost::system::system_error(error);
 
         data.resize(SOCKET_BUFFERLENGTH);
-        length = socket.read_some(boost::asio::buffer(data), error);
-        if (error)
-            throw boost::system::system_error(error);
-
-        const auto response = Response::fromJson(std::string(data.begin(), data.begin()+length));
-        if (!response)
-            throw std::runtime_error("Invalid response from server");
-
-        guiThread = std::thread([] () {
-            startGui(0, nullptr);
-        });
-
         for (;run;) {
             length = socket.read_some(boost::asio::buffer(data), error);
             if (error)
                 throw boost::system::system_error(error);
 
             const auto message = Clientmessage::fromJson(std::string(data.begin(), data.begin()+length));
-            if (!response)
-                throw std::runtime_error("Invalid response from server");
-
-            doorlock_update(message);
+            onDoorlockUpdate(message);
         }
     }
     catch(const std::exception &e)
@@ -118,15 +88,11 @@ static int doorlock_client(const std::string &hostname,
     }
 
 out:
-    if (guiThread.joinable()) {
-        guiThread.join();
-    }
     return retval;
 }
 
 int main(int argc, char** argv)
 {
-    int retval = -1;
     std::string hostname;
     unsigned short port;
 
@@ -151,8 +117,7 @@ int main(int argc, char** argv)
         if (vm.count("help"))
         {
             std::cout << desc << std::endl;
-            retval = 0;
-            goto out;
+            exit(-1);
         }
 
         po::notify(vm);
@@ -160,14 +125,33 @@ int main(int argc, char** argv)
     catch(const std::exception &e)
     {
         l(LogLevel::error, e.what());
-        goto out;
+        exit(-1);
     }
 
     l(LogLevel::notice, "Starting doorlock-client");
 
-    doorlock_client(hostname, port);
+    QApplication app(argc, argv);
+    app.setOrganizationName("Binary Kitchen");
+    app.setApplicationName("doorlock-client");
 
-out:
+    mainWindow = std::unique_ptr<MainWindow>(new MainWindow);
+    mainWindow->showFullScreen();
+
+    // Start the TCP client as thread
+    std::thread clientThread = std::thread([&] () {
+        // If the TCP client returns, an error has occured
+        // In normal operation, it never returns
+        doorlock_client(hostname, port);
+
+        // Stop the QT application
+        app.quit();
+    });
+
+    // This routine will never return in normal operation
+    app.exec();
+
+    clientThread.join();
+
     l(LogLevel::notice, "Stopping doorlock-client");
-    return retval;
+    return 0;
 }

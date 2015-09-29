@@ -2,52 +2,43 @@
 #define MAINWINDOW_H
 
 #include <QApplication>
-#include <QVBoxLayout>
-#include <QLabel>
+#include <QMainWindow>
+#include <QStatusBar>
+#include <QHBoxLayout>
 
 #include "qrwidget.h"
 
-class MainWindow : public QWidget
+class MainWindow : public QMainWindow
 {
 public:
     MainWindow() :
-        QWidget()
+        QMainWindow()
     {
         _qrWidget = new QRWidget;
 
-        _layout = new QVBoxLayout;
-        _layout->addWidget(_qrWidget);
+        statusBar()->showMessage(tr("Boofar"));
 
-        _label = new QLabel;
-        _label->setText("Hello, world!");
+        QHBoxLayout *layout = new QHBoxLayout;
 
-        QFont font("Times", 25, QFont::Bold);
-        _label->setFont(font);
-        _layout->addWidget(_label);
+        layout->addWidget(_qrWidget);
 
-        setLayout(_layout);
-        showFullScreen();
+        QWidget* window = new QWidget;
+        window->setLayout(layout);
+
+        setCentralWidget(window);
     }
 
     MainWindow(const MainWindow&);
     MainWindow& operator =(const MainWindow&);
 
-    void setQRCode(const QString &str)
+    void setQRCode(const std::string &str)
     {
         _qrWidget->setQRData(str);
-    }
-
-    void setLabel(const QString &str)
-    {
-        _label->setText(str);
     }
 
 private:
 
     QRWidget* _qrWidget = { nullptr };
-    QVBoxLayout* _layout = { nullptr };
-    QLabel* _label = { nullptr };
-
 };
 
 #endif
