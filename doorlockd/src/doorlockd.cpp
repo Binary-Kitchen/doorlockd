@@ -106,10 +106,6 @@ static void session(tcp::socket &&sock)
                 goto out;
             }
 
-            response.code = Response::Code::Success;
-            response .message = "";
-            sock.write_some(boost::asio::buffer(response.toJson()),
-                            error);
             sock.write_some(boost::asio::buffer(logic->getClientMessage().toJson()));
 
             while (run) {
