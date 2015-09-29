@@ -49,7 +49,7 @@ static void signal_handler(int signum)
 static void session(tcp::socket &&sock)
 {
     boost::asio::ip::address remoteAddress;
-    unsigned short remotePort;
+    unsigned short remotePort = 0;
 
     try {
         boost::system::error_code error;
