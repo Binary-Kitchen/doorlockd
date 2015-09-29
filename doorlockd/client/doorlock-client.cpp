@@ -155,17 +155,18 @@ int main(int argc, char** argv)
         // In normal operation, it never returns
         doorlock_client(hostname, port);
 
+        // This will stop the Qapplication
         mainWindow->hide();
-        mainWindow.reset();
-
-        // Stop the QT application
-        app.quit();
+        mainWindow->close();
     });
 
     // This routine will never return in normal operation
     app.exec();
 
     clientThread.join();
+
+    if (mainWindow)
+        mainWindow.reset();
 
     l(LogLevel::notice, "Stopping doorlock-client");
     return 0;
