@@ -6,10 +6,11 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
-#include "clientmessage.h"
 #include "config.h"
-#include "logger.h"
-#include "response.h"
+
+#include "../lib/clientmessage.h"
+#include "../lib/logger.h"
+#include "../lib/response.h"
 
 #include "mainwindow.h"
 

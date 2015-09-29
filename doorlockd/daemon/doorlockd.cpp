@@ -10,10 +10,11 @@
 
 #include <json/json.h>
 
-#include "daemon.h"
+#include "../lib/logic.h"
+#include "../lib/util.h"
+
 #include "config.h"
-#include "logic.h"
-#include "util.h"
+#include "daemon.h"
 
 namespace po = boost::program_options;
 using boost::asio::ip::tcp;

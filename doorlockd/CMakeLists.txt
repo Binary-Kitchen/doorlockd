@@ -58,30 +58,30 @@ find_package (Threads)
 find_package(Qt5Widgets)
 
 set(LIBDOORLOCK_SRCS
-    src/clientmessage.cpp
-    src/clientmessage.h
-    src/daemon.cpp
-    src/daemon.h
-    src/door.cpp
-    src/door.h
-    src/doormessage.h
-    src/logger.cpp
-    src/logger.h
-    src/logic.cpp
-    src/logic.h
-    src/response.cpp
-    src/response.h
-    src/util.cpp
-    src/util.h)
+    lib/clientmessage.cpp
+    lib/clientmessage.h
+    lib/door.cpp
+    lib/door.h
+    lib/doormessage.h
+    lib/logger.cpp
+    lib/logger.h
+    lib/logic.cpp
+    lib/logic.h
+    lib/response.cpp
+    lib/response.h
+    lib/util.cpp
+    lib/util.h)
 
 set(DOORLOCKD_SRCS
-    src/doorlockd.cpp)
+    daemon/daemon.cpp
+    daemon/daemon.h
+    daemon/doorlockd.cpp)
 
 set(DOORLOCK_CLIENT_SRCS
-    src/qrwidget.cpp
-    src/qrwidget.h
-    src/doorlock-client.cpp
-    src/mainwindow.h)
+    client/qrwidget.cpp
+    client/qrwidget.h
+    client/doorlock-client.cpp
+    client/mainwindow.h)
 
 add_library(doorlock STATIC ${LIBDOORLOCK_SRCS})
 target_link_libraries(doorlock jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
