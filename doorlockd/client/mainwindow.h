@@ -1,42 +1,24 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QApplication>
-#include <QHBoxLayout>
-#include <QMainWindow>
-#include <QStatusBar>
+#include <QWidget>
 
-#include "qrwidget.h"
+namespace Ui {
+class MainWindow;
+}
 
-class MainWindow : public QMainWindow
+class MainWindow : public QWidget
 {
+    Q_OBJECT
+
 public:
-    MainWindow() :
-        QMainWindow()
-    {
-        layout = new QHBoxLayout;
+    explicit MainWindow(QWidget *parent = 0);
+    ~MainWindow();
 
-        _qrWidget = new QRWidget;
-        layout->addWidget(_qrWidget);
-
-        QWidget* window = new QWidget;
-        window->setLayout(layout);
-
-        setCentralWidget(window);
-    }
-
-    MainWindow(const MainWindow&);
-    MainWindow& operator =(const MainWindow&);
-
-    void setQRCode(const std::string &str)
-    {
-        _qrWidget->setQRData(str);
-    }
+    void setQRCode(const std::string &token);
 
 private:
-
-    QHBoxLayout* layout = { nullptr };
-    QRWidget* _qrWidget = { nullptr };
+    Ui::MainWindow *ui;
 };
 
-#endif
+#endif // MAINWINDOW_H

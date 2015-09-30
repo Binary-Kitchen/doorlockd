@@ -81,7 +81,9 @@ set(DOORLOCK_CLIENT_SRCS
     client/qrwidget.cpp
     client/qrwidget.h
     client/doorlock-client.cpp
-    client/mainwindow.h)
+    client/mainwindow.h
+    client/mainwindow.cpp
+    client/mainwindow.ui)
 
 add_library(doorlock STATIC ${LIBDOORLOCK_SRCS})
 target_link_libraries(doorlock jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
@@ -91,6 +93,7 @@ target_link_libraries(doorlockd doorlock)
 
 add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
 target_link_libraries(doorlock-client doorlock qrencode Qt5::Widgets)
+target_include_directories(doorlock-client PRIVATE ${CMAKE_SOURCE_DIR})
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(TARGETS doorlock-client DESTINATION bin/)
