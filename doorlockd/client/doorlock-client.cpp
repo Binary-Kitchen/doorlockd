@@ -6,6 +6,8 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
+#include <QApplication>
+
 #include "config.h"
 
 #include "../lib/clientmessage.h"
@@ -23,9 +25,10 @@ const static std::string gitversion =
 const static Logger &l = Logger::get();
 
 namespace po = boost::program_options;
-using boost::asio::ip::tcp;
+namespace ba = boost::asio;
+using ba::ip::tcp;
 
-boost::asio::io_service io_service;
+ba::io_service io_service;
 
 const static std::string subscriptionCommand =
         "{ \"command\": \"subscribe\"}";
@@ -67,7 +70,7 @@ static int doorlock_client(const std::string &hostname,
         tcp::resolver::query query(hostname, std::to_string(port));
         tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
         tcp::resolver::iterator end;
-        boost::system::error_code error = boost::asio::error::host_not_found;
+        boost::system::error_code error = ba::error::host_not_found;
         size_t length;
         std::vector<char> data;
 
@@ -79,19 +82,30 @@ static int doorlock_client(const std::string &hostname,
             throw boost::system::system_error(error);
 
         // After connection is established, send the subscription command
-        socket.write_some(boost::asio::buffer(subscriptionCommand), error);
+        socket.write_some(ba::buffer(subscriptionCommand), error);
         if (error)
             throw boost::system::system_error(error);
 
         data.resize(SOCKET_BUFFERLENGTH);
-        for (;run;) {
-            length = socket.read_some(boost::asio::buffer(data), error);
-            if (error)
-                throw boost::system::system_error(error);
 
-            const auto message = Clientmessage::fromJson(std::string(data.begin(), data.begin()+length));
-            onDoorlockUpdate(message);
-        }
+        std::function<void(void)> receiveMessage = [&] () {
+            socket.async_read_some(ba::buffer(data),
+                                   [&] (const boost::system::error_code &ec,
+                                        const size_t length)
+            {
+                if (ec) {
+                    throw boost::system::system_error(ec);
+                }
+
+                const auto message = Clientmessage::fromJson(std::string(data.begin(), data.begin()+length));
+                onDoorlockUpdate(message);
+
+                receiveMessage();
+            });
+        };
+
+        receiveMessage();
+        io_service.run();
     }
     catch(const std::exception &e)
     {
@@ -162,6 +176,9 @@ int main(int argc, char** argv)
 
     // This routine will never return in normal operation
     app.exec();
+
+    // Stop the IO service
+    io_service.stop();
 
     clientThread.join();
 
