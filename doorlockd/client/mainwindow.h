@@ -13,6 +13,10 @@ class MainWindow : public QWidget
 
 public:
     explicit MainWindow(QWidget *parent = 0);
+
+    MainWindow(const MainWindow &rhs);
+    MainWindow &operator =(const MainWindow &rhs);
+
     ~MainWindow();
 
     void setQRCode(const std::string &token);
