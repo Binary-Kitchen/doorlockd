@@ -28,17 +28,17 @@ namespace po = boost::program_options;
 namespace ba = boost::asio;
 using ba::ip::tcp;
 
-ba::io_service io_service;
+static ba::io_service io_service;
 
 const static std::string subscriptionCommand =
         "{ \"command\": \"subscribe\"}";
 
 // The receive buffer length of the TCP socket
-const int constexpr SOCKET_BUFFERLENGTH = 2048;
+constexpr static int SOCKET_BUFFERLENGTH = 2048;
 
 static volatile bool run = true;
 
-std::unique_ptr<MainWindow> mainWindow = nullptr;
+static std::unique_ptr<MainWindow> mainWindow = nullptr;
 
 static void onDoorlockUpdate(const Clientmessage &msg)
 {
@@ -173,9 +173,12 @@ int main(int argc, char** argv)
         // In normal operation, it never returns
         while (run) {
             doorlock_client(hostname, port);
-            l(LogLevel::error, "client aborted, retrying in 5 seconds");
-            sleep(5);
-            // Todo: Write message to QT frontend
+            if (run) {
+                l(LogLevel::error, "client aborted, retrying in 5 seconds");
+                // Todo: Write message to QT frontend
+
+                sleep(5);
+            }
         }
 
         // This will stop the Qapplication
@@ -186,9 +189,10 @@ int main(int argc, char** argv)
     // This routine will never return in normal operation
     app.exec();
 
+    run = false;
+
     // Stop the IO service
     io_service.stop();
-    io_service.reset();
 
     clientThread.join();
 
