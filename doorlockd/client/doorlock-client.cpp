@@ -116,6 +116,8 @@ static int doorlock_client(const std::string &hostname,
         retval = -1;
     }
 
+    io_service.reset();
+
     return retval;
 }
 
@@ -169,7 +171,12 @@ int main(int argc, char** argv)
     std::thread clientThread = std::thread([&] () {
         // If the TCP client returns, an error has occured
         // In normal operation, it never returns
-        doorlock_client(hostname, port);
+        while (run) {
+            doorlock_client(hostname, port);
+            l(LogLevel::error, "client aborted, retrying in 5 seconds");
+            sleep(5);
+            // Todo: Write message to QT frontend
+        }
 
         // This will stop the Qapplication
         mainWindow->hide();
@@ -181,6 +188,7 @@ int main(int argc, char** argv)
 
     // Stop the IO service
     io_service.stop();
+    io_service.reset();
 
     clientThread.join();
 
