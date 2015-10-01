@@ -8,6 +8,18 @@
 const std::string Response::_codeKey = "code";
 const std::string Response::_messageKey = "message";
 
+Response::Response():
+    code(Fail),
+    message("General failure")
+{
+}
+
+Response::Response(Response::Code code, const std::string &what) :
+    code(code),
+    message(what)
+{
+}
+
 Response::operator bool() const
 {
     return code == Response::Code::Success;
@@ -24,21 +36,34 @@ std::string Response::toJson() const
     return writer.write(response);
 }
 
-Response Response::fromJson(const std::string &json)
+Response Response::fromJson(const Json::Value &root)
+{
+    Response retval;
+
+    try {
+        retval.message = getJsonOrFail<std::string>(root, _messageKey);
+
+        const auto code = getJsonOrFail<int>(root, _codeKey);
+        if (code > Code::RESPONSE_NUM_ITEMS)
+            throw std::runtime_error("Error code out of range");
+
+        retval.code = static_cast<Code>(code);
+    }
+    catch (const std::exception &ex) {
+        throw Response(Response::Code::JsonError, ex.what());
+    }
+
+    return retval;
+}
+
+Response Response::fromString(const std::string &json)
 {
     Json::Reader reader;
     Json::Value root;
-    Response retval;
 
     if (reader.parse(json, root) == false)
-        throw std::runtime_error("Error parsing JSON");
+        throw Response(Response::Code::NotJson,
+                       "No valid JSON");
 
-    retval.message = getJsonOrFail<std::string>(root, _messageKey);
-
-    const auto code = getJsonOrFail<int>(root, _codeKey);
-    if (code > Code::RESPONSE_NUM_ITEMS)
-        throw std::runtime_error("Error code out of range");
-    retval.code = static_cast<Code>(code);
-
-    return retval;
+    return fromJson(root);
 }

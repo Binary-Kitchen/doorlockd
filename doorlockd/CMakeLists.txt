@@ -67,6 +67,8 @@ set(LIBDOORLOCK_SRCS
     lib/logger.h
     lib/logic.cpp
     lib/logic.h
+    lib/request.cpp
+    lib/request.h
     lib/response.cpp
     lib/response.h
     lib/util.cpp

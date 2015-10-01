@@ -1,7 +1,6 @@
-#include <json/json.h>
-
 #include "clientmessage.h"
 #include "util.h"
+#include "response.h"
 
 const std::string Clientmessage::_tokenKey = "token";
 const std::string Clientmessage::_unlockButtonKey = "unlockButton";
@@ -40,21 +39,33 @@ const Doormessage& Clientmessage::doormessage() const
     return _doormessage;
 }
 
-Clientmessage Clientmessage::fromJson(const std::string &json)
+Clientmessage Clientmessage::fromJson(const Json::Value &root)
 {
-    Json::Reader reader;
-    Json::Value root;
     std::string token;
     Doormessage doormessage;
 
-    if (reader.parse(json, root) == false)
-        throw std::runtime_error("Error parsing JSON");
-
-    token = getJsonOrFail<std::string>(root, _tokenKey);
-    doormessage.isLockButton = getJsonOrFail<bool>(root, _lockButtonKey);
-    doormessage.isUnlockButton = getJsonOrFail<bool>(root, _unlockButtonKey);
-    doormessage.isEmergencyUnlock = getJsonOrFail<bool>(root, _emergencyUnlockKey);
-    doormessage.isOpen = getJsonOrFail<bool>(root, _isOpenKey);
+    try {
+        token = getJsonOrFail<std::string>(root, _tokenKey);
+        doormessage.isLockButton = getJsonOrFail<bool>(root, _lockButtonKey);
+        doormessage.isUnlockButton = getJsonOrFail<bool>(root, _unlockButtonKey);
+        doormessage.isEmergencyUnlock = getJsonOrFail<bool>(root, _emergencyUnlockKey);
+        doormessage.isOpen = getJsonOrFail<bool>(root, _isOpenKey);
+    }
+    catch (const std::exception &ex) {
+        throw Response(Response::Code::JsonError, ex.what());
+    }
 
     return Clientmessage(token, doormessage);
+}
+
+Clientmessage Clientmessage::fromString(const std::string &string)
+{
+    Json::Reader reader;
+    Json::Value root;
+
+    if (reader.parse(string, root) == false)
+        throw Response(Response::Code::NotJson,
+                       "No valid JSON");
+
+    return fromJson(root);
 }

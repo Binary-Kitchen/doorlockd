@@ -3,8 +3,11 @@
 
 #include <string>
 
-struct Response
+#include <json/json.h>
+
+class Response
 {
+public:
     enum Code {
         Success = 0, // Request successful
         Fail, // General non-specified error
@@ -22,19 +25,11 @@ struct Response
     } code;
     std::string message;
 
-    Response() :
-        code(Fail),
-        message("General failure")
-    {
-    }
+    Response();
+    Response(Response::Code code, const std::string &message = "");
 
-    Response(Response::Code code, const std::string &message = "") :
-        code(code),
-        message(message)
-    {
-    }
-
-    static Response fromJson(const std::string &json);
+    static Response fromJson(const Json::Value &root);
+    static Response fromString(const std::string &json);
     std::string toJson() const;
 
     // Returns true if code is success

@@ -14,13 +14,12 @@ T getJsonOrFail(const Json::Value &root, const std::string &key)
     const auto members = root.getMemberNames();
     if (std::find(members.begin(), members.end(), key) == members.end())
     {
-        throw std::runtime_error("Json key not existing");
+        throw std::runtime_error("Json key \"" + key + "\" not existing");
     }
 
     return getJson<T>(root, key);
 }
 
 std::string toHexString(uint64_t c);
-uint64_t toUint64(const std::string &s);
 
 #endif

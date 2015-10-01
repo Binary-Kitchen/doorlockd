@@ -1,26 +1,17 @@
-#include <chrono>
-#include <functional>
-
-#include <cstdlib>
-#include <json/json.h>
-
+#include <errno.h>
 #define LDAP_DEPRECATED 1
 #include <ldap.h>
 
-#include <errno.h>
-
-#include "util.h"
 #include "logic.h"
+#include "util.h"
 
-using namespace std;
-
-Logic::Logic(const chrono::seconds tokenTimeout,
-             const string &ldapUri,
-             const string &bindDN,
-             const string &webPrefix,
-             const string &serDev,
+Logic::Logic(const std::chrono::seconds tokenTimeout,
+             const std::string &ldapUri,
+             const std::string &bindDN,
+             const std::string &webPrefix,
+             const std::string &serDev,
              const unsigned int baudrate,
-             condition_variable &onClientUpdate) :
+             std::condition_variable &onClientUpdate) :
     _logger(Logger::get()),
     _door(serDev, baudrate),
     _tokenTimeout(tokenTimeout),
@@ -36,10 +27,10 @@ Logic::Logic(const chrono::seconds tokenTimeout,
                                     this,
                                     std::placeholders::_1));
 
-    _tokenUpdater = thread([this] () {
+    _tokenUpdater = std::thread([this] () {
         while (_run)
         {
-            unique_lock<mutex> l(_mutex);
+            std::unique_lock<std::mutex> l(_mutex);
             _tokenCondition.wait_for(l, _tokenTimeout);
             if (_run == false)
             {
@@ -58,58 +49,60 @@ Logic::~Logic()
     _tokenUpdater.join();
 }
 
-Response Logic::parseRequest(const Json::Value &root)
+Response Logic::processDoor(const DoorCommand &doorCommand)
 {
-    unique_lock<mutex> l(_mutex);
-
-    _logger(LogLevel::info, "Incoming request...");
     Response response;
-    string command, user, password, ip, token;
 
-    try {
-        command = getJsonOrFail<string>(root, "command");
-        ip = getJsonOrFail<string>(root, "ip");
-        user = getJsonOrFail<string>(root, "user");
-        password = getJsonOrFail<string>(root, "password");
-        token = getJsonOrFail<string>(root, "token");
+    switch (doorCommand) {
+        case DoorCommand::Lock:
+            response = _lock();
+            break;
+        case DoorCommand::Unlock:
+            response = _unlock();
+            break;
+        default:
+            response.code = Response::Code::UnknownCommand;
+            response.message = "Unknown DoorCommand";
+            break;
     }
-    catch (...)
-    {
-        _logger(LogLevel::warning, "Error parsing JSON");
-        response.code = Response::Code::JsonError;
-        response.message = "Error parsing JSON";
+
+    return response;
+}
+
+Response Logic::request(const Request &request)
+{
+    std::unique_lock<std::mutex> l(_mutex);
+    Response response;
+
+    DoorCommand doorCommand;
+
+    switch (request.command) {
+        case Request::Command::Lock:
+            doorCommand = DoorCommand::Lock;
+            break;
+        case Request::Command::Unlock:
+            doorCommand = DoorCommand::Unlock;
+            break;
+        default:
+            response.code = Response::Code::UnknownCommand;
+            response.message = "Unknown Command";
+            goto out;
+    }
+
+    response = _checkToken(request.token);
+    if (!response) {
         goto out;
     }
+    _logger(LogLevel::info, "   -> Token check successful");
 
-    _logger("  User   : " + user, LogLevel::notice);
-    _logger("  IP     : " + ip, LogLevel::notice);
-    _logger("  Token  : " + token, LogLevel::notice);
-
-    if (_checkToken(token) == false)
-    {
-        _logger(LogLevel::error, "User provided invalid token");
-        response.code = Response::Code::InvalidToken;
-        response.message = "User provided invalid token";
+    response = _checkLDAP(request.user, request.password);
+    if (!response) {
         goto out;
     }
+    _logger(LogLevel::info, "   -> LDAP check successful");
 
-    response = _checkLDAP(user,password);
-    if (!response)
-    {
-        _logger(LogLevel::error, "Ldap error");
-        goto out;
-    }
-
-    if (command == "lock")
-    {
-        response = _lock();
-    } else if (command == "unlock") {
-        response = _unlock();
-    } else {
-        response.code = Response::Code::UnknownCommand;
-        response.message = "Unknown Command: " + command;
-        _logger(response.message, LogLevel::error);
-    }
+    response = processDoor(doorCommand);
+    _logger(LogLevel::info, "   -> Door Command successful");
 
 out:
     return response;
@@ -122,13 +115,14 @@ Response Logic::_lock()
     {
         response.code = Response::Code::AlreadyLocked;
         response.message = "Unable to lock: already closed";
-        _logger(response.message, LogLevel::warning);
     } else {
-        _door.lock();
         _createNewToken(false);
 
         response.code = Response::Code::Success;
+        response.message = "Success";
     }
+
+    _door.lock();
 
     return response;
 }
@@ -145,32 +139,38 @@ Response Logic::_unlock()
     {
         response.code = Response::Code::AlreadyUnlocked;
         response.message = "Unable to unlock: already unlocked";
-        _logger(response.message, LogLevel::warning);
+        _logger(response.message, LogLevel::info);
     } else {
         response.code = Response::Code::Success;
+        response.message = "Success";
     }
 
     return response;
 }
 
-bool Logic::_checkToken(const string &strToken)
+Response Logic::_checkToken(std::string token) const
 {
-    try {
-        uint64_t token = toUint64(strToken);
-        if (token == _curToken || (_prevValid == true && token == _prevToken))
-        {
-            _logger(LogLevel::info, "Token check successful");
-            return true;
-        }
-    }
-    catch (const char* const &ex)
-    {
-        _logger(LogLevel::error, "Check Token failed for token \"%s\" (expected %s): %s", strToken.c_str(), toHexString(_curToken).c_str(), ex);
-    }
-    return false;
+    std::transform(token.begin(),
+                   token.end(),
+                   token.begin(),
+                   ::toupper);
+
+    if (token == _curToken)
+        return Response(Response::Code::Success);
+
+    if (_prevValid == true && token == _prevToken)
+        return Response(Response::Code::Success);
+
+    _logger("Check Token failed: got \"" + token
+            + "\", expected \"" + _curToken +"\"",
+            LogLevel::error);
+
+    return Response(Response::InvalidToken,
+                    "User provided invalid token");
 }
 
-Response Logic::_checkLDAP(const string &user, const string &password)
+Response Logic::_checkLDAP(const std::string &user,
+                           const std::string &password)
 {
     constexpr int BUFFERSIZE = 1024;
     char buffer[BUFFERSIZE];
@@ -180,16 +180,15 @@ Response Logic::_checkLDAP(const string &user, const string &password)
     LDAP* ld = nullptr;
     unsigned long version = LDAP_VERSION3;
 
-    _logger(LogLevel::notice, "Trying to authenticate as user \"%s\"", user.c_str());
+    _logger(LogLevel::info, "      Trying to authenticate as user \"%s\"", user.c_str());
     snprintf(buffer, BUFFERSIZE, _bindDN.c_str(), user.c_str());
 
     rc = ldap_initialize(&ld, _ldapUri.c_str());
     if(rc != LDAP_SUCCESS)
     {
-        retval.message = (string)"LDAP initialize error: "
-                       + ldap_err2string(rc);
+        retval.message = (std::string)"LDAP initialize error: "
+                + ldap_err2string(rc);
         retval.code = Response::Code::LDAPInit;
-        _logger(retval.message, LogLevel::error);
         goto out2;
     }
 
@@ -200,7 +199,6 @@ Response Logic::_checkLDAP(const string &user, const string &password)
     {
         retval.code = Response::Code::LDAPInit;
         retval.message = "LDAP set version failed";
-        _logger(retval.message, LogLevel::error);
         goto out;
     }
 
@@ -210,12 +208,11 @@ Response Logic::_checkLDAP(const string &user, const string &password)
         retval = Response::Code::InvalidCredentials;
         retval.message = "Credential check for user \"" + user
                        + "\" failed: " + ldap_err2string(rc);
-        _logger(retval.message, LogLevel::error);
         goto out;
     }
 
-    _logger(LogLevel::notice, "user \"%s\" successfully authenticated", user.c_str());
-    retval = Response::Code::Success;
+    retval.code = Response::Code::Success;
+    retval.message = "";
 
 out:
     ldap_unbind(ld);
@@ -231,11 +228,13 @@ void Logic::_createNewToken(const bool stillValid)
     _prevToken = _curToken;
     _prevValid = stillValid;
 
-    _curToken = (((uint64_t)rand())<<32) | ((uint64_t)rand());
+    _curToken = toHexString((((uint64_t)rand())<<32) | ((uint64_t)rand()));
 
-    ostringstream message;
-    message << "New Token generated: " << toHexString(_curToken) << " old Token: " << toHexString(_prevToken) << " is " << (_prevValid?"still":"not") << " valid";
-    _logger(message, LogLevel::info);
+    std::ostringstream message;
+    message << "New token: " << _curToken
+            << " old token: " << _prevToken << " is "
+            << (_prevValid?"still":"not") << " valid";
+    _logger(message, LogLevel::notice);
 
     _onClientUpdate.notify_all();
 }
@@ -243,7 +242,7 @@ void Logic::_createNewToken(const bool stillValid)
 Clientmessage Logic::getClientMessage()
 {
     std::lock_guard<std::mutex> l(_mutex);
-    Clientmessage retval(_webPrefix + toHexString(_curToken),
+    Clientmessage retval(_webPrefix + _curToken,
                          _doormessage);
 
     // Reset doormessage

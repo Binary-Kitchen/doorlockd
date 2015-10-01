@@ -1,9 +1,7 @@
 #include "util.h"
 
-using namespace std;
-
 template <>
-int getJson(const Json::Value &root, const string &key)
+int getJson(const Json::Value &root, const std::string &key)
 {
     auto val = root.get(key, Json::Value());
     if (val.isInt())
@@ -12,7 +10,7 @@ int getJson(const Json::Value &root, const string &key)
 }
 
 template <>
-string getJson(const Json::Value &root, const string &key)
+std::string getJson(const Json::Value &root, const std::string &key)
 {
     auto val = root.get(key, Json::Value());
     if (val.isString())
@@ -21,7 +19,7 @@ string getJson(const Json::Value &root, const string &key)
 }
 
 template <>
-size_t getJson(const Json::Value &root, const string &key)
+size_t getJson(const Json::Value &root, const std::string &key)
 {
     auto val = root.get(key, Json::Value());
     if (val.isInt())
@@ -30,7 +28,7 @@ size_t getJson(const Json::Value &root, const string &key)
 }
 
 template <>
-bool getJson(const Json::Value &root, const string &key)
+bool getJson(const Json::Value &root, const std::string &key)
 {
     auto val = root.get(key, Json::Value());
     if (val.isBool())
@@ -39,7 +37,7 @@ bool getJson(const Json::Value &root, const string &key)
 }
 
 template <>
-Json::Value getJson(const Json::Value &root, const string &key)
+Json::Value getJson(const Json::Value &root, const std::string &key)
 {
     auto val = root.get(key, Json::Value());
     return val;
@@ -57,9 +55,9 @@ static char nibble2hex(unsigned char input)
     return input - 0xA + 'A';
 }
 
-string toHexString(const uint64_t c)
+std::string toHexString(const uint64_t c)
 {
-    string retval;
+    std::string retval;
 
     retval  = nibble2hex((c>>60) & 0xF);
     retval += nibble2hex((c>>56) & 0xF);
@@ -91,22 +89,4 @@ unsigned char hex2uchar(const char input)
         return input - 'a' + 10;
     }
     throw std::runtime_error("Malformed hexadecimal input");
-}
-
-uint64_t toUint64(const string &s)
-{
-    if (s.length() != (64/4))
-    {
-        throw std::runtime_error("Hex string has invalid length");
-    }
-
-    uint64_t retval = 0;
-
-    for (int i = 0 ; i < (64/4) ; i++)
-    {
-        retval <<= 4;
-        retval |= hex2uchar(s.at(i))&0xf;
-    }
-
-    return retval;
 }

@@ -1,9 +1,5 @@
-#include <iostream>
-#include <string>
-#include <cstdlib>
-#include <memory>
-#include <utility>
 #include <csignal>
+#include <iostream>
 
 #include <boost/program_options.hpp>
 #include <boost/asio.hpp>
@@ -11,13 +7,13 @@
 #include <json/json.h>
 
 #include "../lib/logic.h"
-#include "../lib/util.h"
 
 #include "config.h"
 #include "daemon.h"
 
 namespace po = boost::program_options;
-using boost::asio::ip::tcp;
+namespace ba = boost::asio;
+using ba::ip::tcp;
 
 // Info about doorlockd version
 const static std::string version =
@@ -31,7 +27,7 @@ const int constexpr SOCKET_BUFFERLENGTH = 2048;
 const static Logger &l = Logger::get();
 
 static std::unique_ptr<Logic> logic = nullptr;
-static boost::asio::io_service io_service;
+static ba::io_service io_service;
 
 static std::mutex mutex;
 static std::condition_variable onClientMessage;
@@ -46,13 +42,26 @@ static void signal_handler(int signum)
     onClientMessage.notify_all();
 }
 
+static Response subscribe(tcp::socket &sock)
+{
+    sock.write_some(ba::buffer(logic->getClientMessage().toJson()));
+    while (run) {
+        std::unique_lock<std::mutex> lock(mutex);
+        onClientMessage.wait(lock);
+        if (run) {
+            sock.write_some(ba::buffer(logic->getClientMessage().toJson()));
+        }
+    };
+    return Response(Response::Code::Success);
+}
+
 static void session(tcp::socket &&sock)
 {
-    boost::asio::ip::address remoteAddress;
+    ba::ip::address remoteAddress;
     unsigned short remotePort = 0;
+    Response response;
 
     try {
-        boost::system::error_code error;
         std::vector<char> data;
         data.resize(SOCKET_BUFFERLENGTH);
 
@@ -63,79 +72,59 @@ static void session(tcp::socket &&sock)
           + std::to_string(remotePort) + ")",
           LogLevel::notice);
 
-        size_t length = sock.read_some(boost::asio::buffer(data),
-                                       error);
-        if (error == boost::asio::error::eof)
-            return;
-        else if (error)
-            throw boost::system::system_error(error);
+        size_t length = sock.read_some(ba::buffer(data));
 
-        const std::string request(data.begin(), data.begin()+length);
+        // Get Request
+        const std::string requestString(data.begin(), data.begin()+length);
+        l("   Parsing request...", LogLevel::info);
+        Request request = Request::fromString(requestString);
 
-        Json::Reader reader;
-        Json::Value root;
-        Response response;
-        std::string command;
+        switch (request.command) {
+            case Request::Command::Lock:
+            case Request::Command::Unlock:
+                response = logic->request(request);
+                break;
 
-        if (!reader.parse(request, root, false))
-        {
-            response.message = "Request is no valid JSON";
-            response.code = Response::Code::JsonError;
-            l(response.message, LogLevel::warning);
-            goto out;
-        }
-
-        try {
-            command = getJsonOrFail<std::string>(root, "command");
-        }
-        catch (...)
-        {
-            response.code = Response::Code::JsonError;
-            response.message = "Error parsing JSON";
-            l(response.message, LogLevel::warning);
-            goto out;
-        }
-
-        l("  Command: " + command, LogLevel::notice);
-        if (command == "lock" || command == "unlock") {
-            response = logic->parseRequest(root);
-        } else if (command == "subscribe") {
-            if (remoteAddress.is_loopback() == false) {
-                response.code = Response::Code::AccessDenied;
-                response.message = "Subscriptions are only allowed from localhost";
-                l(response.message, LogLevel::warning);
-                goto out;
-            }
-
-            sock.write_some(boost::asio::buffer(logic->getClientMessage().toJson()));
-
-            while (run) {
-                std::unique_lock<std::mutex> lock(mutex);
-                onClientMessage.wait(lock);
-
-                if (run) {
-                    sock.write_some(boost::asio::buffer(logic->getClientMessage().toJson()));
+            case Request::Command::Subscribe:
+                if (remoteAddress.is_loopback() == false) {
+                    response.code = Response::Code::AccessDenied;
+                    response.message = "Subscriptions are only allowed from localhost";
+                } else {
+                    response = subscribe(sock);
                 }
-            };
-        } else {
-            response.code = Response::Code::UnknownCommand;
-            response.message = "Received unknown command " + command;
-            l(response.message, LogLevel::warning);
+                break;
+
+            case Request::Command::Unknown:
+            default:
+                response.code = Response::Code::UnknownCommand;
+                response.message = "Received unknown command ";
+            break;
         }
 
-    out:
-        sock.write_some(boost::asio::buffer(response.toJson()),
-                        error);
-        if (error == boost::asio::error::eof)
-            return;
-        else if (error)
-            throw boost::system::system_error(error);
+        throw response;
     }
-    catch (const std::exception &e) {
-        std::string message = "Exception in session " + remoteAddress.to_string()
-                + ":" + std::to_string(remotePort) + " : " + e.what();
-        l(message, LogLevel::error);
+    catch (const Response &err) {
+        response = err;
     }
+    catch (const std::exception &err) {
+        response.code = Response::Code::Fail;
+        response.message = "Exception in session " + remoteAddress.to_string()
+                + ":" + std::to_string(remotePort) + " : " + err.what();
+    }
+    catch (...) {
+        response.code = Response::Code::Fail;
+        response.message = "Unhandled doorlockd error";
+    }
+
+    if (!response) {
+        l(response.message, LogLevel::warning);
+    }
+
+    if (sock.is_open()) {
+        boost::system::error_code ec;
+        sock.write_some(ba::buffer(response.toJson()), ec);
+    }
+
     l("Closing TCP connection from " + remoteAddress.to_string(), LogLevel::notice);
 }
 
@@ -143,7 +132,7 @@ static void server(unsigned short port)
 {
     l(LogLevel::info, "Starting TCP Server");
 
-    const auto endpoint = tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), port);
+    const auto endpoint = tcp::endpoint(ba::ip::address::from_string("127.0.0.1"), port);
     tcp::acceptor a(io_service, endpoint);
 
     tcp::socket sock(io_service);

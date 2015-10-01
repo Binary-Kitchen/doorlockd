@@ -71,7 +71,6 @@ static int doorlock_client(const std::string &hostname,
         tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
         tcp::resolver::iterator end;
         boost::system::error_code error = ba::error::host_not_found;
-        size_t length;
         std::vector<char> data;
 
         while (error && endpoint_iterator != end) {
@@ -97,7 +96,8 @@ static int doorlock_client(const std::string &hostname,
                     throw boost::system::system_error(ec);
                 }
 
-                const auto message = Clientmessage::fromJson(std::string(data.begin(), data.begin()+length));
+                const auto message = Clientmessage::fromString(
+                            std::string(data.begin(), data.begin()+length));
                 onDoorlockUpdate(message);
 
                 receiveMessage();
@@ -107,13 +107,15 @@ static int doorlock_client(const std::string &hostname,
         receiveMessage();
         io_service.run();
     }
-    catch(const std::exception &e)
-    {
-        l(LogLevel::error, e.what());
-        goto out;
+    catch(const Response &err) {
+        l(err.message, LogLevel::error);
+        retval = -1;
+    }
+    catch(const std::exception &err) {
+        l(LogLevel::error, err.what());
+        retval = -1;
     }
 
-out:
     return retval;
 }
 

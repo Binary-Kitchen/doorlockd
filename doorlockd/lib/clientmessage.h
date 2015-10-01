@@ -2,6 +2,7 @@
 #define CLIENTMESSAGE_H
 
 #include <string>
+#include <json/json.h>
 
 #include "doormessage.h"
 
@@ -13,7 +14,8 @@ public:
     Clientmessage(std::string token,
                   Doormessage doormessage);
 
-    static Clientmessage fromJson(const std::string &json);
+    static Clientmessage fromJson(const Json::Value &root);
+    static Clientmessage fromString(const std::string &json);
     std::string toJson() const;
 
     const std::string& token() const;

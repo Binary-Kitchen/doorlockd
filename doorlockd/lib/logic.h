@@ -1,23 +1,23 @@
 #ifndef LOGIC_H
 #define LOGIC_H
 
-#include <cstdint>
-#include <string>
-#include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <string>
+#include <thread>
 
 #include "config.h"
+#include "clientmessage.h"
 #include "door.h"
 #include "logger.h"
+#include "request.h"
 #include "response.h"
-#include "clientmessage.h"
 
 /* The "Logic" class
  *
  * This class is initilized by all settings.
  *
- * It parses incoming JSON-Requests and returns the Response Code.
+ * It handles incoming requests and allows modifications of the door
  */
 class Logic
 {
@@ -33,7 +33,11 @@ public:
     ~Logic();
 
     // Parse incoming JSON Requests
-    Response parseRequest(const Json::Value &root);
+    Response request(const Request &request);
+
+    // Send direct command to door without credential checks
+    enum class DoorCommand { Lock, Unlock };
+    Response processDoor(const DoorCommand &doorCommand);
 
     // Returns the current Token
     Clientmessage getClientMessage();
@@ -46,7 +50,7 @@ private:
     Response _unlock();
 
     // Checks if the incoming token is valid
-    bool _checkToken(const std::string &token);
+    Response _checkToken(std::string token) const;
 
     // Checks if incoming credentials against LDAP
     Response _checkLDAP(const std::string &user,
@@ -63,13 +67,10 @@ private:
     // The door
     Door _door;
 
-    // Tokens are 64-bit hexadecimal values
-    using Token = uint64_t;
-
     // The current token
-    Token _curToken = { 0x0000000000000000 };
+    std::string _curToken = { "0000000000000000" };
     // The previous token
-    Token _prevToken = { 0x0000000000000000 };
+    std::string _prevToken = { "0000000000000000" };
     // Indicates whether the previous token is valid
     bool _prevValid = { false };
 

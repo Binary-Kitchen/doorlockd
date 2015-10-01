@@ -133,7 +133,7 @@ void Door::lock()
     _heartbeatCondition.notify_one();
     _heartbeatThread.join();
 
-    _logger(LogLevel::info, "Door closed");
+    _logger(LogLevel::notice , "Door closed");
 
 out:
     _logger(LogLevel::notice, "Executing Post Lock Script");
@@ -175,7 +175,7 @@ void Door::unlock()
         writeCMD(DOOR_CMD_LOCK);
     });
 
-    _logger(LogLevel::info, "Door opened");
+    _logger(LogLevel::notice, "Door opened");
 
     out:
     _logger(LogLevel::notice, "Executing Post Unlock Script");

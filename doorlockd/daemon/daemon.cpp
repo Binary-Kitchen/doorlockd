@@ -9,24 +9,22 @@
 
 #include "daemon.h"
 
-using namespace std;
-
-void daemonize(const string &dir,
-               const string &stdinfile,
-               const string &stdoutfile,
-               const string &stderrfile)
+void daemonize(const std::string &dir,
+               const std::string &stdinfile,
+               const std::string &stdoutfile,
+               const std::string &stderrfile)
 {
     umask(0);
 
     rlimit rl;
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0)
     {
-        throw runtime_error(strerror(errno));
+        throw std::runtime_error(strerror(errno));
     }
 
     if (!dir.empty() && chdir(dir.c_str()) < 0)
     {
-        throw runtime_error(strerror(errno));
+        throw std::runtime_error(strerror(errno));
     }
 
     if (rl.rlim_max == RLIM_INFINITY)
@@ -47,6 +45,6 @@ void daemonize(const string &dir,
 
     if (fd0 != STDIN_FILENO || fd1 != STDOUT_FILENO || fd2 != STDERR_FILENO)
     {
-        throw runtime_error("new standard file descriptors were not opened as expected");
+        throw std::runtime_error("new standard file descriptors were not opened as expected");
     }
 }
