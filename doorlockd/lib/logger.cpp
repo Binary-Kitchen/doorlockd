@@ -65,6 +65,8 @@ Logger::Logger(const LogLevel level) :
 
 Logger::~Logger()
 {
+    if (_logFile.is_open())
+        _logFile.close();
 }
 
 Logger &Logger::get()
@@ -73,7 +75,7 @@ Logger &Logger::get()
     return l;
 }
 
-void Logger::operator ()(const std::string &message, const LogLevel level) const
+void Logger::operator ()(const std::string &message, const LogLevel level)
 {
     if(level > _level)
     {
@@ -104,44 +106,59 @@ void Logger::operator ()(const std::string &message, const LogLevel level) const
         lock_guard<mutex> lock(_ostreamMutex);
 
 #if defined(USE_COLORIZED_LOGS) && !defined(_WIN32)
-        cerr << prefix.str() << message << suffix_ansireset << endl;
-        cerr.flush();
+        if (_consoleActive) {
+            cerr << prefix.str() << message << suffix_ansireset << endl;
+            cerr.flush();
+        }
+        if (_logFileActive && _logFile.is_open()) {
+            _logFile << prefix.str() << message << suffix_ansireset << endl;
+        }
 #elif defined(USE_COLORIZED_LOGS) && defined(_WIN32)
 
-        // taken from GTEST
-        const HANDLE stdout_handle = GetStdHandle(STD_ERROR_HANDLE);
+        if (_consoleActive) {
+            // taken from GTEST
+            const HANDLE stdout_handle = GetStdHandle(STD_ERROR_HANDLE);
 
-        // Gets the current text color.
-        CONSOLE_SCREEN_BUFFER_INFO buffer_info;
-        GetConsoleScreenBufferInfo(stdout_handle, &buffer_info);
-        const WORD old_color_attrs = buffer_info.wAttributes;
+            // Gets the current text color.
+            CONSOLE_SCREEN_BUFFER_INFO buffer_info;
+            GetConsoleScreenBufferInfo(stdout_handle, &buffer_info);
+            const WORD old_color_attrs = buffer_info.wAttributes;
 
-        // We need to flush the stream buffers into the console before each
-        // SetConsoleTextAttribute call lest it affect the text that is already
-        // printed but has not yet reached the console.
-        cerr.flush();
-        SetConsoleTextAttribute(stdout_handle,
-                                colorAttribute.at(level) | FOREGROUND_INTENSITY);
+            // We need to flush the stream buffers into the console before each
+            // SetConsoleTextAttribute call lest it affect the text that is already
+            // printed but has not yet reached the console.
+            cerr.flush();
+            SetConsoleTextAttribute(stdout_handle,
+                                    colorAttribute.at(level) | FOREGROUND_INTENSITY);
 
-        cerr << prefix.str() << message << endl;
-        cerr.flush();
+            cerr << prefix.str() << message << endl;
+            cerr.flush();
 
-        // Restores the text color.
-        SetConsoleTextAttribute(stdout_handle, old_color_attrs);
+            // Restores the text color.
+            SetConsoleTextAttribute(stdout_handle, old_color_attrs);
+        }
+        if (_logFileActive && _logFile.is_open()) {
+            _logFile << prefix.str() << message << endl;
+        }
 
 #else
-        cerr << prefix.str() << message << endl;
-        cerr.flush();
+        if (_consoleActive) {
+            cerr << prefix.str() << message << endl;
+            cerr.flush();
+        }
+        if (_logFileActive && _logFile.is_open()) {
+            _logFile << prefix.str() << message << endl;
+        }
 #endif
     }
 }
 
-void Logger::operator ()(const std::ostringstream &message, const LogLevel level) const
+void Logger::operator ()(const std::ostringstream &message, const LogLevel level)
 {
     (*this)(message.str(), level);
 }
 
-void Logger::operator ()(const LogLevel level, const char* format, ...) const
+void Logger::operator ()(const LogLevel level, const char* format, ...)
 {
     if(level > _level)
     {
@@ -188,5 +205,34 @@ LogLevel Logger::level() const
     return _level;
 }
 
-void foo(void) {
+bool Logger::console() const
+{
+    return _consoleActive;
+}
+
+void Logger::console(const bool active)
+{
+    lock_guard<mutex> lock(_ostreamMutex);
+    _consoleActive = active;
+}
+
+bool Logger::logFile() const
+{
+    return _logFileActive;
+}
+
+void Logger::logFile(const bool active)
+{
+    lock_guard<mutex> lock(_ostreamMutex);
+    _logFileActive = active;
+}
+
+void Logger::setLogFile(const std::string &logFile)
+{
+    if (_logFile.is_open())
+        _logFile.close();
+
+    _logFile.open(logFile, std::ofstream::out | std::ofstream::app);
+    if (!_logFile.is_open())
+        throw std::runtime_error("Unable to open " + logFile);
 }

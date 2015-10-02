@@ -22,7 +22,7 @@ const static std::string version =
 const static std::string gitversion =
         DOORLOCK_GIT_BRANCH "-" DOORLOCK_GIT_COMMIT_HASH;
 
-const static Logger &l = Logger::get();
+static Logger &l = Logger::get();
 
 namespace po = boost::program_options;
 namespace ba = boost::asio;

@@ -62,7 +62,7 @@ private:
 
     void _doorCallback(Doormessage doormessage);
 
-    const Logger &_logger;
+    Logger &_logger;
 
     // The door
     Door _door;

@@ -9,7 +9,6 @@
 #include "../lib/logic.h"
 
 #include "config.h"
-#include "daemon.h"
 
 namespace po = boost::program_options;
 namespace ba = boost::asio;
@@ -24,7 +23,7 @@ const static std::string gitversion =
 // The receive buffer length of the TCP socket
 const int constexpr SOCKET_BUFFERLENGTH = 2048;
 
-const static Logger &l = Logger::get();
+static Logger &l = Logger::get();
 
 static std::unique_ptr<Logic> logic = nullptr;
 static ba::io_service io_service;
@@ -167,10 +166,6 @@ int main(int argc, char** argv)
     std::string serDev;
     unsigned int baudrate;
 
-    l((std::string)"Hello, this is " + version + " built on " + gitversion,
-      LogLevel::info);
-    l(LogLevel::notice, "Starting doorlockd");
-
     try {
         unsigned int timeout;
         po::options_description desc("doorlockd (" + version + " built on " + gitversion + ")");
@@ -209,26 +204,25 @@ int main(int argc, char** argv)
         {
             std::cout << desc << std::endl;
             retval = 0;
-            goto out;
+            exit(0);
         }
 
         po::notify(vm);
 
         tokenTimeout = std::chrono::seconds(timeout);
+
+        l.setLogFile(logfile);
+        l.logFile(true);
     }
     catch(const std::exception &e)
     {
         std::cerr << "Error: " << e.what() << "\n";
-        goto out;
+        exit(-1);
     }
 
-    daemonize("/",
-              "/dev/null",
-              logfile,
-              logfile);
-    // Resend version string after redirection stdout
     l((std::string)"Hello, this is " + version + " built on " + gitversion,
       LogLevel::info);
+    l(LogLevel::notice, "Starting doorlockd");
 
     signal(SIGINT, signal_handler);
     signal(SIGKILL, signal_handler);
@@ -237,6 +231,8 @@ int main(int argc, char** argv)
     signal(SIGUSR2, signal_handler);
 
     l(LogLevel::info, "Starting Doorlock Logic");
+
+    retval = 0;
     try {
         logic = std::unique_ptr<Logic>(new Logic(tokenTimeout,
                                                  ldapUri,
@@ -250,12 +246,8 @@ int main(int argc, char** argv)
     catch (...) {
         l(LogLevel::error, "Fatal error, shutting down");
         retval = -1;
-        goto out;
     }
 
-    retval = 0;
-
-out:
     if (logic) {
         l(LogLevel::info, "Stopping Doorlock Logic");
         logic.reset();

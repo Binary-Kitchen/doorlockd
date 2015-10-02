@@ -66,7 +66,7 @@ private:
 
     DoorCallback _doorCallback = { };
 
-    const Logger &_logger;
+    Logger &_logger;
 
     // Writed command to AVR board
     bool writeCMD(char c);

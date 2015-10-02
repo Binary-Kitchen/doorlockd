@@ -75,8 +75,6 @@ set(LIBDOORLOCK_SRCS
     lib/util.h)
 
 set(DOORLOCKD_SRCS
-    daemon/daemon.cpp
-    daemon/daemon.h
     daemon/doorlockd.cpp)
 
 set(DOORLOCK_CLIENT_SRCS

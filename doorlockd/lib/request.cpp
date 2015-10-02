@@ -23,7 +23,7 @@ Request::Command Request::_commandFromString(const std::string &command)
 Request Request::fromJson(const Json::Value &root)
 {
     Request retval;
-    const auto &l = Logger::get();
+    auto &l = Logger::get();
 
     try {
         const auto commandStr =
