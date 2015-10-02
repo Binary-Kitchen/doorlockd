@@ -111,12 +111,10 @@ ISR(INT1_vect)
 
 	uart_putc(DOOR_BUTTON_UNLOCK);
 
-	bolzen_off();
-	schnapper_on();
-
-	_delay_ms(3000);
-
-	schnapper_off();
+    if (state == LOCKED) {
+		bolzen_off();
+		_delay_ms(3000);
+	}
 
 out:
 	sei();
