@@ -55,7 +55,7 @@ static void onDoorlockUpdate(const Clientmessage &msg)
     l((std::string)"  emergency open: " + std::to_string(doormessage.isEmergencyUnlock),
       LogLevel::info);
     if (mainWindow) {
-        mainWindow->setQRCode(msg.token());
+        mainWindow->setClientmessage(msg);
     }
 }
 

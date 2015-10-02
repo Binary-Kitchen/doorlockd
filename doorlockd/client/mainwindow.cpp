@@ -13,7 +13,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::setQRCode(const std::string &token)
+void MainWindow::setClientmessage(const Clientmessage &msg)
 {
-    ui->qrwidget->setQRData(token);
+    ui->qrwidget->setQRData(msg.token());
+    ui->tokenLabel->setText(QString::fromStdString(msg.token()));
 }

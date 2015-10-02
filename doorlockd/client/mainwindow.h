@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QWidget>
+#include "../lib/clientmessage.h"
 
 namespace Ui {
 class MainWindow;
@@ -19,7 +20,7 @@ public:
 
     ~MainWindow();
 
-    void setQRCode(const std::string &token);
+    void setClientmessage(const Clientmessage &msg);
 
 private:
     Ui::MainWindow *ui;
