@@ -15,15 +15,6 @@
 #include "config.h"
 #include "logger.h"
 
-using std::map;
-using std::string;
-using std::mutex;
-using std::lock_guard;
-using std::move;
-
-using std::cerr;
-using std::endl;
-
 #ifdef USE_COLORIZED_LOGS
 #ifdef _WIN32 // If Windows, Use Windows Terminal coloring
 const static map<LogLevel, WORD> colorAttribute = {
@@ -35,7 +26,7 @@ const static map<LogLevel, WORD> colorAttribute = {
     {LogLevel::debug2,  FOREGROUND_BLUE | FOREGROUND_RED },
 };
 #else // Use ANSI Escape sequences
-const static map<LogLevel, string> prefix_ansicolor = {
+const static std::map<LogLevel, std::string> prefix_ansicolor = {
     {LogLevel::error,   "\x1b[1m\x1b[31m" },
     {LogLevel::warning, "\x1b[1m\x1b[33m" },
     {LogLevel::notice,  "\x1b[1m\x1b[34m" },
@@ -44,11 +35,11 @@ const static map<LogLevel, string> prefix_ansicolor = {
     {LogLevel::debug2,  "\x1b[1m\x1b[36m" },
 };
 
-const static string suffix_ansireset = "\x1b[0m";
+const static std::string suffix_ansireset = "\x1b[0m";
 #endif
 #endif
 
-const static map<LogLevel, string> logLevel = {
+const static std::map<LogLevel, std::string> logLevel = {
     {LogLevel::error,   "ERROR  " },
     {LogLevel::warning, "WARNING" },
     {LogLevel::notice,  "NOTICE " },
@@ -75,7 +66,8 @@ Logger &Logger::get()
     return l;
 }
 
-void Logger::operator ()(const std::string &message, const LogLevel level)
+void Logger::operator ()(const std::string &message,
+                         const LogLevel level)
 {
     if(level > _level)
     {
@@ -103,15 +95,17 @@ void Logger::operator ()(const std::string &message, const LogLevel level)
 
     // Critical section
     {
-        lock_guard<mutex> lock(_ostreamMutex);
+        std::lock_guard<std::mutex> lock(_ostreamMutex);
 
 #if defined(USE_COLORIZED_LOGS) && !defined(_WIN32)
         if (_consoleActive) {
-            cerr << prefix.str() << message << suffix_ansireset << endl;
-            cerr.flush();
+            std::cerr << prefix.str() << message
+                      << suffix_ansireset << std::endl;
+            std::cerr.flush();
         }
         if (_logFileActive && _logFile.is_open()) {
-            _logFile << prefix.str() << message << suffix_ansireset << endl;
+            _logFile << prefix.str() << message
+                     << suffix_ansireset << std::endl;
         }
 #elif defined(USE_COLORIZED_LOGS) && defined(_WIN32)
 
@@ -127,27 +121,27 @@ void Logger::operator ()(const std::string &message, const LogLevel level)
             // We need to flush the stream buffers into the console before each
             // SetConsoleTextAttribute call lest it affect the text that is already
             // printed but has not yet reached the console.
-            cerr.flush();
+            std::cerr.flush();
             SetConsoleTextAttribute(stdout_handle,
                                     colorAttribute.at(level) | FOREGROUND_INTENSITY);
 
-            cerr << prefix.str() << message << endl;
-            cerr.flush();
+            std::cerr << prefix.str() << message << std::endl;
+            std::cerr.flush();
 
             // Restores the text color.
             SetConsoleTextAttribute(stdout_handle, old_color_attrs);
         }
         if (_logFileActive && _logFile.is_open()) {
-            _logFile << prefix.str() << message << endl;
+            _logFile << prefix.str() << message << std::endl;
         }
 
 #else
         if (_consoleActive) {
-            cerr << prefix.str() << message << endl;
-            cerr.flush();
+            std::cerr << prefix.str() << message << std::endl;
+            std::cerr.flush();
         }
         if (_logFileActive && _logFile.is_open()) {
-            _logFile << prefix.str() << message << endl;
+            _logFile << prefix.str() << message << std::endl;
         }
 #endif
     }
@@ -186,7 +180,7 @@ void Logger::operator ()(const LogLevel level, const char* format, ...)
         vsnprintf(message, size, format, argp);
         va_end(argp);
 
-        (*this)(string(message), level);
+        (*this)(std::string(message), level);
 
         free(message);
     } else {
@@ -212,7 +206,7 @@ bool Logger::console() const
 
 void Logger::console(const bool active)
 {
-    lock_guard<mutex> lock(_ostreamMutex);
+    std::lock_guard<std::mutex> lock(_ostreamMutex);
     _consoleActive = active;
 }
 
@@ -223,7 +217,7 @@ bool Logger::logFile() const
 
 void Logger::logFile(const bool active)
 {
-    lock_guard<mutex> lock(_ostreamMutex);
+    std::lock_guard<std::mutex> lock(_ostreamMutex);
     _logFileActive = active;
 }
 
