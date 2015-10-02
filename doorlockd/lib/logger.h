@@ -26,8 +26,8 @@ enum class LogLevel : unsigned char
  * The logger class is a thread-safe class which is used for formatting and forwarding
  * log messages.
  */
-class Logger final {
-
+class Logger final
+{
 public:
     static Logger &get();
 

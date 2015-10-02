@@ -8,7 +8,6 @@
 
 class Clientmessage
 {
-
 public:
 
     Clientmessage(std::string token,
