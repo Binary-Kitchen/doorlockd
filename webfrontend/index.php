@@ -34,6 +34,7 @@
 	$showLoginForm = false;
 	$showSuccess = false;
 	$showFailure = false;
+	$showTokenForm = false;
 	$isApi = false;
 
 	$pIp = $_SERVER[ 'REMOTE_ADDR' ];
@@ -74,12 +75,12 @@
 
 	} else {
 		// This is done by apache mod_rewrite
-		$pToken = $_GET[ 'token' ];
-		$lToken = preg_replace( '/[^0-9a-fA-F]/i', "", $pToken );
+		$pToken = $_GET['token'];
+		$lToken = $str= ltrim ($pToken, '/');
 
-		if(strlen($lToken) != 16) {
-			$showFailure = true;
-			$failureMsg = "Please provide Token";
+		if(strlen($lToken) == 0) {
+			$showLoginForm = true;
+			$showTokenForm = true;
 		} else {
 			$showLoginForm = true;
 		}
@@ -127,17 +128,23 @@ if ($isApi == false) {
 		}
 	</style>
 
-	<?php if( $showLoginForm ): ?>
+	<?php if ($showLoginForm): ?>
 
 		<form name="login" method="post" action="/">
+			<?php if ($showTokenForm): ?>
+			<label for="token">Token</label>
+			<input type="text" name="token" value="">
+			<?php else: ?>
+			<input type="hidden" name="token" value="<?php echo $lToken;?>">
+			<?php endif; ?>
+
+			<input type="hidden" name="api" value="false">
+
 			<label for="user">User</label>
 			<input id="user" type="text" name="user">
 
 			<label for="pass">Pass</label>
 			<input id="pass" type="password" name="pass">
-
-			<input type="hidden" name="token" value="<?php echo $lToken;?>">
-			<input type="hidden" name="api" value="false">
 
 			<button name="command" value="unlock">Open</button>
 			<hr/>
