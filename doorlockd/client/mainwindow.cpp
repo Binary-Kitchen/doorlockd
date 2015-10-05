@@ -9,8 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    _greenLED(false);
-    _redLED(true);
+    _LED(false);
 }
 
 MainWindow::~MainWindow()
@@ -23,27 +22,13 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
     ui->qrwidget->setQRData(msg.token());
     ui->tokenLabel->setText(QString::fromStdString(msg.token()));
 
-    if (msg.isOpen()) {
-        _greenLED(true);
-        _redLED(false);
-    } else {
-        _greenLED(false);
-        _redLED(true);
-    }
+    _LED(msg.isOpen());
 }
 
-void MainWindow::_greenLED(const bool on)
+void MainWindow::_LED(const bool on)
 {
     if (on)
-        ui->greenLED->setPixmap(QPixmap(IMAGE_LOCATION "led-green-on.png"));
+        ui->LED->setPixmap(QPixmap(IMAGE_LOCATION "led-green.png"));
     else
-        ui->greenLED->setPixmap(QPixmap(IMAGE_LOCATION "led-green-off.png"));
-}
-
-void MainWindow::_redLED(const bool on)
-{
-    if (on)
-        ui->redLED->setPixmap(QPixmap(IMAGE_LOCATION "led-red-on.png"));
-    else
-        ui->redLED->setPixmap(QPixmap(IMAGE_LOCATION "led-red-off.png"));
+        ui->LED->setPixmap(QPixmap(IMAGE_LOCATION "led-red.png"));
 }
