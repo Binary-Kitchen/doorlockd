@@ -46,7 +46,7 @@ static void onDoorlockUpdate(const Clientmessage &msg)
     l("Received message", LogLevel::info);
     l((std::string)"  token: " + msg.token(),
       LogLevel::info);
-    l((std::string)"  open: " + std::to_string(doormessage.isOpen),
+    l((std::string)"  open: " + std::to_string(msg.isOpen()),
       LogLevel::info);
     l((std::string)"  button lock: " + std::to_string(doormessage.isLockButton),
       LogLevel::info);

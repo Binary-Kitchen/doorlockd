@@ -243,6 +243,7 @@ Clientmessage Logic::getClientMessage()
 {
     std::lock_guard<std::mutex> l(_mutex);
     Clientmessage retval(_webPrefix + _curToken,
+                         _door.state() == Door::State::Unlocked,
                          _doormessage);
 
     // Reset doormessage

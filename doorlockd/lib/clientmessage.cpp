@@ -9,8 +9,10 @@ const std::string Clientmessage::_emergencyUnlockKey = "emergencyUnlock";
 const std::string Clientmessage::_isOpenKey = "isOpen";
 
 Clientmessage::Clientmessage(std::string token,
+                             bool isOpen,
                              Doormessage doormessage) :
     _token(token),
+    _isOpen(isOpen),
     _doormessage(doormessage)
 {
 }
@@ -24,7 +26,7 @@ std::string Clientmessage::toJson() const
     message[_unlockButtonKey] = _doormessage.isUnlockButton;
     message[_lockButtonKey] = _doormessage.isLockButton;
     message[_emergencyUnlockKey] = _doormessage.isEmergencyUnlock;
-    message[_isOpenKey] = _doormessage.isOpen;
+    message[_isOpenKey] = _isOpen;
 
     return writer.write(message);
 }
@@ -42,6 +44,7 @@ const Doormessage& Clientmessage::doormessage() const
 Clientmessage Clientmessage::fromJson(const Json::Value &root)
 {
     std::string token;
+    bool isOpen;
     Doormessage doormessage;
 
     try {
@@ -49,13 +52,13 @@ Clientmessage Clientmessage::fromJson(const Json::Value &root)
         doormessage.isLockButton = getJsonOrFail<bool>(root, _lockButtonKey);
         doormessage.isUnlockButton = getJsonOrFail<bool>(root, _unlockButtonKey);
         doormessage.isEmergencyUnlock = getJsonOrFail<bool>(root, _emergencyUnlockKey);
-        doormessage.isOpen = getJsonOrFail<bool>(root, _isOpenKey);
+        isOpen = getJsonOrFail<bool>(root, _isOpenKey);
     }
     catch (const std::exception &ex) {
         throw Response(Response::Code::JsonError, ex.what());
     }
 
-    return Clientmessage(token, doormessage);
+    return Clientmessage(token, isOpen, doormessage);
 }
 
 Clientmessage Clientmessage::fromString(const std::string &string)
@@ -68,4 +71,9 @@ Clientmessage Clientmessage::fromString(const std::string &string)
                        "No valid JSON");
 
     return fromJson(root);
+}
+
+bool Clientmessage::isOpen() const
+{
+    return _isOpen;
 }

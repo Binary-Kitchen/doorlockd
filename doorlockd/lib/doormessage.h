@@ -3,7 +3,12 @@
 
 struct Doormessage
 {
-    bool isOpen = { false };
+    Doormessage(bool isUnlockButton,
+                bool isLockButton,
+                bool isEmergencyUnlock);
+
+    Doormessage();
+
     bool isUnlockButton = { false };
     bool isLockButton = { false };
     bool isEmergencyUnlock = { false };

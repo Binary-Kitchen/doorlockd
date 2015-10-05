@@ -55,9 +55,6 @@ void Door::_asyncRead()
     _port.async_read_some(
         boost::asio::buffer(&recvBuf, sizeof(recvBuf)),
         [this] (const boost::system::error_code &ec, size_t bytes_transferred) {
-            Doormessage m;
-            m.isOpen = _state == Door::State::Unlocked;
-
             if (ec) {
                 // Operation canceled occurs on system shutdown
                 // So we return without invoking an additional asyncRead()
@@ -78,8 +75,7 @@ void Door::_asyncRead()
                 // No further actions required
                 _logger(LogLevel::notice, "Someone pushed the unlock button");
                 if (_doorCallback) {
-                    m.isUnlockButton = true;
-                    _doorCallback(m);
+                    _doorCallback(Doormessage(true, false, false));
                 }
                 goto out;
             } else if (recvBuf == DOOR_BUTTON_LOCK) {
@@ -87,16 +83,14 @@ void Door::_asyncRead()
                 _logger(LogLevel::notice, "Locking...");
                 lock();
                 if (_doorCallback) {
-                    m.isLockButton = true;
-                    _doorCallback(m);
+                    _doorCallback(Doormessage(false, true, false));
                 }
                 goto out;
             } else if (recvBuf == DOOR_EMERGENCY_UNLOCK) {
                 _logger(LogLevel::warning, "Someone did an emergency unlock!");
                 system(EMERGENCY_UNLOCK_SCRIPT);
                 if (_doorCallback) {
-                    m.isEmergencyUnlock = true;
-                    _doorCallback(m);
+                    _doorCallback(Doormessage(false, false, true));
                 }
                 goto out;
             }

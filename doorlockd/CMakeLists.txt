@@ -62,6 +62,7 @@ set(LIBDOORLOCK_SRCS
     lib/clientmessage.h
     lib/door.cpp
     lib/door.h
+    lib/doormessage.cpp
     lib/doormessage.h
     lib/logger.cpp
     lib/logger.h

@@ -11,6 +11,7 @@ class Clientmessage
 public:
 
     Clientmessage(std::string token,
+                  bool isOpen,
                   Doormessage doormessage);
 
     static Clientmessage fromJson(const Json::Value &root);
@@ -18,12 +19,14 @@ public:
     std::string toJson() const;
 
     const std::string& token() const;
+    bool isOpen() const;
     const Doormessage& doormessage() const;
 
 private:
 
-    std::string _token;
-    Doormessage _doormessage;
+    const std::string _token;
+    const bool _isOpen;
+    const Doormessage _doormessage;
 
     static const std::string _tokenKey;
     const static std::string _unlockButtonKey;
