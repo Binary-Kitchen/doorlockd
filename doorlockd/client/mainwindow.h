@@ -24,6 +24,9 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    void _greenLED(const bool on);
+    void _redLED(const bool on);
 };
 
 #endif // MAINWINDOW_H
