@@ -98,10 +98,10 @@ target_include_directories(doorlock-client PRIVATE ${CMAKE_SOURCE_DIR})
 install(TARGETS doorlockd DESTINATION sbin/)
 install(TARGETS doorlock-client DESTINATION bin/)
 
-install(FILES img/template.png DESTINATION share/doorlockd/)
-install(DIRECTORY scripts/ DESTINATION share/doorlockd/
-    FILES_MATCHING PATTERN "scripts/doorlockd-*"
-    PERMISSIONS WORLD_EXECUTE WORLD_READ OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE OWNER_WRITE)
+install(DIRECTORY images/ DESTINATION share/doorlockd/images
+    FILES_MATCHING PATTERN "images/*.png"
+    PERMISSIONS WORLD_READ OWNER_READ GROUP_READ)
+
 install(FILES scripts/doorlockd.service DESTINATION /etc/systemd/system/)
 
 install(DIRECTORY scripts/ DESTINATION etc/doorlockd/
