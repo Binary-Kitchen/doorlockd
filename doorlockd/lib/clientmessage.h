@@ -13,6 +13,9 @@ public:
     Clientmessage(std::string token,
                   bool isOpen,
                   Doormessage doormessage);
+    Clientmessage();
+
+    Clientmessage &operator=(const Clientmessage& rhs);
 
     static Clientmessage fromJson(const Json::Value &root);
     static Clientmessage fromString(const std::string &json);
@@ -24,11 +27,11 @@ public:
 
 private:
 
-    const std::string _token;
-    const bool _isOpen;
-    const Doormessage _doormessage;
+    std::string _token;
+    bool _isOpen;
+    Doormessage _doormessage;
 
-    static const std::string _tokenKey;
+    const static std::string _tokenKey;
     const static std::string _unlockButtonKey;
     const static std::string _lockButtonKey;
     const static std::string _emergencyUnlockKey;

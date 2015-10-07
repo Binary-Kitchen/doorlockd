@@ -17,6 +17,27 @@ Clientmessage::Clientmessage(std::string token,
 {
 }
 
+Clientmessage::Clientmessage() :
+    _token(),
+    _isOpen(false),
+    _doormessage()
+{
+}
+
+Clientmessage &Clientmessage::operator=(const Clientmessage &rhs)
+{
+    // Protect against self assignement
+    if (this == &rhs) {
+        return *this;
+    }
+
+    this->_token = rhs._token;
+    this->_isOpen = rhs._isOpen;
+    this->_doormessage = rhs._doormessage;
+
+    return *this;
+}
+
 std::string Clientmessage::toJson() const
 {
     Json::StyledWriter writer;
