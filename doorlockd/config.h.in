@@ -27,7 +27,11 @@
 #define DEFAULT_SERIAL_BAUDRATE 9600UL
 
 #define SHARED_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/"
+
 #define IMAGE_LOCATION  SHARED_LOCATION "images/"
+#define IMAGE_LED_GREEN IMAGE_LOCATION "led-green.png"
+#define IMAGE_LED_RED   IMAGE_LOCATION "led-red.png"
+
 
 #define SOUNDS_LOCATION         SHARED_LOCATION "sounds/"
 #define SOUND_LOCK              SOUNDS_LOCATION "lock.wav"

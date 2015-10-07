@@ -57,7 +57,7 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
 void MainWindow::_LED(const bool on)
 {
     if (on)
-        ui->LED->setPixmap(QPixmap(IMAGE_LOCATION "led-green.png"));
+        ui->LED->setPixmap(QPixmap(IMAGE_LED_GREEN));
     else
-        ui->LED->setPixmap(QPixmap(IMAGE_LOCATION "led-red.png"));
+        ui->LED->setPixmap(QPixmap(IMAGE_LED_RED));
 }
