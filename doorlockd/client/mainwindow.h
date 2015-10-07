@@ -25,6 +25,8 @@ public:
 private:
     Ui::MainWindow *ui;
 
+    Clientmessage _oldMessage = { };
+
     void _LED(const bool on);
 };
 

@@ -103,6 +103,10 @@ install(DIRECTORY images/ DESTINATION share/doorlockd/images
     FILES_MATCHING PATTERN "images/*.png"
     PERMISSIONS WORLD_READ OWNER_READ GROUP_READ)
 
+install(DIRECTORY sounds/ DESTINATION share/doorlockd/sounds
+    FILES_MATCHING PATTERN "sounds/*.wav"
+    PERMISSIONS WORLD_READ OWNER_READ GROUP_READ)
+
 install(FILES scripts/doorlockd.service DESTINATION /etc/systemd/system/)
 
 install(DIRECTORY scripts/ DESTINATION etc/doorlockd/
