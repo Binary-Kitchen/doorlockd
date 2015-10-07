@@ -26,7 +26,8 @@
 #define DEFAULT_SERIAL_DEVICE "/dev/ttyAMA0"
 #define DEFAULT_SERIAL_BAUDRATE 9600UL
 
-#define IMAGE_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/images/"
+#define SHARED_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/"
+#define IMAGE_LOCATION  SHARED_LOCATION "images/"
 
 #define PRE_LOCK_SCRIPT "@CMAKE_INSTALL_PREFIX@/etc/doorlockd/pre_lock &"
 #define POST_LOCK_SCRIPT "@CMAKE_INSTALL_PREFIX@/etc/doorlockd/post_lock &"
