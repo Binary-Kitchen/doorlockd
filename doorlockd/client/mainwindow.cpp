@@ -31,8 +31,9 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
 
     _LED(msg.isOpen());
 
-    if (_oldMessage.isOpen() && !msg.isOpen()) {
-        // regular close
+    if (_oldMessage.isOpen()
+        && !msg.isOpen()
+        && !doormsg.isLockButton) {
         _soundLock.playAsync();
     } else if (!_oldMessage.isOpen() && msg.isOpen()) {
         // regular open
