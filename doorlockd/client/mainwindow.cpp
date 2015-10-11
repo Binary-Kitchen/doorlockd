@@ -26,6 +26,7 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
 {
     ui->qrwidget->setQRData(msg.token());
     ui->tokenLabel->setText(QString::fromStdString(msg.token()));
+    QString statusMessage("");
 
     const auto &doormsg = msg.doormessage();
 
@@ -34,9 +35,12 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
     if (_oldMessage.isOpen()
         && !msg.isOpen()
         && !doormsg.isLockButton) {
+        // regular close
+        statusMessage = "Bye bye. See you next time!";
         _soundLock.playAsync();
     } else if (!_oldMessage.isOpen() && msg.isOpen()) {
         // regular open
+        statusMessage = "Come in! Happy hacking!";
         _soundUnlock.playAsync();
     } else {
         // no change
@@ -44,15 +48,20 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
 
     if (doormsg.isEmergencyUnlock) {
         _soundEmergencyUnlock.playAsync();
+        statusMessage = "!! EMERGENCY UNLOCK !!";
     } else if (doormsg.isLockButton) {
         _soundLockButton.playAsync();
+        statusMessage = "!! LOCK BUTTON !!";
     } else if (doormsg.isUnlockButton) {
+        statusMessage = "!! UNLOCK BUTTON !!";
         if (msg.isOpen()) {
             _soundZonk.playAsync();
         } else {
             _soundUnlockButton.playAsync();
         }
     }
+
+    ui->message->setText(statusMessage);
 
     _oldMessage = msg;
 }
