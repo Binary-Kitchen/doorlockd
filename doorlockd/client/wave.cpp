@@ -1,6 +1,7 @@
 #include <cstring>
 #include <fstream>
 #include <stdexcept>
+#include <thread>
 
 #include <sndfile.h>
 
@@ -76,6 +77,7 @@ Wave Wave::fromFile(const std::string &filename)
 
 void Wave::play() const
 {
+    std::lock_guard<std::mutex> l(_playMutex);
     if (_device == nullptr) {
         return;
     }
@@ -83,4 +85,11 @@ void Wave::play() const
     ao_play(_device,
             (char*)&_data.front(),
             _data.size());
+}
+
+void Wave::playAsync() const
+{
+    std::thread([this] () {
+        play();
+    }).detach();
 }
