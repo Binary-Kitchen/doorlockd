@@ -2,7 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QWidget>
+
 #include "../lib/clientmessage.h"
+#include "wave.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,6 +28,13 @@ private:
     Ui::MainWindow *ui;
 
     Clientmessage _oldMessage = { };
+
+    const Wave _soundLock;
+    const Wave _soundUnlock;
+    const Wave _soundEmergencyUnlock;
+    const Wave _soundZonk;
+    const Wave _soundLockButton;
+    const Wave _soundUnlockButton;
 
     void _LED(const bool on);
 };

@@ -3,15 +3,17 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#define PLAY(file) \
-    system("play -q " file " &")
-
 MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    _soundLock(Wave::fromFile(SOUND_LOCK)),
+    _soundUnlock(Wave::fromFile(SOUND_UNLOCK)),
+    _soundEmergencyUnlock(Wave::fromFile(SOUND_EMERGENCY_UNLOCK)),
+    _soundZonk(Wave::fromFile(SOUND_ZONK)),
+    _soundLockButton(Wave::fromFile(SOUND_LOCK_BUTTON)),
+    _soundUnlockButton(Wave::fromFile(SOUND_UNLOCK_BUTTON))
 {
     ui->setupUi(this);
-
     _LED(false);
 }
 
@@ -31,23 +33,23 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
 
     if (_oldMessage.isOpen() && !msg.isOpen()) {
         // regular close
-        PLAY(SOUND_LOCK);
+        _soundLock.playAsync();
     } else if (!_oldMessage.isOpen() && msg.isOpen()) {
         // regular open
-        PLAY(SOUND_UNLOCK);
+        _soundUnlock.playAsync();
     } else {
         // no change
     }
 
     if (doormsg.isEmergencyUnlock) {
-        PLAY(SOUND_EMERGENCY_UNLOCK);
+        _soundEmergencyUnlock.playAsync();
     } else if (doormsg.isLockButton) {
-        PLAY(SOUND_LOCK_BUTTON);
+        _soundLockButton.playAsync();
     } else if (doormsg.isUnlockButton) {
         if (msg.isOpen()) {
-            PLAY(SOUND_ZONK);
+            _soundZonk.playAsync();
         } else {
-            PLAY(SOUND_UNLOCK_BUTTON);
+            _soundUnlockButton.playAsync();
         }
     }
 

@@ -3,6 +3,8 @@
 #include <string>
 #include <thread>
 
+#include <ao/ao.h>
+
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
@@ -164,8 +166,17 @@ int main(int argc, char** argv)
     app.setOrganizationName("Binary Kitchen");
     app.setApplicationName("doorlock-client");
 
-    mainWindow = std::unique_ptr<MainWindow>(new MainWindow);
-    mainWindow->showFullScreen();
+    ao_initialize();
+
+    try {
+        mainWindow = std::unique_ptr<MainWindow>(new MainWindow);
+        mainWindow->showFullScreen();
+    }
+    catch(const std::exception &e)
+    {
+        l(LogLevel::error, e.what());
+        exit(-1);
+    }
 
     // Start the TCP client as thread
     std::thread clientThread = std::thread([&] () {
@@ -198,6 +209,8 @@ int main(int argc, char** argv)
 
     if (mainWindow)
         mainWindow.reset();
+
+    ao_shutdown();
 
     l(LogLevel::notice, "Stopping doorlock-client");
     return 0;
