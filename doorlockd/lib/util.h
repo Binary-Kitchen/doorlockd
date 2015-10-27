@@ -9,11 +9,14 @@ template <typename T>
 T getJson(const Json::Value &root, const std::string &key);
 
 template <typename T>
-T getJsonOrFail(const Json::Value &root, const std::string &key)
+static T getJsonOrFail(const Json::Value &root, const std::string &key)
 {
-    const auto members = root.getMemberNames();
-    if (std::find(members.begin(), members.end(), key) == members.end())
+    if (root.isObject() == false)
     {
+        throw std::runtime_error("Invalid Json Object");
+    }
+
+    if (root.isMember(key) == false) {
         throw std::runtime_error("Json key \"" + key + "\" not existing");
     }
 
