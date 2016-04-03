@@ -23,6 +23,6 @@ static T getJsonOrFail(const Json::Value &root, const std::string &key)
     return getJson<T>(root, key);
 }
 
-std::string toHexString(uint64_t c);
+std::string randHexString(unsigned int len);
 
 #endif

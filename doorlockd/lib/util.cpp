@@ -55,27 +55,11 @@ static char nibble2hex(unsigned char input)
     return input - 0xA + 'A';
 }
 
-std::string toHexString(const uint64_t c)
+std::string randHexString(unsigned int len)
 {
     std::string retval;
-
-    retval  = nibble2hex((c>>60) & 0xF);
-    retval += nibble2hex((c>>56) & 0xF);
-    retval += nibble2hex((c>>52) & 0xF);
-    retval += nibble2hex((c>>48) & 0xF);
-    retval += nibble2hex((c>>44) & 0xF);
-    retval += nibble2hex((c>>40) & 0xF);
-    retval += nibble2hex((c>>36) & 0xF);
-    retval += nibble2hex((c>>32) & 0xF);
-    retval += nibble2hex((c>>28) & 0xF);
-    retval += nibble2hex((c>>24) & 0xF);
-    retval += nibble2hex((c>>20) & 0xF);
-    retval += nibble2hex((c>>16) & 0xF);
-    retval += nibble2hex((c>>12) & 0xF);
-    retval += nibble2hex((c>> 8) & 0xF);
-    retval += nibble2hex((c>> 4) & 0xF);
-    retval += nibble2hex((c    ) & 0xF);
-
+    while (len--)
+        retval += nibble2hex(rand() & 0xF);
     return retval;
 }
 

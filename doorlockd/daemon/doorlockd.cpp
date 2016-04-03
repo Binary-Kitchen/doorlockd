@@ -163,6 +163,7 @@ int main(int argc, char** argv)
     std::string bindDN;
     std::string lockPagePrefix;
     std::string logfile;
+    unsigned int tokenLength;
     std::string serDev;
     unsigned int baudrate;
 
@@ -187,6 +188,9 @@ int main(int argc, char** argv)
             ("web,w",
                 po::value<std::string>(&lockPagePrefix)->default_value(DEFAULT_WEB_PREFIX),
                 "Prefix of the webpage")
+            ("tokenLength,t",
+                po::value<unsigned int>(&tokenLength)->default_value(DEFAULT_TOKEN_LENGTH),
+                "Token length")
             ("logfile,l",
                 po::value<std::string>(&logfile)->default_value(DEFAULT_LOG_FILE),
                 "Log file")
@@ -238,6 +242,7 @@ int main(int argc, char** argv)
                                                  ldapUri,
                                                  bindDN,
                                                  lockPagePrefix,
+                                                 tokenLength,
                                                  serDev,
                                                  baudrate,
                                                  onClientMessage));

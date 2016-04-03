@@ -9,6 +9,7 @@ Logic::Logic(const std::chrono::seconds tokenTimeout,
              const std::string &ldapUri,
              const std::string &bindDN,
              const std::string &webPrefix,
+             const unsigned int tokenLength,
              const std::string &serDev,
              const unsigned int baudrate,
              std::condition_variable &onClientUpdate) :
@@ -18,7 +19,8 @@ Logic::Logic(const std::chrono::seconds tokenTimeout,
     _onClientUpdate(onClientUpdate),
     _ldapUri(ldapUri),
     _bindDN(bindDN),
-    _webPrefix(webPrefix)
+    _webPrefix(webPrefix),
+    _tokenLength(tokenLength)
 {
     srand(time(NULL));
     _createNewToken(false);
@@ -228,7 +230,7 @@ void Logic::_createNewToken(const bool stillValid)
     _prevToken = _curToken;
     _prevValid = stillValid;
 
-    _curToken = toHexString((((uint64_t)rand())<<32) | ((uint64_t)rand()));
+    _curToken = randHexString(_tokenLength);
 
     std::ostringstream message;
     message << "New token: " << _curToken

@@ -27,6 +27,7 @@ public:
           const std::string &ldapUri,
           const std::string &bindDN,
           const std::string &webPrefix,
+          const unsigned int tokenLength,
           const std::string &serDev,
           const unsigned int baudrate,
           std::condition_variable &onClientUpdate);
@@ -68,9 +69,9 @@ private:
     Door _door;
 
     // The current token
-    std::string _curToken = { "0000000000000000" };
+    std::string _curToken = {};
     // The previous token
-    std::string _prevToken = { "0000000000000000" };
+    std::string _prevToken = {};
     // Indicates whether the previous token is valid
     bool _prevValid = { false };
 
@@ -96,6 +97,8 @@ private:
     const std::string _bindDN;
     // Prefix of the website
     const std::string _webPrefix;
+    // Length of the token in bytes
+    const unsigned int _tokenLength;
 };
 
 #endif
