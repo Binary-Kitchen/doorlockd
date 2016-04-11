@@ -21,7 +21,7 @@
 #define DEFAULT_PORT 5555
 #define DEFAULT_WEB_PREFIX "https://lock.binary.kitchen/"
 #define DEFAULT_LDAP_URI "ldaps://ldap1.binary.kitchen/ ldaps://ldap2.binary.kitchen/ ldaps://ldapm.binary.kitchen/"
-#define DEFAULT_BINDDN "cn=%s,ou=Users,dc=binary-kitchen,dc=de"
+#define DEFAULT_BINDDN "cn=%s,ou=people,dc=binary-kitchen,dc=de"
 #define DEFAULT_LOG_FILE "/var/log/doorlockd.log"
 #define DEFAULT_SERIAL_DEVICE "/dev/ttyAMA0"
 #define DEFAULT_SERIAL_BAUDRATE 9600UL
