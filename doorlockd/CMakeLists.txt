@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(doorlockd)
 
 option(USE_COLORIZED_LOGS "Colorized logging" ON)
+option(DORLOCKD_CMAKE_DEBUG "Add some debug output" Off)
 
 set(DOORLOCK_VERSION_MAJOR 1)
 set(DOORLOCK_VERSION_MINOR 3)
@@ -13,7 +14,10 @@ set(DOORLOCK_VERSION "${DOORLOCK_VERSION_MAJOR}.${DOORLOCK_VERSION_MINOR}-${DOOR
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
-MESSAGE(STATUS "doorlockd version: ${DOORLOCK_VERSION}")
+if(DORLOCKD_CMAKE_DEBUG)
+    message(STATUS "[${CMAKE_CURRENT_LIST_DIR}:${CMAKE_CURRENT_LIST_LINE}] "
+            "doorlockd version: ${DOORLOCK_VERSION}")
+endif()
 
 # Get the current working branch
 execute_process(
@@ -24,6 +28,11 @@ execute_process(
 )
 set(GIT_BRANCH "\"${GIT_BRANCH}\"")
 
+if(DORLOCKD_CMAKE_DEBUG)
+    message(STATUS "[${CMAKE_CURRENT_LIST_DIR}:${CMAKE_CURRENT_LIST_LINE}] "
+            "git branch: ${GIT_BRANCH}")
+endif()
+
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
   COMMAND git log -1 --format=%h
@@ -32,6 +41,11 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 set(GIT_COMMIT_HASH "\"${GIT_COMMIT_HASH}\"")
+
+if(DORLOCKD_CMAKE_DEBUG)
+    message(STATUS "[${CMAKE_CURRENT_LIST_DIR}:${CMAKE_CURRENT_LIST_LINE}] "
+            "git commit hash: ${GIT_COMMIT_HASH}")
+endif()
 
 add_definitions(-std=c++11)
 
