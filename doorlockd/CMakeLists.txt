@@ -54,9 +54,6 @@ configure_file (
     "${PROJECT_BINARY_DIR}/config.h"
 )
 
-include_directories(${PROJECT_BINARY_DIR})
-include_directories(${Boost_INCLUDE_DIRS})
-
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Weffc++ -Wextra")
 set(CMAKE_CXX_FLAGS "-O2 -Wall -pedantic -Wextra -Weffc++")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Wextra")
@@ -65,13 +62,17 @@ set(CMAKE_C_FLAGS "-O2 -Wall -pedantic -Wextra")
 find_package(Boost 1.55.0 COMPONENTS program_options system REQUIRED)
 
 set(JSON_INCLUDE_DIR "/usr/include/jsoncpp" CACHE PATH "path to jsoncpp includes")
-include_directories(${JSON_INCLUDE_DIR})
 
 find_package (Threads)
 
 find_package(Qt5Widgets)
 
-set(LIBDOORLOCK_SRCS
+include_directories(
+        ${Boost_INCLUDE_DIRS}
+        ${PROJECT_BINARY_DIR}
+        ${JSON_INCLUDE_DIR})
+
+set(_LIBDOORLOCK_SRCS
     lib/clientmessage.cpp
     lib/clientmessage.h
     lib/door.cpp
@@ -89,10 +90,10 @@ set(LIBDOORLOCK_SRCS
     lib/util.cpp
     lib/util.h)
 
-set(DOORLOCKD_SRCS
+set(_DOORLOCKD_SRCS
     daemon/doorlockd.cpp)
 
-set(DOORLOCK_CLIENT_SRCS
+set(_DOORLOCK_CLIENT_SRCS
     client/qrwidget.cpp
     client/qrwidget.h
     client/doorlock-client.cpp
@@ -102,15 +103,20 @@ set(DOORLOCK_CLIENT_SRCS
     client/wave.h
     client/wave.cpp)
 
-add_library(doorlock STATIC ${LIBDOORLOCK_SRCS})
+add_library(doorlock STATIC ${_LIBDOORLOCK_SRCS})
 target_link_libraries(doorlock jsoncpp ldap ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable(doorlockd ${DOORLOCKD_SRCS})
+add_executable(doorlockd ${_DOORLOCKD_SRCS})
 target_link_libraries(doorlockd doorlock)
 
-add_executable(doorlock-client ${DOORLOCK_CLIENT_SRCS})
+add_executable(doorlock-client ${_DOORLOCK_CLIENT_SRCS})
 target_link_libraries(doorlock-client doorlock qrencode ao sndfile Qt5::Widgets)
 target_include_directories(doorlock-client PRIVATE ${CMAKE_SOURCE_DIR})
+
+mark_as_advanced(
+        _LIBDOORLOCK_SRCS
+        _DOORLOCKD_SRCS
+        _DOORLOCK_CLIENT_SRCS)
 
 install(TARGETS doorlockd DESTINATION sbin/)
 install(TARGETS doorlock-client DESTINATION bin/)
