@@ -1,23 +1,12 @@
 #ifndef WAVE_H
 #define WAVE_H
 
-#include <memory>
 #include <mutex>
 #include <string>
-#include <vector>
-
-#include <ao/ao.h>
 
 class Wave {
 public:
-
-    using Raw = std::vector<char>;
-
-    static Wave fromFile(const std::string &filename);
-    Wave(int bits,
-         int channels,
-         int rate,
-         Raw data);
+    Wave(const std::string &filename);
     Wave(const Wave &rhs);
     ~Wave();
 
@@ -27,13 +16,10 @@ public:
     void playAsync() const;
 
 private:
+    static std::mutex _playMutex;
 
-    mutable std::mutex _playMutex = { };
-
-    std::unique_ptr<ao_sample_format> _format;
-    ao_device* _device = { nullptr };
-
-    const Raw _data;
+    const std::string _filename;
+    const std::string _command;
 };
 
 #endif

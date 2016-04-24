@@ -6,12 +6,12 @@
 MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MainWindow),
-    _soundLock(Wave::fromFile(SOUND_LOCK)),
-    _soundUnlock(Wave::fromFile(SOUND_UNLOCK)),
-    _soundEmergencyUnlock(Wave::fromFile(SOUND_EMERGENCY_UNLOCK)),
-    _soundZonk(Wave::fromFile(SOUND_ZONK)),
-    _soundLockButton(Wave::fromFile(SOUND_LOCK_BUTTON)),
-    _soundUnlockButton(Wave::fromFile(SOUND_UNLOCK_BUTTON))
+    _soundLock(Wave(SOUND_LOCK)),
+    _soundUnlock(Wave(SOUND_UNLOCK)),
+    _soundEmergencyUnlock(Wave(SOUND_EMERGENCY_UNLOCK)),
+    _soundZonk(Wave(SOUND_ZONK)),
+    _soundLockButton(Wave(SOUND_LOCK_BUTTON)),
+    _soundUnlockButton(Wave(SOUND_UNLOCK_BUTTON))
 {
     ui->setupUi(this);
     _LED(false);

@@ -110,7 +110,7 @@ add_executable(doorlockd ${_DOORLOCKD_SRCS})
 target_link_libraries(doorlockd doorlock)
 
 add_executable(doorlock-client ${_DOORLOCK_CLIENT_SRCS})
-target_link_libraries(doorlock-client doorlock qrencode ao sndfile Qt5::Widgets)
+target_link_libraries(doorlock-client doorlock qrencode Qt5::Widgets)
 target_include_directories(doorlock-client PRIVATE ${CMAKE_SOURCE_DIR})
 
 mark_as_advanced(
