@@ -1,3 +1,5 @@
 #!/bin/bash
 
-wget -O /dev/null --timeout 3 "http://homer.binary.kitchen/set?color=000000" > /dev/null 2>&1
+# Send command twice
+mosquitto_pub -h sushi.binary.kitchen -t kitchen/shutdown -m ""
+mosquitto_pub -h sushi.binary.kitchen -t kitchen/shutdown -m ""
