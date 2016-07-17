@@ -8,17 +8,31 @@ const std::string Clientmessage::_lockButtonKey = "lockButton";
 const std::string Clientmessage::_emergencyUnlockKey = "emergencyUnlock";
 const std::string Clientmessage::_isOpenKey = "isOpen";
 
+const std::regex Clientmessage::_token_regex(".*/([0-9a-fA-F]+)");
+
 Clientmessage::Clientmessage(std::string web_address,
                              bool isOpen,
                              Doormessage doormessage) :
     _web_address(web_address),
+    _token(),
     _isOpen(isOpen),
     _doormessage(doormessage)
 {
+    std::smatch match;
+    if (std::regex_match(_web_address, match, _token_regex)) {
+        if (match.size() == 2) {
+            _token = match[1].str();
+        } else {
+            _token = "ERROR";
+        }
+    } else {
+        _token = "ERROR";
+    }
 }
 
 Clientmessage::Clientmessage() :
     _web_address(),
+    _token(),
     _isOpen(false),
     _doormessage()
 {
@@ -32,6 +46,7 @@ Clientmessage &Clientmessage::operator=(const Clientmessage &rhs)
     }
 
     this->_web_address = rhs._web_address;
+    this->_token = rhs._token;
     this->_isOpen = rhs._isOpen;
     this->_doormessage = rhs._doormessage;
 
@@ -50,6 +65,11 @@ std::string Clientmessage::toJson() const
     message[_isOpenKey] = _isOpen;
 
     return writer.write(message);
+}
+
+const std::string& Clientmessage::token() const
+{
+    return _token;
 }
 
 const std::string& Clientmessage::web_address() const

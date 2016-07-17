@@ -1,6 +1,7 @@
 #ifndef CLIENTMESSAGE_H
 #define CLIENTMESSAGE_H
 
+#include <regex>
 #include <string>
 #include <json/json.h>
 
@@ -22,12 +23,14 @@ public:
     std::string toJson() const;
 
     const std::string& web_address() const;
+    const std::string& token() const;
     bool isOpen() const;
     const Doormessage& doormessage() const;
 
 private:
 
     std::string _web_address;
+    std::string _token;
     bool _isOpen;
     Doormessage _doormessage;
 
@@ -36,6 +39,8 @@ private:
     const static std::string _lockButtonKey;
     const static std::string _emergencyUnlockKey;
     const static std::string _isOpenKey;
+
+    const static std::regex _token_regex;
 };
 
 #endif
