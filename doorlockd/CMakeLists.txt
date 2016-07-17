@@ -54,10 +54,10 @@ configure_file (
     "${PROJECT_BINARY_DIR}/config.h"
 )
 
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Weffc++ -Wextra")
-set(CMAKE_CXX_FLAGS "-O2 -Wall -pedantic -Wextra -Weffc++")
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Wextra")
-set(CMAKE_C_FLAGS "-O2 -Wall -pedantic -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Weffc++ -Wextra -Wno-unused-result")
+set(CMAKE_CXX_FLAGS "-O2 -Wall -pedantic -Wextra -Weffc++ -Wno-unused-result")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Wextra -Wno-unused-result")
+set(CMAKE_C_FLAGS "-O2 -Wall -pedantic -Wextra -Wno-unused-result")
 
 find_package(Boost 1.55.0 COMPONENTS program_options system REQUIRED)
 
