@@ -248,6 +248,14 @@ int main(int argc, char** argv)
                                                  onClientMessage));
         server(port);
     }
+    catch (const boost::system::system_error &ex) {
+        l(LogLevel::error, "Fatal error: %s", ex.what());
+        retval = -1;
+    }
+    catch (const std::exception &ex) {
+        l(LogLevel::error, "Fatal error: %s", ex.what());
+        retval = -1;
+    }
     catch (...) {
         l(LogLevel::error, "Fatal error, shutting down");
         retval = -1;
