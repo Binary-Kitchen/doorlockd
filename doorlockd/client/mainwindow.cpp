@@ -26,6 +26,7 @@ void MainWindow::setClientmessage(const Clientmessage &msg)
 {
     ui->qrwidget->setQRData(msg.web_address());
     ui->address->setText(QString::fromStdString(msg.web_address()));
+    ui->token->setText(QString::fromStdString(msg.token()));
     QString statusMessage("");
 
     const auto &doormsg = msg.doormessage();
