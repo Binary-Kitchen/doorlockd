@@ -44,7 +44,7 @@ static void onDoorlockUpdate(const Clientmessage &msg)
 {
     const auto& doormessage = msg.doormessage();
     l("Received message", LogLevel::info);
-    l((std::string)"  token: " + msg.token(),
+    l((std::string)"  token: " + msg.web_address(),
       LogLevel::info);
     l((std::string)"  open: " + std::to_string(msg.isOpen()),
       LogLevel::info);

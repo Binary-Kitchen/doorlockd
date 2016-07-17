@@ -10,7 +10,7 @@ class Clientmessage
 {
 public:
 
-    Clientmessage(std::string token,
+    Clientmessage(std::string web_address,
                   bool isOpen,
                   Doormessage doormessage);
     Clientmessage();
@@ -21,13 +21,13 @@ public:
     static Clientmessage fromString(const std::string &json);
     std::string toJson() const;
 
-    const std::string& token() const;
+    const std::string& web_address() const;
     bool isOpen() const;
     const Doormessage& doormessage() const;
 
 private:
 
-    std::string _token;
+    std::string _web_address;
     bool _isOpen;
     Doormessage _doormessage;
 

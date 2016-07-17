@@ -8,17 +8,17 @@ const std::string Clientmessage::_lockButtonKey = "lockButton";
 const std::string Clientmessage::_emergencyUnlockKey = "emergencyUnlock";
 const std::string Clientmessage::_isOpenKey = "isOpen";
 
-Clientmessage::Clientmessage(std::string token,
+Clientmessage::Clientmessage(std::string web_address,
                              bool isOpen,
                              Doormessage doormessage) :
-    _token(token),
+    _web_address(web_address),
     _isOpen(isOpen),
     _doormessage(doormessage)
 {
 }
 
 Clientmessage::Clientmessage() :
-    _token(),
+    _web_address(),
     _isOpen(false),
     _doormessage()
 {
@@ -31,7 +31,7 @@ Clientmessage &Clientmessage::operator=(const Clientmessage &rhs)
         return *this;
     }
 
-    this->_token = rhs._token;
+    this->_web_address = rhs._web_address;
     this->_isOpen = rhs._isOpen;
     this->_doormessage = rhs._doormessage;
 
@@ -43,7 +43,7 @@ std::string Clientmessage::toJson() const
     Json::StyledWriter writer;
     Json::Value message;
 
-    message[_tokenKey] = _token;
+    message[_tokenKey] = _web_address;
     message[_unlockButtonKey] = _doormessage.isUnlockButton;
     message[_lockButtonKey] = _doormessage.isLockButton;
     message[_emergencyUnlockKey] = _doormessage.isEmergencyUnlock;
@@ -52,9 +52,9 @@ std::string Clientmessage::toJson() const
     return writer.write(message);
 }
 
-const std::string& Clientmessage::token() const
+const std::string& Clientmessage::web_address() const
 {
-    return _token;
+    return _web_address;
 }
 
 const Doormessage& Clientmessage::doormessage() const
