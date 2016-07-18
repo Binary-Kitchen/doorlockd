@@ -2,3 +2,9 @@
 
 # Set blue moodlights
 mosquitto_pub -h sushi.binary.kitchen -t "kitchen/moodlights/set/a" -m "#0000ff"
+mosquitto_pub -h sushi.binary.kitchen -t "kitchen/moodlights/set/a" -m "#0000ff"
+
+# Wakeup cashdesk
+wol -i 172.23.2.44 00:0b:ca:94:10:ca
+wol -i 172.23.2.44 00:0b:ca:94:10:ca
+wol -i 172.23.2.44 00:0b:ca:94:10:ca
