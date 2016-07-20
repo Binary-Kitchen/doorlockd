@@ -59,7 +59,7 @@ set(CMAKE_CXX_FLAGS "-O2 -Wall -pedantic -Wextra -Weffc++ -Wno-unused-result")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -Wall -pedantic -Wextra -Wno-unused-result")
 set(CMAKE_C_FLAGS "-O2 -Wall -pedantic -Wextra -Wno-unused-result")
 
-find_package(Boost 1.55.0 COMPONENTS program_options system REQUIRED)
+find_package(Boost 1.55.0 COMPONENTS filesystem program_options system REQUIRED)
 
 set(JSON_INCLUDE_DIR "/usr/include/jsoncpp" CACHE PATH "path to jsoncpp includes")
 

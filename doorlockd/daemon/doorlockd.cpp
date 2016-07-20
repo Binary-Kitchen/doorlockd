@@ -1,6 +1,7 @@
 #include <csignal>
 #include <iostream>
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/asio.hpp>
 
@@ -12,6 +13,7 @@
 
 namespace po = boost::program_options;
 namespace ba = boost::asio;
+namespace fs = boost::filesystem;
 using ba::ip::tcp;
 
 // Info about doorlockd version
@@ -162,6 +164,7 @@ int main(int argc, char** argv)
     std::string ldapUri;
     std::string bindDN;
     std::string lockPagePrefix;
+    fs::path logdir;
     std::string logfile;
     unsigned int tokenLength;
     std::string serDev;
@@ -191,8 +194,8 @@ int main(int argc, char** argv)
             ("tokenLength,t",
                 po::value<unsigned int>(&tokenLength)->default_value(DEFAULT_TOKEN_LENGTH),
                 "Token length")
-            ("logfile,l",
-                po::value<std::string>(&logfile)->default_value(DEFAULT_LOG_FILE),
+            ("logdir,l",
+                po::value<fs::path>(&logdir)->default_value(DEFAULT_LOG_DIR),
                 "Log file")
             ("serial,i",
                 po::value<std::string>(&serDev)->default_value(DEFAULT_SERIAL_DEVICE),
@@ -214,6 +217,8 @@ int main(int argc, char** argv)
         po::notify(vm);
 
         tokenTimeout = std::chrono::seconds(timeout);
+
+        logfile = (logdir / LOG_FILENAME).string();
 
         l.setLogFile(logfile);
         l.logFile(true);
