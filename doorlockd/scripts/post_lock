@@ -3,3 +3,6 @@
 # Send command twice
 mosquitto_pub -h sushi.binary.kitchen -t kitchen/shutdown -m ""
 mosquitto_pub -h sushi.binary.kitchen -t kitchen/shutdown -m ""
+
+# Send lock to Christians Node Red for Twitter sink
+mosquitto_pub -h sushi.binary.kitchen -t kitchen/frontdoor/status -m "locked"
