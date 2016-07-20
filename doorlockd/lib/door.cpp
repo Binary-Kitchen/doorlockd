@@ -88,7 +88,7 @@ void Door::_asyncRead()
                 goto out;
             } else if (recvBuf == DOOR_EMERGENCY_UNLOCK) {
                 _logger(LogLevel::warning, "Someone did an emergency unlock!");
-                system(EMERGENCY_UNLOCK_SCRIPT);
+                _exec_and_log(EMERGENCY_UNLOCK_SCRIPT);
                 if (_doorCallback) {
                     _doorCallback(Doormessage(false, false, true));
                 }
@@ -114,7 +114,7 @@ void Door::lock()
 
 
     _logger(LogLevel::notice, "Executing Pre Lock Script");
-    system(PRE_LOCK_SCRIPT);
+    _exec_and_log(PRE_LOCK_SCRIPT);
 
     if (_state == State::Locked) {
         _stateMutex.unlock();
@@ -131,7 +131,7 @@ void Door::lock()
 
 out:
     _logger(LogLevel::notice, "Executing Post Lock Script");
-    system(POST_LOCK_SCRIPT);
+    _exec_and_log(POST_LOCK_SCRIPT);
 }
 
 void Door::unlock()
@@ -140,7 +140,7 @@ void Door::unlock()
     _schnapper = true;
 
     _logger(LogLevel::notice, "Executing Pre Unlock Script");
-    system(PRE_UNLOCK_SCRIPT);
+    _exec_and_log(PRE_UNLOCK_SCRIPT);
 
     if(_state == State::Unlocked) {
         _stateMutex.unlock();
@@ -173,7 +173,7 @@ void Door::unlock()
 
     out:
     _logger(LogLevel::notice, "Executing Post Unlock Script");
-    system(POST_UNLOCK_SCRIPT);
+    _exec_and_log(POST_UNLOCK_SCRIPT);
 }
 
 bool Door::_writeCMD(char c)
@@ -197,4 +197,10 @@ bool Door::_writeCMD(char c)
 void Door::setDoorCallback(DoorCallback doorCallback)
 {
     _doorCallback = doorCallback;
+}
+
+void Door::_exec_and_log(const std::string &filename)
+{
+    const std::string cmd = filename + " &";
+    ::system(cmd.c_str());
 }

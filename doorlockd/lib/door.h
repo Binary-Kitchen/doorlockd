@@ -72,6 +72,8 @@ private:
     bool _writeCMD(char c);
     // Receives one byte and returns true or returns false on timeout
     bool _readByte(char &byte, Milliseconds timeout);
+
+    void _exec_and_log(const std::string &filename);
 };
 
 #endif
