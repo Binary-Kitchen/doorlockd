@@ -30,6 +30,7 @@ public:
           const unsigned int tokenLength,
           const std::string &serDev,
           const unsigned int baudrate,
+          const std::string &logfile_scripts,
           std::condition_variable &onClientUpdate);
     ~Logic();
 

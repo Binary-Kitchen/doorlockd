@@ -28,6 +28,7 @@
 #define DEFAULT_SERIAL_BAUDRATE 9600UL
 
 #define LOG_FILENAME "doorlockd.log"
+#define LOG_SCRIPTS_FILENAME "doorlockd-scripts.log"
 
 #define SHARED_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/"
 

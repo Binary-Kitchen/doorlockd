@@ -20,10 +20,9 @@ public:
     using DoorCallback = std::function<void(Doormessage)>;
     enum class State {Unlocked, Locked};
 
-
-
     Door(const std::string &serDev,
-         unsigned int baudrate);
+         unsigned int baudrate,
+         const std::string &logfile_scripts);
     ~Door();
 
     State state() const;
@@ -43,6 +42,8 @@ private:
 
     boost::asio::io_service _ioService = { };
     boost::asio::serial_port _port;
+
+    const std::string _logfile_scripts;
 
     std::mutex _stateMutex = { };
     volatile State _state = { State::Locked };

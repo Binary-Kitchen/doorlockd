@@ -166,6 +166,7 @@ int main(int argc, char** argv)
     std::string lockPagePrefix;
     fs::path logdir;
     std::string logfile;
+    std::string logfile_scripts;
     unsigned int tokenLength;
     std::string serDev;
     unsigned int baudrate;
@@ -219,6 +220,7 @@ int main(int argc, char** argv)
         tokenTimeout = std::chrono::seconds(timeout);
 
         logfile = (logdir / LOG_FILENAME).string();
+        logfile_scripts = (logdir / LOG_SCRIPTS_FILENAME).string();
 
         l.setLogFile(logfile);
         l.logFile(true);
@@ -250,6 +252,7 @@ int main(int argc, char** argv)
                                                  tokenLength,
                                                  serDev,
                                                  baudrate,
+                                                 logfile_scripts,
                                                  onClientMessage));
         server(port);
     }

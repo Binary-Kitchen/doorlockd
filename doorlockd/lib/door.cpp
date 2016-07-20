@@ -4,9 +4,11 @@
 #include "../../doorcmds.h"
 
 Door::Door(const std::string &serDev,
-           unsigned int baudrate) :
+           unsigned int baudrate,
+           const std::string &logfile_scripts) :
     _baudrate(baudrate),
     _port(_ioService, serDev),
+    _logfile_scripts(logfile_scripts),
     _logger(Logger::get())
 {
     // Configure serial port
