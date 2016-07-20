@@ -203,6 +203,6 @@ void Door::setDoorCallback(DoorCallback doorCallback)
 
 void Door::_exec_and_log(const std::string &filename)
 {
-    const std::string cmd = filename + " &";
+    const std::string cmd = "nohup " + filename + " &>> " + _logfile_scripts;
     ::system(cmd.c_str());
 }
