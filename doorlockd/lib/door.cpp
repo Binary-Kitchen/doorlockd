@@ -38,7 +38,7 @@ Door::~Door()
     _ioThread.join();
 }
 
-bool Door::readByte(char &byte, std::chrono::milliseconds timeout)
+bool Door::_readByte(char &byte, std::chrono::milliseconds timeout)
 {
     std::unique_lock<std::mutex> lock(_receiveLock);
     _receivedCondition.wait_for(lock, timeout);
@@ -156,17 +156,17 @@ void Door::unlock()
 
         while (_state == State::Unlocked) {
             if (_state == State::Unlocked) {
-                writeCMD(DOOR_CMD_UNLOCK);
+                _writeCMD(DOOR_CMD_UNLOCK);
 
                 if (_schnapper) {
                     _schnapper = false;
-                    writeCMD(DOOR_CMD_SCHNAPER);
+                    _writeCMD(DOOR_CMD_SCHNAPER);
                 }
             }
 
             _heartbeatCondition.wait_for(lock, Milliseconds(400));
         }
-        writeCMD(DOOR_CMD_LOCK);
+        _writeCMD(DOOR_CMD_LOCK);
     });
 
     _logger(LogLevel::notice, "Door opened");
@@ -176,13 +176,13 @@ void Door::unlock()
     system(POST_UNLOCK_SCRIPT);
 }
 
-bool Door::writeCMD(char c)
+bool Door::_writeCMD(char c)
 {
     std::lock_guard<std::mutex> l(_serialMutex);
 
     _port.write_some(boost::asio::buffer(&c, sizeof(c)));
     char response;
-    if (readByte(response, Milliseconds(100)))
+    if (_readByte(response, Milliseconds(100)))
     {
         if (c != response) {
             _logger(LogLevel::error, "Sent command '%c' but got response '%c'", c, response);

@@ -69,9 +69,9 @@ private:
     Logger &_logger;
 
     // Writed command to AVR board
-    bool writeCMD(char c);
+    bool _writeCMD(char c);
     // Receives one byte and returns true or returns false on timeout
-    bool readByte(char &byte, Milliseconds timeout);
+    bool _readByte(char &byte, Milliseconds timeout);
 };
 
 #endif
