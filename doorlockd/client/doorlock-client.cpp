@@ -36,7 +36,7 @@ const static std::string subscriptionCommand =
 // The receive buffer length of the TCP socket
 constexpr static int SOCKET_BUFFERLENGTH = 2048;
 
-static volatile bool run = true;
+static volatile bool app_run = true;
 
 static std::unique_ptr<MainWindow> mainWindow = nullptr;
 
@@ -181,9 +181,9 @@ int main(int argc, char** argv)
     std::thread clientThread = std::thread([&] () {
         // If the TCP client returns, an error has occured
         // In normal operation, it never returns
-        while (run) {
+        while (app_run) {
             doorlock_client(hostname, port);
-            if (run) {
+            if (app_run) {
                 l(LogLevel::error, "client aborted, retrying in 5 seconds");
                 // Todo: Write message to QT frontend
 
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
     // This routine will never return in normal operation
     app.exec();
 
-    run = false;
+    app_run = false;
 
     // Stop the IO service
     io_service.stop();
