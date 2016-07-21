@@ -3,17 +3,11 @@
 #include <string>
 #include <thread>
 
-#include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
 #include <QApplication>
 
 #include "config.h"
-
-#include "../lib/clientmessage.h"
-#include "../lib/logger.h"
-#include "../lib/response.h"
-
 #include "mainwindow.h"
 
 // Info about doorlock-client version
@@ -22,117 +16,25 @@ const static std::string version =
 const static std::string gitversion =
         DOORLOCK_GIT_BRANCH "-" DOORLOCK_GIT_COMMIT_HASH;
 
-static Logger &l = Logger::get();
-
 namespace po = boost::program_options;
-namespace ba = boost::asio;
-using ba::ip::tcp;
-
-static ba::io_service io_service;
-
-const static std::string subscriptionCommand =
-        "{ \"command\": \"subscribe\"}";
-
-// The receive buffer length of the TCP socket
-constexpr static int SOCKET_BUFFERLENGTH = 2048;
-
-static volatile bool app_run = true;
-
-static std::unique_ptr<MainWindow> mainWindow = nullptr;
-
-static void onDoorlockUpdate(const Clientmessage &msg)
-{
-    const auto& doormessage = msg.doormessage();
-    l("Received message", LogLevel::info);
-    l((std::string)"  token: " + msg.web_address(),
-      LogLevel::info);
-    l((std::string)"  open: " + std::to_string(msg.isOpen()),
-      LogLevel::info);
-    l((std::string)"  button lock: " + std::to_string(doormessage.isLockButton),
-      LogLevel::info);
-    l((std::string)"  button unlock: " + std::to_string(doormessage.isUnlockButton),
-      LogLevel::info);
-    l((std::string)"  emergency open: " + std::to_string(doormessage.isEmergencyUnlock),
-      LogLevel::info);
-    if (mainWindow) {
-        mainWindow->setClientmessage(msg);
-        l(LogLevel::info, "Clientmessage successfully set");
-    } else {
-        l(LogLevel::error, "No valid UI object!");
-    }
-}
-
-static int doorlock_client(const std::string &hostname,
-                           const unsigned short port)
-{
-    int retval = 0;
-
-    try {
-        tcp::resolver resolver(io_service);
-        tcp::socket socket(io_service);
-        tcp::resolver::query query(hostname, std::to_string(port));
-        tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
-        tcp::resolver::iterator end;
-        boost::system::error_code error = ba::error::host_not_found;
-        std::vector<char> data;
-
-        while (error && endpoint_iterator != end) {
-            socket.close();
-            socket.connect(*endpoint_iterator++, error);
-        }
-        if (error)
-            throw boost::system::system_error(error);
-
-        // After connection is established, send the subscription command
-        socket.write_some(ba::buffer(subscriptionCommand), error);
-        if (error)
-            throw boost::system::system_error(error);
-
-        data.resize(SOCKET_BUFFERLENGTH);
-
-        std::function<void(void)> receiveMessage = [&] () {
-            socket.async_read_some(ba::buffer(data),
-                                   [&] (const boost::system::error_code &ec,
-                                        const size_t length)
-            {
-                if (ec) {
-                    throw boost::system::system_error(ec);
-                }
-
-                const auto message = Clientmessage::fromString(
-                            std::string(data.begin(), data.begin()+length));
-                onDoorlockUpdate(message);
-
-                receiveMessage();
-            });
-        };
-
-        receiveMessage();
-        io_service.run();
-    }
-    catch(const Response &err) {
-        l(err.message, LogLevel::error);
-        retval = -1;
-    }
-    catch(const std::exception &err) {
-        l(LogLevel::error, err.what());
-        retval = -1;
-    }
-
-    io_service.reset();
-
-    return retval;
-}
 
 int main(int argc, char** argv)
 {
-    std::string hostname;
-    unsigned short port;
-
+    int retval = 0;
+    Logger &l = Logger::get();
     l((std::string)"Hello, this is " + version + " built on " + gitversion,
       LogLevel::info);
 
     try {
+        QApplication app(argc, argv);
+        std::string hostname;
+        unsigned short port;
+        po::variables_map vm;
+
+        qRegisterMetaType<Clientmessage>("Clientmessage");
+        app.setOrganizationName("Binary Kitchen");
+        app.setApplicationName("doorlock-client");
+
         po::options_description desc("doorlockd (" + version + " built on " + gitversion + ")");
         desc.add_options()
             ("help,h",
@@ -144,7 +46,6 @@ int main(int argc, char** argv)
                 po::value<std::string>(&hostname)->default_value("localhost"),
                 "IP or name of host running doorlockd");
 
-        po::variables_map vm;
         po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 
         if (vm.count("help"))
@@ -154,60 +55,23 @@ int main(int argc, char** argv)
         }
 
         po::notify(vm);
+        l(LogLevel::notice, "Starting doorlock-client");
+
+        // Start main GUI
+        MainWindow mainWindow(hostname, port);
+
+        // This routine will never return under normal conditions
+        retval = app.exec();
+
+        mainWindow.hide();
+        mainWindow.close();
     }
     catch(const std::exception &e)
     {
         l(LogLevel::error, e.what());
-        exit(-1);
+        retval = -1;
     }
-
-    l(LogLevel::notice, "Starting doorlock-client");
-
-    QApplication app(argc, argv);
-    app.setOrganizationName("Binary Kitchen");
-    app.setApplicationName("doorlock-client");
-
-    try {
-        mainWindow = std::unique_ptr<MainWindow>(new MainWindow);
-        mainWindow->showFullScreen();
-    }
-    catch(const std::exception &e)
-    {
-        l(LogLevel::error, e.what());
-        exit(-1);
-    }
-
-    // Start the TCP client as thread
-    std::thread clientThread = std::thread([&] () {
-        // If the TCP client returns, an error has occured
-        // In normal operation, it never returns
-        while (app_run) {
-            doorlock_client(hostname, port);
-            if (app_run) {
-                l(LogLevel::error, "client aborted, retrying in 5 seconds");
-                // Todo: Write message to QT frontend
-
-                sleep(5);
-            }
-        }
-
-        mainWindow->hide();
-        mainWindow->close();
-    });
-
-    // This routine will never return in normal operation
-    app.exec();
-
-    app_run = false;
-
-    // Stop the IO service
-    io_service.stop();
-
-    clientThread.join();
-
-    if (mainWindow)
-        mainWindow.reset();
 
     l(LogLevel::notice, "Stopping doorlock-client");
-    return 0;
+    return retval;
 }

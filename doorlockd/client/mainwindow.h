@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "../lib/clientmessage.h"
+#include "../lib/logger.h"
 #include "wave.h"
 
 namespace Ui {
@@ -15,13 +16,16 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(const std::string &hostname,
+                        const unsigned short port,
+                        QWidget *parent = 0);
 
     MainWindow(const MainWindow &rhs);
     MainWindow &operator =(const MainWindow &rhs);
 
     ~MainWindow();
 
+public slots:
     void setClientmessage(const Clientmessage &msg);
 
 private:

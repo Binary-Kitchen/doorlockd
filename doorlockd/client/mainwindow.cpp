@@ -2,8 +2,11 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "network.h"
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(const std::string &hostname,
+                       const unsigned short port,
+                       QWidget* parent) :
     QWidget(parent),
     ui(new Ui::MainWindow),
     _soundLock(Wave(SOUND_LOCK)),
@@ -15,6 +18,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     _LED(false);
+    NetworkThread* nw = new NetworkThread(hostname, port);
+    connect(nw, SIGNAL(new_clientmessage(Clientmessage)),
+                SLOT(setClientmessage(Clientmessage)));
+    connect(nw, SIGNAL(finished()),
+            nw, SLOT(deleteLater()));
+    nw->start();
 }
 
 MainWindow::~MainWindow()

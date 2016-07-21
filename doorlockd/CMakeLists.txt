@@ -100,6 +100,8 @@ set(_DOORLOCK_CLIENT_SRCS
     client/mainwindow.h
     client/mainwindow.cpp
     client/mainwindow.ui
+    client/network.cpp
+    client/network.h
     client/wave.h
     client/wave.cpp)
 
