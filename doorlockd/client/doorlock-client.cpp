@@ -190,7 +190,6 @@ int main(int argc, char** argv)
             }
         }
 
-        // This will stop the Qapplication
         mainWindow->hide();
         mainWindow->close();
     });
