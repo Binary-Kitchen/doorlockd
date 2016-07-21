@@ -56,6 +56,8 @@ static void onDoorlockUpdate(const Clientmessage &msg)
       LogLevel::info);
     if (mainWindow) {
         mainWindow->setClientmessage(msg);
+    } else {
+        l(LogLevel::error, "No valid UI object!");
     }
 }
 
