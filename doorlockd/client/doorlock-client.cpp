@@ -59,6 +59,7 @@ int main(int argc, char** argv)
 
         // Start main GUI
         MainWindow mainWindow(hostname, port);
+        mainWindow.showFullScreen();
 
         // This routine will never return under normal conditions
         retval = app.exec();
