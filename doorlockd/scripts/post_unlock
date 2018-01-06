@@ -1,11 +1,6 @@
 #!/bin/bash
 
-# Set blue moodlights
-mosquitto_pub -h sushi.binary.kitchen -t "kitchen/moodlights/set/a" -m "#0000ff"
-mosquitto_pub -h sushi.binary.kitchen -t "kitchen/moodlights/set/a" -m "#0000ff"
-
-# Send lock to Christians Node Red for Twitter sink
-mosquitto_pub -h sushi.binary.kitchen -t kitchen/frontdoor/status -m "unlocked"
+mosquitto_pub -t kitchen/frontdoor/status -m "unlocked"
 
 # Wakeup cashdesk
 wol -i 172.23.2.44 00:0b:ca:94:13:f1
