@@ -33,8 +33,8 @@
 #define SHARED_LOCATION "@CMAKE_INSTALL_PREFIX@/share/doorlockd/"
 
 #define IMAGE_LOCATION  SHARED_LOCATION "images/"
-#define IMAGE_LED_GREEN IMAGE_LOCATION "led-green.png"
-#define IMAGE_LED_RED   IMAGE_LOCATION "led-red.png"
+#define IMAGE_OPEN_STATUS IMAGE_LOCATION "kitchen-open.png"
+#define IMAGE_CLOSED_STATUS   IMAGE_LOCATION "kitchen-closed.png"
 
 
 #define SOUNDS_LOCATION         SHARED_LOCATION "sounds/"
