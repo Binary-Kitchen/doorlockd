@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port)
+        socket.on('connect', function() {
+            socket.emit('connected');
+        });
+        socket.on('status', function(status) {
+            $('#led').html(status.led)
+            $('#message').html(status.message)
+        });
+    });
+    </script>
+{% endblock %}
+
+{% block content %}
+<h1>Willkommen in der Binary Kitchen!</h1>
+<div id="led"></div>
+<div id="message"></div>
+{{ super() }}
+{% endblock %}

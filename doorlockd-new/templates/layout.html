@@ -1,0 +1,11 @@
+{%extends "bootstrap/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{%- block content %}
+{{super()}}
+{%- block footer %}
+<br><br><br>
+<footer>Ralf Ramsauer &copy; 2018 Binary Kitchen e.V.</footer>
+{%- endblock footer %}
+{%- endblock content %}
