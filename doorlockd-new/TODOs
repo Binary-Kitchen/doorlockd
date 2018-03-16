@@ -1,3 +1,2 @@
 - Connect to LDAP
-- Add 'demo' mode
 - Add support for post/pre lock/unlock hooks

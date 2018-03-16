@@ -57,6 +57,8 @@ webapp = Flask(__name__)
 webapp.config.from_pyfile('config.cfg')
 socketio = SocketIO(webapp, async_mode=None)
 Bootstrap(webapp)
+serial_port = webapp.config.get('SERIAL_PORT')
+simulate = webapp.config.get('SIMULATE')
 
 # copied from sudo
 eperm_insults = {
@@ -134,6 +136,9 @@ class DoorHandler:
     state = DoorState.Close
 
     def __init__(self, device):
+        if simulate:
+            return
+
         self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
                              stopbits=1, timeout=1)
         self.thread = Thread(target=self.thread_worker)
@@ -178,11 +183,14 @@ class DoorHandler:
 
 class Logic:
     def __init__(self):
-        self.door_handler = DoorHandler(webapp.config.get('SERIAL_PORT'))
+        self.door_handler = DoorHandler(serial_port)
 
     def _try_auth_ldap(self, user, password):
+        if simulate:
+            log.info('SIMULATION MODE! ACCEPTING ANYTHING!')
+            return LogicResponse.Success
+
         log.info('Trying to LDAP auth (user, password) as user %s', user)
-        return LogicResponse.Success
         return LogicResponse.LDAP
 
     def try_auth(self, credentials):
