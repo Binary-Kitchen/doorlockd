@@ -1,56 +1,21 @@
-{% from "formhelpers.html" import render_field_label, render_field %}
-<!DOCTYPE html>
-<html>
-<head>
-<title>{{ title }}</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-</head>
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
-<body>
-	<style>
-		* {
-			font: normal 30px Arial,sans-serif;
-		}
-		body {
-			background-color: #037;
-			color: white;
-			background-image: url('static/logo.svg');
-			background-repeat: repeat;
-			background-size: 100%;
-			background-position: -0px -0px;
-		}
-		form {
-			position: relative;
-			display: block;
-			width: auto;
-			text-align: center;
-		}
-		input {
-			position: relative;
-			display: block;
-			width: auto;
-			width: 100%;
-		}
-		button {
-			width: 100%;
-			margin-top: 40px;
-		}
-	</style>
-	{{ state_img }}
-	<form name="login" method="POST" action="{{ url_for('home') }}">
-		{{ render_field_label(authentication_form.username) }}
-		{{ render_field_label(authentication_form.password) }}
+{% block content %}
+<h1 class="text-center">Binary Kitchen Doorlock</h1>
+<div class="row">
+	<div class="col-md-3 text-center">
+		<img src="{{ led }}">
+	</div>
+	<div class="col-md-8">
+		{{ wtf.quick_form(authentication_form, button_map={'open': 'success btn-lg btn-block', 'close': 'danger btn-lg btn-block'}) }}
+		{% if response %}
 		<hr/>
-		{{ render_field(authentication_form.open) }}
-		{{ render_field(authentication_form.close) }}
-		{{ authentication_form.csrf_token }}
-	</form>
-	{% if response %}
-	<hr/>
-	<h1>{{ response.to_html() }}</h1>
-	{%  endif %}
-	<hr/>
-	Die Kitchen ist: {{ state_text }}
-</body>
-</html>
+		<h1>{{ response.to_html() }}</h1>
+		{%  endif %}
+		<hr/>
+		Die Kitchen ist: {{ state_text }}
+	</div>
+</div>
+{{ super() }}
+{% endblock %}

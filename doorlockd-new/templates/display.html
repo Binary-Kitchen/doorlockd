@@ -10,7 +10,7 @@
             socket.emit('connected');
         });
         socket.on('status', function(status) {
-            $('#led').html(status.led)
+            $('#led').attr('src', status.led)
             $('#message').html(status.message)
         });
     });
@@ -21,7 +21,7 @@
 <h1 class="text-center">Willkommen in der Binary Kitchen!</h1>
 <div class="row">
 	<div class="col-md-3 text-center">
-		<div id="led"></div>
+		<img id="led" src="">
 		<div id="message"></div>
 	</div>
 	<div class="col-md-8">

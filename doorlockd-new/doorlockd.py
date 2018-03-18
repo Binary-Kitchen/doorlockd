@@ -80,7 +80,7 @@ class DoorState(Enum):
         led = 'red'
         if self == DoorState.Open:
              led = 'green'
-        return '<img src="static/led-%s.png">' % led
+        return 'static/led-%s.png' % led
 
     def to_html(self):
         if self == DoorState.Open:
@@ -258,7 +258,7 @@ def home():
                            authentication_form=authentication_form,
                            response=response,
                            state_text=logic.state.to_html(),
-                           state_img=Markup(logic.state.to_img()),
+                           led=logic.state.to_img(),
                            title=html_title)
 
 
@@ -270,6 +270,6 @@ if __name__ == '__main__':
 
     logic = Logic()
 
-    socketio.run(webapp, port=8080)
+    socketio.run(webapp, host='0.0.0.0', port=8080)
 
     sys.exit(0)
