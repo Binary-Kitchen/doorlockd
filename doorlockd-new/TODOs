@@ -1,3 +1,2 @@
 - Connect to LDAP
-- Add support for post/pre lock/unlock hooks
 - Implement proper RS232 support

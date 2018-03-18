@@ -23,6 +23,7 @@ import sys
 from enum import Enum
 from random import sample
 from serial import Serial
+from subprocess import Popen
 from threading import Thread
 from time import sleep
 
@@ -85,6 +86,14 @@ eperm_insults = {
 
 def choose_insult():
     return(sample(eperm_insults, 1)[0])
+
+
+def start_hook(script):
+    if simulate:
+        log.info('Simulation mode: not starting %s' % script)
+        return
+    log.info('Starting hook %s' % script)
+    Popen(['nohup', script])
 
 
 class AuthMethod(Enum):
@@ -165,6 +174,7 @@ class DoorHandler:
             return LogicResponse.AlreadyOpen
 
         self.state = DoorState.Open
+        start_hook('./scripts/post_unlock.sh')
         return LogicResponse.Success
 
     def close(self):
@@ -172,6 +182,7 @@ class DoorHandler:
             return LogicResponse.AlreadyLocked
 
         self.state = DoorState.Close
+        start_hook('./scripts/post_lock.sh')
         return LogicResponse.Success
 
     def request(self, state):
