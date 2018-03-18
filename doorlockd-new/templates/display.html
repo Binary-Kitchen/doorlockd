@@ -18,8 +18,15 @@
 {% endblock %}
 
 {% block content %}
-<h1>Willkommen in der Binary Kitchen!</h1>
-<div id="led"></div>
-<div id="message"></div>
+<h1 class="text-center">Willkommen in der Binary Kitchen!</h1>
+<div class="row">
+	<div class="col-md-3 text-center">
+		<div id="led"></div>
+		<div id="message"></div>
+	</div>
+	<div class="col-md-8">
+		<!-- Here's still space left! -->
+	</div>
+</div>
 {{ super() }}
 {% endblock %}
