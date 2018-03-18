@@ -5,16 +5,15 @@ import logging
 import sys
 
 from enum import Enum
-from threading import Thread
-from time import sleep
 from random import sample
 from serial import Serial
+from threading import Thread
+from time import sleep
 
 from flask import abort, Flask, render_template, request, Markup
 from flask_bootstrap import Bootstrap
 from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
-
 from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length
 
