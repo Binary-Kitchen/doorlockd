@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
 import logging
 import sys
 
@@ -30,7 +29,6 @@ date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
 
-default_serial = '/dev/ttyS0'
 default_ldap_uri = 'ldaps://ldap1.binary.kitchen/ ' \
                    'ldaps://ldap2.binary.kitchen/ ' \
                    'ldaps://ldapm.binary.kitchen/'
@@ -162,8 +160,8 @@ class DoorHandler:
 
 
 class Logic:
-    def __init__(self, device):
-        self.door_handler = DoorHandler(device)
+    def __init__(self):
+        self.door_handler = DoorHandler(webapp.config.get('SERIAL_PORT'))
 
     def _try_auth_ldap(self, user, password):
         log.info('Trying to LDAP auth (user, password) as user %s', user)
@@ -265,16 +263,12 @@ def home():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('doorlockd', 'Binary Kitchen doorlockd')
-    parser.add_argument('-s', '--serial', default=default_serial, type=str)
-    args = parser.parse_args()
-
     logging.basicConfig(level=log_level, stream=sys.stdout,
                         format=log_fmt, datefmt=date_fmt)
     log.info('Starting doorlockd')
-    log.info('Using serial port: %s' % args.serial)
+    log.info('Using serial port: %s' % webapp.config.get('SERIAL_PORT'))
 
-    logic = Logic(args.serial)
+    logic = Logic()
 
     socketio.run(webapp, port=8080)
 
