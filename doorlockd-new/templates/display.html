@@ -1,20 +1,20 @@
 {% extends "layout.html" %}
 
 {% block scripts %}
-    {{ super() }}
-    <script type="text/javascript" src="static/socket.io.slim.js"></script>
-    <script type="text/javascript" charset="utf-8">
-    $(document).ready(function() {
-        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port)
-        socket.on('connect', function() {
-            socket.emit('connected');
-        });
-        socket.on('status', function(status) {
-            $('#led').attr('src', status.led)
-            $('#message').html(status.message)
-        });
-    });
-    </script>
+	{{ super() }}
+	<script type="text/javascript" src="static/socket.io.slim.js"></script>
+	<script type="text/javascript" charset="utf-8">
+	$(document).ready(function() {
+		var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port)
+		socket.on('connect', function() {
+			socket.emit('connected');
+		});
+		socket.on('status', function(status) {
+			$('#led').attr('src', status.led)
+			$('#message').html(status.message)
+		});
+	});
+	</script>
 {% endblock %}
 
 {% block content %}
