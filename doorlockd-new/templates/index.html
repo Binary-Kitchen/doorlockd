@@ -1,4 +1,4 @@
-{% from "formhelpers.html" import render_field_label %}
+{% from "formhelpers.html" import render_field_label, render_field %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -37,11 +37,13 @@
 			margin-top: 40px;
 		}
 	</style>
+	{{ state_img }}
 	<form name="login" method="POST" action="{{ url_for('home') }}">
 		{{ render_field_label(authentication_form.username) }}
 		{{ render_field_label(authentication_form.password) }}
-		{{ render_field_label(authentication_form.open) }}
-		{{ render_field_label(authentication_form.close) }}
+		<hr/>
+		{{ render_field(authentication_form.open) }}
+		{{ render_field(authentication_form.close) }}
 		{{ authentication_form.csrf_token }}
 	</form>
 	{% if response %}
@@ -50,6 +52,5 @@
 	{%  endif %}
 	<hr/>
 	Die Kitchen ist: {{ state_text }}
-	{{ state_img }}
 </body>
 </html>
