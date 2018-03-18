@@ -40,16 +40,16 @@
 	<form name="login" method="POST" action="{{ url_for('home') }}">
 		{{ render_field(authentication_form.username) }}
 		{{ render_field(authentication_form.password) }}
-        {{ render_field(authentication_form.open) }}
-        {{ render_field(authentication_form.close) }}
-        {{ authentication_form.csrf_token }}
+		{{ render_field(authentication_form.open) }}
+		{{ render_field(authentication_form.close) }}
+		{{ authentication_form.csrf_token }}
 	</form>
-    {% if response %}
-    <hr/>
-    <h1>{{ response.to_html() }}</h1>
-    {%  endif %}
-    <hr/>
-    Die Kitchen ist: {{ state_text }}
-    {{ state_img }}
+	{% if response %}
+	<hr/>
+	<h1>{{ response.to_html() }}</h1>
+	{%  endif %}
+	<hr/>
+	Die Kitchen ist: {{ state_text }}
+	{{ state_img }}
 </body>
 </html>
