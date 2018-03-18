@@ -10,7 +10,7 @@ from time import sleep
 from random import sample
 from serial import Serial
 
-from flask import Flask, render_template, request, Markup
+from flask import abort, Flask, render_template, request, Markup
 from flask_bootstrap import Bootstrap
 from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
@@ -230,6 +230,8 @@ def on_connect():
 
 @webapp.route('/display')
 def display():
+    if request.remote_addr != '127.0.0.1':
+        abort(403)
     return render_template('display.html')
 
 
