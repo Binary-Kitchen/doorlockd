@@ -39,7 +39,7 @@ default_binddn = 'cn=%s,ou=people,dc=binary-kitchen,dc=de'
 html_title = 'Binary Kitchen Doorlock (%s - v%s)' % (__status__, __version__)
 
 webapp = Flask(__name__)
-webapp.config['SECRET_KEY'] = 'foobar'
+webapp.config.from_pyfile('config.cfg')
 socketio = SocketIO(webapp, async_mode=None)
 Bootstrap(webapp)
 
