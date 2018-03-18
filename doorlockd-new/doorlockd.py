@@ -183,7 +183,17 @@ class Logic:
 
     def request(self, state, credentials):
         err = self._request(state, credentials)
+        self.emit_status(err)
         return err
+
+    def emit_status(self, message=None):
+        led = self.state.to_img()
+        if message is None:
+            message = self.state.to_html()
+        else:
+            message = message.to_html()
+
+        socketio.emit('status', {'led': led, 'message': message})
 
     @property
     def state(self):
@@ -210,19 +220,9 @@ class AuthenticationForm(FlaskForm):
         return True
 
 
-def emit_status(message=None):
-    led = logic.state.to_img()
-    if message is None:
-        message = logic.state.to_html()
-    else:
-        message = message.to_html()
-
-    socketio.emit('status', {'led': led, 'message': message})
-
-
 @socketio.on('connect')
 def on_connect():
-	emit_status()
+	logic.emit_status()
 
 
 @webapp.route('/display')
@@ -251,8 +251,6 @@ def home():
 
         # Don't trust python, zero credentials
         user = password = credentials = None
-
-    emit_status(response)
 
     return render_template('index.html',
                            authentication_form=authentication_form,
