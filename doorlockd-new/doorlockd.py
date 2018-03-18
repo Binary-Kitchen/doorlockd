@@ -220,6 +220,7 @@ class AuthenticationForm(FlaskForm):
         return True
 
 
+@socketio.on('request_status')
 @socketio.on('connect')
 def on_connect():
 	logic.emit_status()
