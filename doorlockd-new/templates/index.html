@@ -1,4 +1,4 @@
-{% from "formhelpers.html" import render_field %}
+{% from "formhelpers.html" import render_field_label %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -38,10 +38,10 @@
 		}
 	</style>
 	<form name="login" method="POST" action="{{ url_for('home') }}">
-		{{ render_field(authentication_form.username) }}
-		{{ render_field(authentication_form.password) }}
-		{{ render_field(authentication_form.open) }}
-		{{ render_field(authentication_form.close) }}
+		{{ render_field_label(authentication_form.username) }}
+		{{ render_field_label(authentication_form.password) }}
+		{{ render_field_label(authentication_form.open) }}
+		{{ render_field_label(authentication_form.close) }}
 		{{ authentication_form.csrf_token }}
 	</form>
 	{% if response %}
