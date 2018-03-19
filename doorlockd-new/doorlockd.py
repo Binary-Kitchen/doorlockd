@@ -124,6 +124,10 @@ class LogicResponse(Enum):
     Inval = 4
     LDAP = 5
 
+    EmergencyUnlock = 10,
+    ButtonLock = 11,
+    ButtonUnlock = 12,
+
     def to_html(self):
         if self == LogicResponse.Success:
             return 'Yo, passt.'
@@ -137,6 +141,12 @@ class LogicResponse(Enum):
             return 'Das was du willst geht nicht.'
         elif self == LogicResponse.LDAP:
             return 'Moep! Geh LDAP fixen!'
+        elif self == LogicResponse.EmergencyUnlock:
+            return '!!! Emergency Unlock !!!'
+        elif self == LogicResponse.ButtonLock:
+            return 'Closed by lock button'
+        elif self == LogicResponse.ButtonUnlock:
+            return 'Temporary unlock by unlock button'
 
         return 'Bitte spezifizieren Sie.'
 
@@ -144,30 +154,55 @@ class LogicResponse(Enum):
 class DoorHandler:
     state = DoorState.Close
 
+    CMD_UNLOCK = b'u'
+    CMD_LOCK = b'l'
+    BUTTON_LOCK_PRESS = b'L'
+    BUTTON_UNLOCK_PRESS = b'U'
+    BUTTON_EMERGENCY_PRESS = b'E'
+
     def __init__(self, device):
         if simulate:
             return
 
         self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
-                             stopbits=1, timeout=1)
+                             stopbits=1, timeout=0)
         self.thread = Thread(target=self.thread_worker)
         self.thread.start()
 
-    def send_command(self, cmd):
-        print('sending cmd %c' % cmd)
+    def handle_input(self, recv, expect=None):
+        if recv == DoorHandler.BUTTON_LOCK_PRESS:
+            self.state = DoorState.Close
+            logic.emit_status(LogicResponse.ButtonLock)
+        elif recv == DoorHandler.BUTTON_UNLOCK_PRESS:
+            logic.emit_status(LogicResponse.ButtonUnlock)
+        elif recv == DoorHandler.BUTTON_EMERGENCY_PRESS:
+            logic.emit_status(LogicResponse.EmergencyUnlock)
 
-    def clear_buffer(self):
-        print('clearing buffer...')
+        if expect is None:
+            return True
+        return recv == expect
+
+    def send_command(self, cmd):
+        self.serial.write(cmd)
+        self.serial.flush()
+        sleep(0.1)
+        char = self.serial.read(1)
+        if not self.handle_input(char, cmd):
+            log.warning('Sent serial command, got wrong response')
 
     def thread_worker(self):
         while True:
-            self.clear_buffer()
+            sleep(0.4)
+            while True:
+                char = self.serial.read(1)
+                if len(char) == 0:
+                    break
+                self.handle_input(char)
 
             if self.state == DoorState.Open:
-                self.send_command('u')
+                self.send_command(DoorHandler.CMD_UNLOCK)
             elif self.state == DoorState.Close:
-                self.send_command('l')
-            sleep(1)
+                self.send_command(DoorHandler.CMD_LOCK)
 
     def open(self):
         if self.state == DoorState.Open:
