@@ -320,7 +320,7 @@ def home():
         password = authentication_form.password.data
         credentials = AuthMethod.LDAP_USER_PW, user, password
 
-        log.info('Incoming request from %s' % user)
+        log.info('Incoming request from %s' % user.encode('utf-8'))
         desired_state = authentication_form.desired_state
         log.info('  desired state: %s' % desired_state)
         log.info('  current state: %s' % logic.state)
