@@ -1,0 +1,8 @@
+#!/bin/bash
+
+mosquitto_pub -t kitchen/frontdoor/status -m "unlocked"
+
+# Wakeup cashdesk
+wol -i 172.23.2.44 00:0b:ca:94:13:f1
+wol -i 172.23.2.44 00:0b:ca:94:13:f1
+wol -i 172.23.2.44 00:0b:ca:94:13:f1
