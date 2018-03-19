@@ -153,9 +153,11 @@ class LogicResponse(Enum):
 
 class DoorHandler:
     state = DoorState.Close
+    do_schnapper = False
 
     CMD_UNLOCK = b'u'
     CMD_LOCK = b'l'
+    CMD_SCHNAPPER = b's'
     BUTTON_LOCK_PRESS = b'L'
     BUTTON_UNLOCK_PRESS = b'U'
     BUTTON_EMERGENCY_PRESS = b'E'
@@ -201,10 +203,14 @@ class DoorHandler:
 
             if self.state == DoorState.Open:
                 self.send_command(DoorHandler.CMD_UNLOCK)
+                if self.do_schnapper:
+                    self.send_command(DoorHandler.CMD_SCHNAPPER)
+                    self.do_schnapper = False
             elif self.state == DoorState.Close:
                 self.send_command(DoorHandler.CMD_LOCK)
 
     def open(self):
+        self.do_schnapper = True
         if self.state == DoorState.Open:
             return LogicResponse.AlreadyOpen
 
