@@ -209,7 +209,7 @@ class DoorHandler:
             return LogicResponse.AlreadyOpen
 
         self.state = DoorState.Open
-        start_hook('./scripts/post_unlock.sh')
+        start_hook('./scripts/post_unlock')
         return LogicResponse.Success
 
     def close(self):
@@ -217,7 +217,7 @@ class DoorHandler:
             return LogicResponse.AlreadyLocked
 
         self.state = DoorState.Close
-        start_hook('./scripts/post_lock.sh')
+        start_hook('./scripts/post_lock')
         return LogicResponse.Success
 
     def request(self, state):
