@@ -60,6 +60,7 @@ socketio = SocketIO(webapp, async_mode=None)
 Bootstrap(webapp)
 serial_port = webapp.config.get('SERIAL_PORT')
 simulate = webapp.config.get('SIMULATE')
+run_hooks = webapp.config.get('RUN_HOOKS')
 
 # copied from sudo
 eperm_insults = {
@@ -89,8 +90,8 @@ def choose_insult():
 
 
 def start_hook(script):
-    if simulate:
-        log.info('Simulation mode: not starting %s' % script)
+    if not run_hooks:
+        log.info('Hooks disabled: not starting %s' % script)
         return
     log.info('Starting hook %s' % script)
     Popen(['nohup', script])
