@@ -27,7 +27,7 @@ from subprocess import Popen
 from threading import Thread
 from time import sleep
 
-from flask import abort, Flask, render_template, request, Markup
+from flask import abort, Flask, render_template, request
 from flask_bootstrap import Bootstrap
 from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
