@@ -17,6 +17,7 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
 
+import ldap
 import logging
 import sys
 
@@ -61,6 +62,14 @@ Bootstrap(webapp)
 serial_port = webapp.config.get('SERIAL_PORT')
 simulate = webapp.config.get('SIMULATE')
 run_hooks = webapp.config.get('RUN_HOOKS')
+
+ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+ldap.set_option(ldap.OPT_REFERRALS, 0)
+if 'LDAP_CA' in webapp.config.keys():
+    ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, webapp.config.get('LDAP_CA'))
+
+ldap_uri = webapp.config.get('LDAP_URI')
+ldap_binddn = webapp.config.get('LDAP_BINDDN')
 
 # copied from sudo
 eperm_insults = {
@@ -243,8 +252,19 @@ class Logic:
             log.info('SIMULATION MODE! ACCEPTING ANYTHING!')
             return LogicResponse.Success
 
-        log.info('Trying to LDAP auth (user, password) as user %s', user)
-        return LogicResponse.LDAP
+        log.info('  Trying to LDAP auth (user, password) as user %s', user)
+        ldap_username = ldap_binddn % user
+        try:
+            l = ldap.initialize(ldap_uri)
+            l.simple_bind_s(ldap_username, password)
+            l.unbind_s()
+        except ldap.INVALID_CREDENTIALS:
+            log.info('  Invalid credentials')
+            return LogicResponse.Perm
+        except ldap.LDAPError as e:
+            log.info('  LDAP Error: %s' % e)
+            return LogicResponse.LDAP
+        return LogicResponse.Success
 
     def try_auth(self, credentials):
         method = credentials[0]
