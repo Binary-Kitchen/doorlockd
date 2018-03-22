@@ -1,1 +1,5 @@
 - Connect to LDAP
+- Add sounds
+- Remove php-fpm
+- adjust nginx config
+- Add proper SSL certificates
