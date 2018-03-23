@@ -1,3 +1,0 @@
-#!/bin/bash
-
-mosquitto_pub -t kitchen/frontdoor/status -m "locked"
