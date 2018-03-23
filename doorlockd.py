@@ -137,7 +137,7 @@ class DoorState(Enum):
     def to_html(self):
         if self == DoorState.Open:
             return 'Offen'
-        return 'Zu'
+        return 'Geschlossen'
 
 
 class LogicResponse(Enum):
