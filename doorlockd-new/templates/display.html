@@ -1,5 +1,10 @@
 {% extends "layout.html" %}
 
+{% block head %}
+{{ super() }}
+<meta http-equiv="refresh" content="600">
+{% endblock %}
+
 {% block scripts %}
 	{{ super() }}
 	<script type="text/javascript" src="static/socket.io.slim.js"></script>
