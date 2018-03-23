@@ -71,6 +71,14 @@ if 'LDAP_CA' in webapp.config.keys():
 ldap_uri = webapp.config.get('LDAP_URI')
 ldap_binddn = webapp.config.get('LDAP_BINDDN')
 
+wave_emergency = webapp.config.get('WAVE_EMERGENCY')
+wave_lock = webapp.config.get('WAVE_LOCK')
+wave_lock_button = webapp.config.get('WAVE_LOCK_BUTTON')
+wave_unlock = webapp.config.get('WAVE_UNLOCK')
+wave_unlock_button = webapp.config.get('WAVE_UNLOCK_BUTTON')
+wave_zonk = webapp.config.get('WAVE_ZONK')
+sounds = webapp.config.get('SOUNDS')
+
 # copied from sudo
 eperm_insults = {
         'Wrong!  You cheating scum!',
@@ -96,6 +104,12 @@ eperm_insults = {
 
 def choose_insult():
     return(sample(eperm_insults, 1)[0])
+
+
+def playsound(filename):
+    if not sounds:
+        return
+    Popen(['nohup', 'aplay', filename])
 
 
 def start_hook(script):
@@ -183,11 +197,14 @@ class DoorHandler:
 
     def handle_input(self, recv, expect=None):
         if recv == DoorHandler.BUTTON_LOCK_PRESS:
+            playsound(wave_lock_button)
             self.state = DoorState.Close
             logic.emit_status(LogicResponse.ButtonLock)
         elif recv == DoorHandler.BUTTON_UNLOCK_PRESS:
+            playsound(wave_unlock_button)
             logic.emit_status(LogicResponse.ButtonUnlock)
         elif recv == DoorHandler.BUTTON_EMERGENCY_PRESS:
+            playsound(wave_emergency)
             logic.emit_status(LogicResponse.EmergencyUnlock)
 
         if expect is None:
@@ -281,6 +298,13 @@ class Logic:
 
     def request(self, state, credentials):
         err = self._request(state, credentials)
+        if err == LogicResponse.Success:
+            if self.door_handler.state == DoorState.Open:
+                playsound(wave_unlock)
+            if self.door_handler.state == DoorState.Close:
+                playsound(wave_lock)
+        elif err == LogicResponse.AlreadyLocked or err == LogicResponse.AlreadyOpen:
+            playsound(wave_zonk)
         self.emit_status(err)
         return err
 
