@@ -1,0 +1,12 @@
+[Unit]
+Description=Binary Kitchen doorlockd service
+After=network.target
+
+[Service]
+User=root
+Group=root
+ExecStart=/home/doorlock/doorlockd/doorlockd.py
+
+[Install]
+WantedBy=multi-user.target
+
