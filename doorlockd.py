@@ -120,6 +120,14 @@ def start_hook(script):
     Popen(['nohup', script])
 
 
+def run_lock():
+    start_hook('./scripts/post_lock')
+
+
+def run_unlock():
+    start_hook('./scripts/post_unlock')
+
+
 class AuthMethod(Enum):
     LDAP_USER_PW = 1
 
@@ -198,6 +206,8 @@ class DoorHandler:
     def handle_input(self, recv, expect=None):
         if recv == DoorHandler.BUTTON_LOCK_PRESS:
             playsound(wave_lock_button)
+            if self.state == DoorState.Open:
+                run_lock()
             self.state = DoorState.Close
             logic.emit_status(LogicResponse.ButtonLock)
         elif recv == DoorHandler.BUTTON_UNLOCK_PRESS:
@@ -242,7 +252,7 @@ class DoorHandler:
             return LogicResponse.AlreadyOpen
 
         self.state = DoorState.Open
-        start_hook('./scripts/post_unlock')
+        run_unlock()
         return LogicResponse.Success
 
     def close(self):
@@ -250,7 +260,7 @@ class DoorHandler:
             return LogicResponse.AlreadyLocked
 
         self.state = DoorState.Close
-        start_hook('./scripts/post_lock')
+        run_lock()
         return LogicResponse.Success
 
     def request(self, state):
