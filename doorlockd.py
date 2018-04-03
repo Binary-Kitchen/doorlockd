@@ -57,7 +57,7 @@ html_title = 'Binary Kitchen Doorlock (%s - v%s)' % (__status__, __version__)
 
 webapp = Flask(__name__)
 webapp.config.from_pyfile('config.cfg')
-socketio = SocketIO(webapp, async_mode=None)
+socketio = SocketIO(webapp, async_mode='threading')
 Bootstrap(webapp)
 serial_port = webapp.config.get('SERIAL_PORT')
 simulate = webapp.config.get('SIMULATE')
