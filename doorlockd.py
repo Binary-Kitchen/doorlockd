@@ -333,7 +333,7 @@ class Logic:
 
 
 class AuthenticationForm(FlaskForm):
-    username = StringField('Username', [Length(min=4, max=25)])
+    username = StringField('Username', [Length(min=3, max=25)])
     password = PasswordField('Password', [DataRequired()])
     open = SubmitField('Open')
     close = SubmitField('Close')
