@@ -2,6 +2,11 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{%- block metas %}
+{{super()}}
+<meta name="apple-mobile-web-app-capable" content="yes">
+{%- endblock metas %}
+
 {%- block content %}
 {{super()}}
 {%- block footer %}
