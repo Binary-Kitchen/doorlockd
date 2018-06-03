@@ -1,6 +1,11 @@
 {% extends "layout.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
+{%- block metas %}
+{{super()}}
+<meta name="apple-mobile-web-app-capable" content="yes">
+{%- endblock metas %}
+
 {% block content %}
 <h1 class="text-center">Binary Kitchen Doorlock</h1>
 <div class="row">
