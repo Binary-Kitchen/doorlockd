@@ -28,7 +28,7 @@ from subprocess import Popen
 from threading import Thread
 from time import sleep
 
-from flask import abort, Flask, render_template, request
+from flask import abort, Flask, jsonify, render_template, request
 from flask_bootstrap import Bootstrap
 from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
@@ -363,6 +363,53 @@ def display():
     if request.remote_addr != '127.0.0.1':
         abort(403)
     return render_template('display.html')
+
+
+@webapp.route('/api', methods=['POST'])
+def api():
+    def json_response(response, msg=None):
+        json = dict()
+        json['err'] = response.value
+        json['msg'] = response.to_html() if msg is None else msg
+        if response == LogicResponse.Success or \
+           response == LogicResponse.AlreadyLocked or \
+           response == LogicResponse.AlreadyOpen:
+            json['status'] = str(logic.state.to_html())
+        return jsonify(json)
+
+    user = request.form.get('user')
+    password = request.form.get('pass')
+    command = request.form.get('command')
+
+    if any(v is None for v in [user, password, command]):
+        log.warning('Incomplete API request')
+        abort(400)
+
+    if not user or not password:
+        log.warning('Invalid username or password format')
+        return json_response(LogicResponse.Inval,
+                             'Invalid username or password format')
+
+    credentials = AuthMethod.LDAP_USER_PW, user, password
+    desired_state = None
+
+    if command == 'status':
+        return json_response(logic.try_auth(credentials))
+    elif command == 'lock':
+        desired_state = DoorState.Close
+    elif command == 'unlock':
+        desired_state = DoorState.Open
+
+    if not desired_state:
+        return json_response(LogicResponse.Inval, "Invalid command requested")
+
+    log.info('Incoming API request from %s' % user.encode('utf-8'))
+    log.info('  desired state: %s' % desired_state)
+    log.info('  current state: %s' % logic.state)
+
+    response = logic.request(desired_state, credentials)
+
+    return json_response(response)
 
 
 @webapp.route('/', methods=['GET', 'POST'])
