@@ -419,42 +419,6 @@ def home():
     authentication_form = AuthenticationForm()
     response = None
 
-    # detect old API if the 'api' POST variable is set.
-    # NOTE: THESE BITS WILL BE REMOVED ONCE EVERYONE UPDATED THEIR APP
-    if request.method == 'POST' and request.form.get('api'):
-        log.info('Deprecated API usage detected')
-        user = request.form.get('user')
-        password = request.form.get('pass')
-        command = request.form.get('command')
-
-        if any(v is None for v in [user, password, command]):
-            log.warning('Incomplete deprecated API request')
-            abort(400)
-
-        desired_state = DoorState.Close
-        if command == 'unlock':
-            desired_state = DoorState.Open
-        credentials = AuthMethod.LDAP_USER_PW, user, password
-
-        log.info('Incoming request from %s' % user.encode('utf-8'))
-        log.info('  desired state: %s' % desired_state)
-        log.info('  current state: %s' % logic.state)
-        log.info('  -> Knock knock, %s, please update your app!' % user)
-
-        response = logic.request(desired_state, credentials)
-        if response == LogicResponse.Success:
-            return '0'
-        elif response == LogicResponse.Perm:
-            return '7'
-        elif response == LogicResponse.AlreadyLocked:
-            return '3'
-        elif response == LogicResponse.AlreadyOpen:
-            return '2'
-        elif response == LogicResponse.LDAP:
-            return '10'
-        else:
-            return '1' # Fail-mode
-
     if request.method == 'POST' and authentication_form.validate():
         user = authentication_form.username.data
         password = authentication_form.password.data
