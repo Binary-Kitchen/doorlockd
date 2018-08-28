@@ -374,7 +374,9 @@ def api():
         if response == LogicResponse.Success or \
            response == LogicResponse.AlreadyLocked or \
            response == LogicResponse.AlreadyOpen:
+            # TBD: Remove 'status'. No more users. Still used in App Version 2.0!
             json['status'] = str(logic.state.to_html())
+            json['open'] = logic.state == DoorState.Open
         return jsonify(json)
 
     user = request.form.get('user')
