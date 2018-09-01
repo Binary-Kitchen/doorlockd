@@ -1,26 +1,31 @@
+/*
+ * doorlock-avr, AVR code of Binary Kitchen's doorlock
+ *
+ * Copyright (c) Binary Kitchen, 2018
+ *
+ * Authors:
+ *  Ralf Ramsauer <ralf@binary-kitchen.de>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
 #include <stddef.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
 #include "uart.h"
 
-#define UBRR_VAL ((F_CPU+BAUD*8)/(BAUD*16)-1)
-#define BAUD_REAL (F_CPU/(16*(UBRR_VAL+1)))
-#define BAUD_ERROR ((BAUD_REAL*1000)/BAUD)
- 
-#if ((BAUD_ERROR<990) || (BAUD_ERROR>1010))
+#define UBRR_VAL ((F_OSC+UART_BAUD*8)/(UART_BAUD*16)-1)
+#define BAUD_REAL (F_OSC/(16*(UBRR_VAL+1)))
+#define BAUD_ERROR ((BAUD_REAL*1000)/UART_BAUD)
+
+#if ((BAUD_ERROR<985) || (BAUD_ERROR>1010))
+  #warn BAUD_ERROR
   #error Choose another crystal. Baud error too high.
 #endif
 
 static void (*recv_handler)(unsigned char c) = NULL;
-
-ISR(USART_RX_vect)
-{
-	cli();
-	if(recv_handler)
-		recv_handler(UDR);
-	sei();
-}
 
 void uart_init()
 {
@@ -31,7 +36,7 @@ void uart_init()
 	UCSRC = (1<<UCSZ1)|(1<<UCSZ0);
 
 	UBRRH = UBRR_VAL >> 8;
-	UBRRL = UBRR_VAL & 0xFF;	
+	UBRRL = UBRR_VAL & 0xFF;
 }
 
 void uart_set_recv_handler(void (*handler)(unsigned char c))

@@ -1,30 +1,43 @@
-/* 2015, Ralf Ramsauer
- * ralf@binary-kitchen.de
+/*
+ * doorlock-avr, AVR code of Binary Kitchen's doorlock
+ *
+ * Copyright (c) Binary Kitchen, 2018
+ *
+ * Authors:
+ *  Ralf Ramsauer <ralf@binary-kitchen.de>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
  */
 
-#include <stdbool.h>
+#include "uart.h"
 
+#include <stdbool.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include "io.h"
-#include "uart.h"
+#define RED	0x1
+#define GREEN	0x2
+#define YELLOW	0x4
 
-#include "../doorcmds.h"
+#define SET_CONDITIONAL(predicate, port, pin) \
+	if ((predicate)) \
+		port |= (1 << pin); \
+	else \
+		port &= ~(1 << pin);
 
-static volatile enum {LOCKED, UNLOCKED} state = LOCKED;
-static volatile bool schnapper = false;
+/* can either be red, green, or yellow */
+static unsigned char state;
 
-static inline void timer_init(void)
+static inline void set_schnapper(bool state)
 {
-	// Config the timer
-	// The 16bit Timer1 is used for resetting the lock state,
-	// if the UART stops receiving the unlock command
-	TIMSK |= (1<<TOIE1);
-	TIFR |= (1<<TOV1);
-	TCCR1A = 0;
-	TCCR1B = (1<<CS12);
+	SET_CONDITIONAL(state, PORTB, PB0);
+}
+
+static inline void set_bolzen(bool state)
+{
+	SET_CONDITIONAL(state, PORTB, PB1);
 }
 
 static inline void reset_timeout(void)
@@ -32,155 +45,159 @@ static inline void reset_timeout(void)
 	TCNT1 = 0;
 }
 
-static inline void extint_init(void)
+static void set_leds(void)
 {
-	// Configure external interrupts
-	// External interrupts are used for Button Unlock an Lock
-	MCUCR = (1<<ISC11)|(1<<ISC01);
-	GIMSK |= (1<<INT0)|(1<<INT1);
-}
+	static unsigned int counter = 0;
+	bool pwm_cycle = ++counter % 20;
 
-void uart_handler(const unsigned char c)
-{
-	char retval = c;
-	switch ((char)c) {
-		case DOOR_CMD_UNLOCK:
-			state = UNLOCKED;
-			reset_timeout();
-			break;
-
-		case DOOR_CMD_LOCK:
-			state = LOCKED;
-			break;
-
-		case DOOR_CMD_PING:
-			break;
-
-		case DOOR_CMD_SCHNAPER:
-			if (state == UNLOCKED)
-				schnapper = true;
-			else
-				retval = '?';
-			break;
-
-		case DOOR_CMD_STATUS:
-			retval = (state == LOCKED) ? 'l' : 'u';
-			break;
-
-		default:
-			retval = '?';
-			break;
+	if (pwm_cycle) {
+		PORTD &= ~((1 << PD5) | (1 << PD6));
+		PORTB &= ~(1 << PB4);
 	}
 
-	uart_putc(retval);
+	switch (state) {
+	case RED:
+		PORTD |= (1 << PD5);
+		break;
+	case YELLOW:
+		PORTD |= (1 << PD6);
+		break;
+	case GREEN:
+		PORTB |= (1 << PB4);
+		break;
+	}
+
+	if (pwm_cycle)
+		return;
+
+	switch (state) {
+	case RED:
+		PORTD ^= (1 << PD6);
+		PORTB ^= (1 << PB4);
+		break;
+	case YELLOW:
+		PORTD ^= (1 << PD5);
+		PORTB ^= (1 << PB4);
+		break;
+	case GREEN:
+		PORTD ^= (1 << PD5);
+		PORTD ^= (1 << PD6);
+		break;
+	}
 }
 
-// Timeroverflow interrupts occurs each 1.137 seconds
-// UART receive interrupts is used to prevent timer overflows
+static void update_state(unsigned char new_state)
+{
+	reset_timeout();
+
+	if (new_state == state)
+		return;
+
+	state = new_state;
+	switch (state) {
+	case RED:
+		set_bolzen(false);
+		set_schnapper(false);
+		uart_putc('r');
+		break;
+	case YELLOW:
+		set_bolzen(true);
+		set_schnapper(false);
+		uart_putc('y');
+		break;
+	case GREEN:
+		set_bolzen(true);
+		set_schnapper(true);
+		uart_putc('g');
+		break;
+	}
+}
+
+ISR(USART_RX_vect)
+{
+	unsigned char c = UDR;
+	bool respond = true;
+
+	switch (c) {
+	case 'r':
+		update_state(RED);
+		break;
+	case 'y':
+		update_state(YELLOW);
+		break;
+	case 'g':
+		update_state(GREEN);
+		break;
+	default:
+		respond = false;
+		break;
+	}
+
+	if (respond)
+		uart_putc(c);
+}
+
 ISR(TIMER1_OVF_vect)
 {
-	state = LOCKED;
+	reset_timeout();
+	update_state(RED);
 }
 
-// Button Lock
-ISR(INT0_vect)
+static inline void timer_init(void)
 {
-	cli();
-
-	// This code is used to prevent spurious interrupts
-	_delay_ms(50);
-	if (!is_button_lock())
-		goto out;
-
-	uart_putc(DOOR_BUTTON_LOCK);
-	state = LOCKED;
-
-out:
-	sei();
+	TIMSK |= (1 << TOIE1);
+	TIFR |= (1 << TOV1);
+	TCCR1A = 0;
+	TCCR1B = (1 << CS12);
 }
 
-// Button Unlock
-ISR(INT1_vect)
+static inline void setup_ports(void)
 {
-	cli();
+	PORTB = 0;
+	DDRB = (1 << PB4) | (1 << PB1) | (1 << PB0);
 
-	// This code is used to prevent spurious interrupts
-	_delay_ms(50);
-	if (!is_button_unlock())
-		goto out;
+	PORTD = 0;
+	DDRD = (1 << PD5) | (1 << PD6);
+}
 
-	uart_putc(DOOR_BUTTON_UNLOCK);
+static unsigned char get_keys(void)
+{
+	unsigned char ret = 0;
 
-    if (state == LOCKED) {
-		bolzen_off();
-		_delay_ms(3000);
-	}
+	if (!(PIND & (1 << PD2))) ret |= RED;
+	if (!(PIND & (1 << PD3))) ret |= YELLOW;
+	if (!(PIND & (1 << PD4))) ret |= GREEN;
 
-out:
-	sei();
+	return ret;
 }
 
 int main(void)
 {
-	// Disable all interrupts
-	cli();
-	// Init IO
-	io_init();
+	unsigned char i;
 
-	// Wait a bit to settle down
-	_delay_ms(1000);
-
-	// Init Uart
-	uart_init();
-	uart_set_recv_handler(uart_handler);
-
-	// Init Timer
+	setup_ports();
 	timer_init();
+	uart_init();
+
+	update_state(RED);
 	reset_timeout();
 
-	// Init external interrupts
-	extint_init();
-
-	// Enable all interrupts
 	sei();
 
-	for(;;) {
-		if (state == LOCKED) {
-			bolzen_on();
-			status_off();
-			schnapper = false;
-
-			// Check if someone used the emergency unlock
-			if (is_emergency_unlock()) {
-
-				// If so, wait 200ms and double check
-				_delay_ms(200);
-				if (is_emergency_unlock()) {
-					uart_putc(DOOR_EMERGENCY_UNLOCK);
-					cli();
-
-					bolzen_off();
-					schnapper_on();
-
-					_delay_ms(3000);
-
-					schnapper_off();
-					bolzen_on();
-
-					sei();
-				}
-			}
-		} else if (state == UNLOCKED) {
-			bolzen_off();
-			status_on();
-			if (schnapper == true) {
-				schnapper = false;
-				schnapper_on();
-				_delay_ms(2000);
-				schnapper_off();
-			}
+	for (;;) {
+		i = get_keys();
+		if (i & GREEN) {
+			uart_putc('G');
+			update_state(GREEN);
+		} else if (i & YELLOW) {
+			uart_putc('Y');
+			update_state(YELLOW);
+		} else if (i & RED) {
+			uart_putc('R');
+			update_state(RED);
 		}
+		while (get_keys())
+			reset_timeout();
+		set_leds();
 	}
-
-	return 0;
 }
