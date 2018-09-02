@@ -138,6 +138,16 @@ class DoorState(Enum):
     Present = 2
     Closed = 3
 
+    def from_string(string):
+        if string == 'lock':
+            return DoorState.Closed
+        elif string == 'unlock':
+            return DoorState.Open
+        elif string == 'present':
+            return DoorState.Present
+
+        return None
+
     def is_open(self):
         if self != DoorState.Closed:
             return True
@@ -429,15 +439,11 @@ def api():
                              'Invalid username or password format')
 
     credentials = AuthMethod.LDAP_USER_PW, user, password
-    desired_state = None
 
     if command == 'status':
         return json_response(logic.try_auth(credentials))
-    elif command == 'lock':
-        desired_state = DoorState.Closed
-    elif command == 'unlock':
-        desired_state = DoorState.Open
 
+    desired_state = DoorState.from_string(command)
     if not desired_state:
         return json_response(LogicResponse.Inval, "Invalid command requested")
 
