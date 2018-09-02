@@ -60,7 +60,8 @@ webapp.config.from_pyfile('config.cfg')
 socketio = SocketIO(webapp, async_mode='threading')
 Bootstrap(webapp)
 serial_port = webapp.config.get('SERIAL_PORT')
-simulate = webapp.config.get('SIMULATE')
+simulate_ldap = webapp.config.get('SIMULATE_LDAP')
+simulate_serial = webapp.config.get('SIMULATE_SERIAL')
 run_hooks = webapp.config.get('RUN_HOOKS')
 
 ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
@@ -195,7 +196,7 @@ class DoorHandler:
     BUTTON_EMERGENCY_PRESS = b'E'
 
     def __init__(self, device):
-        if simulate:
+        if simulate_serial:
             return
 
         self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
@@ -275,7 +276,7 @@ class Logic:
         self.door_handler = DoorHandler(serial_port)
 
     def _try_auth_ldap(self, user, password):
-        if simulate:
+        if simulate_ldap:
             log.info('SIMULATION MODE! ACCEPTING ANYTHING!')
             return LogicResponse.Success
 
