@@ -13,7 +13,7 @@
 		<img src="{{ led }}">
 	</div>
 	<div class="col-md-8">
-		{{ wtf.quick_form(authentication_form, button_map={'open': 'success btn-lg btn-block', 'close': 'danger btn-lg btn-block'}) }}
+		{{ wtf.quick_form(authentication_form, button_map={'open': 'success btn-lg btn-block', 'present': 'warning btn-lg btn-block', 'close': 'danger btn-lg btn-block'}) }}
 		{% if response %}
 		<hr/>
 		<h1>{{ response.to_html() }}</h1>

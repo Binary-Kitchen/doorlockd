@@ -134,18 +134,28 @@ class AuthMethod(Enum):
 
 
 class DoorState(Enum):
-    Close = 1
-    Open = 2
+    Open = 1
+    Present = 2
+    Closed = 3
+
+    def is_open(self):
+        if self != DoorState.Closed:
+            return True
+        return False
 
     def to_img(self):
         led = 'red'
-        if self == DoorState.Open:
-             led = 'green'
+        if self == DoorState.Present:
+            led = 'yellow'
+        elif self == DoorState.Open:
+            led = 'green'
         return 'static/led-%s.png' % led
 
     def to_html(self):
         if self == DoorState.Open:
             return 'Offen'
+        elif self == DoorState.Present:
+            return 'Jemand da'
         return 'Geschlossen'
 
 
@@ -160,6 +170,7 @@ class LogicResponse(Enum):
     EmergencyUnlock = 10,
     ButtonLock = 11,
     ButtonUnlock = 12,
+    ButtonPresent = 13,
 
     def to_html(self):
         if self == LogicResponse.Success:
@@ -177,23 +188,28 @@ class LogicResponse(Enum):
         elif self == LogicResponse.EmergencyUnlock:
             return '!!! Emergency Unlock !!!'
         elif self == LogicResponse.ButtonLock:
-            return 'Closed by lock button'
+            return 'Closed by button'
         elif self == LogicResponse.ButtonUnlock:
-            return 'Temporary unlock by unlock button'
+            return 'Opened by button'
+        elif self == LogicResponse.ButtonPresent:
+            return 'Present by button'
 
         return 'Bitte spezifizieren Sie.'
 
 
 class DoorHandler:
-    state = DoorState.Close
-    do_schnapper = False
+    state = DoorState.Closed
+    do_close = False
 
-    CMD_UNLOCK = b'u'
-    CMD_LOCK = b'l'
-    CMD_SCHNAPPER = b's'
-    BUTTON_LOCK_PRESS = b'L'
-    BUTTON_UNLOCK_PRESS = b'U'
-    BUTTON_EMERGENCY_PRESS = b'E'
+    CMD_PRESENT = b'y'
+    CMD_OPEN = b'g'
+    CMD_CLOSE = b'r'
+
+    BUTTON_PRESENT = b'Y'
+    BUTTON_OPEN = b'G'
+    BUTTON_CLOSE = b'R'
+    # TBD EMERGENCY OPEN
+    # TBD DOOR NOT CLOSED
 
     def __init__(self, device):
         if simulate_serial:
@@ -205,18 +221,23 @@ class DoorHandler:
         self.thread.start()
 
     def handle_input(self, recv, expect=None):
-        if recv == DoorHandler.BUTTON_LOCK_PRESS:
+        if recv == DoorHandler.BUTTON_CLOSE:
             playsound(wave_lock_button)
-            if self.state == DoorState.Open:
+            if self.state.is_open():
                 run_lock()
-            self.state = DoorState.Close
+            self.state = DoorState.Closed
             logic.emit_status(LogicResponse.ButtonLock)
-        elif recv == DoorHandler.BUTTON_UNLOCK_PRESS:
+        elif recv == DoorHandler.BUTTON_OPEN:
             playsound(wave_unlock_button)
+            self.state = DoorState.Open
             logic.emit_status(LogicResponse.ButtonUnlock)
-        elif recv == DoorHandler.BUTTON_EMERGENCY_PRESS:
-            playsound(wave_emergency)
-            logic.emit_status(LogicResponse.EmergencyUnlock)
+        elif recv == DoorHandler.BUTTON_PRESENT:
+            # playsound...
+            self.state = DoorState.Present
+            logic.emit_status(LogicResponse.ButtonPresent)
+        # elif recv == DoorHandler.BUTTON_EMERGENCY_PRESS:
+        #     playsound(wave_emergency)
+        #     logic.emit_status(LogicResponse.EmergencyUnlock)
 
         if expect is None:
             return True
@@ -239,16 +260,16 @@ class DoorHandler:
                     break
                 self.handle_input(char)
 
-            if self.state == DoorState.Open:
-                self.send_command(DoorHandler.CMD_UNLOCK)
-                if self.do_schnapper:
-                    self.send_command(DoorHandler.CMD_SCHNAPPER)
-                    self.do_schnapper = False
-            elif self.state == DoorState.Close:
-                self.send_command(DoorHandler.CMD_LOCK)
+            if self.do_close:
+                self.send_command(DoorHandler.CMD_CLOSE)
+                self.do_close = False
+            elif self.state.is_open():
+                if self.state == DoorState.Present:
+                    self.send_command(DoorHandler.CMD_PRESENT)
+                else:
+                    self.send_command(DoorHandler.CMD_OPEN)
 
     def open(self):
-        self.do_schnapper = True
         if self.state == DoorState.Open:
             return LogicResponse.AlreadyOpen
 
@@ -257,16 +278,27 @@ class DoorHandler:
         return LogicResponse.Success
 
     def close(self):
-        if self.state == DoorState.Close:
+        if self.state == DoorState.Closed:
             return LogicResponse.AlreadyLocked
 
-        self.state = DoorState.Close
+        self.do_close = True
+        self.state = DoorState.Closed
         run_lock()
         return LogicResponse.Success
 
+    def present(self):
+        if self.state == DoorState.Present:
+            return LogicResponse.AlreadyOpen
+
+        self.state = DoorState.Present
+        # new hook?
+        return LogicResponse.Success
+
     def request(self, state):
-        if state == DoorState.Close:
+        if state == DoorState.Closed:
             return self.close()
+        elif state == DoorState.Present:
+            return self.present()
         elif state == DoorState.Open:
             return self.open()
 
@@ -312,7 +344,7 @@ class Logic:
         if err == LogicResponse.Success:
             if self.door_handler.state == DoorState.Open:
                 playsound(wave_unlock)
-            if self.door_handler.state == DoorState.Close:
+            if self.door_handler.state == DoorState.Closed:
                 playsound(wave_lock)
         elif err == LogicResponse.AlreadyLocked or err == LogicResponse.AlreadyOpen:
             playsound(wave_zonk)
@@ -337,11 +369,12 @@ class AuthenticationForm(FlaskForm):
     username = StringField('Username', [Length(min=3, max=25)])
     password = PasswordField('Password', [DataRequired()])
     open = SubmitField('Open')
+    present = SubmitField('Present')
     close = SubmitField('Close')
 
     def __init__(self, *args, **kwargs):
         FlaskForm.__init__(self, *args, **kwargs)
-        self.desired_state = DoorState.Close
+        self.desired_state = DoorState.Closed
 
     def validate(self):
         if not FlaskForm.validate(self):
@@ -349,6 +382,8 @@ class AuthenticationForm(FlaskForm):
 
         if self.open.data:
             self.desired_state = DoorState.Open
+        elif self.present.data:
+            self.desired_state = DoorState.Present
 
         return True
 
@@ -377,7 +412,7 @@ def api():
            response == LogicResponse.AlreadyOpen:
             # TBD: Remove 'status'. No more users. Still used in App Version 2.0!
             json['status'] = str(logic.state.to_html())
-            json['open'] = logic.state == DoorState.Open
+            json['open'] = logic.state.is_open()
         return jsonify(json)
 
     user = request.form.get('user')
@@ -399,7 +434,7 @@ def api():
     if command == 'status':
         return json_response(logic.try_auth(credentials))
     elif command == 'lock':
-        desired_state = DoorState.Close
+        desired_state = DoorState.Closed
     elif command == 'unlock':
         desired_state = DoorState.Open
 
