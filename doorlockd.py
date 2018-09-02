@@ -134,9 +134,10 @@ class AuthMethod(Enum):
 
 
 class DoorState(Enum):
-    Open = 1
-    Present = 2
-    Closed = 3
+    # These numbers are used by the App since version 3.0, do NOT change them
+    Open = 0
+    Present = 1
+    Closed = 2
 
     def from_string(string):
         if string == 'lock':
@@ -420,9 +421,9 @@ def api():
         if response == LogicResponse.Success or \
            response == LogicResponse.AlreadyLocked or \
            response == LogicResponse.AlreadyOpen:
-            # TBD: Remove 'status'. No more users. Still used in App Version 2.0!
-            json['status'] = str(logic.state.to_html())
+            # TBD: Remove 'open'. No more users. Still used in App Version 2.1.1!
             json['open'] = logic.state.is_open()
+            json['status'] = logic.state.value
         return jsonify(json)
 
     user = request.form.get('user')
