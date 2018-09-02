@@ -173,8 +173,9 @@ class DoorState(Enum):
 class LogicResponse(Enum):
     Success = 0
     Perm = 1
-    AlreadyLocked = 2
-    AlreadyOpen = 3
+    AlreadyActive = 2
+    # don't break old apps, value 3 is reserved now
+    RESERVED = 3
     Inval = 4
     LDAP = 5
 
@@ -188,10 +189,8 @@ class LogicResponse(Enum):
             return 'Yo, passt.'
         elif self == LogicResponse.Perm:
             return choose_insult()
-        elif self == LogicResponse.AlreadyLocked:
-            return 'Narf. Schon zu.'
-        elif self == LogicResponse.AlreadyOpen:
-            return 'Schon offen, treten Sie ein!'
+        elif self == LogicResponse.AlreadyActive:
+            return 'Zustand bereits aktiv'
         elif self == LogicResponse.Inval:
             return 'Das was du willst geht nicht.'
         elif self == LogicResponse.LDAP:
@@ -282,7 +281,7 @@ class DoorHandler:
 
     def open(self):
         if self.state == DoorState.Open:
-            return LogicResponse.AlreadyOpen
+            return LogicResponse.AlreadyActive
 
         self.state = DoorState.Open
         run_unlock()
@@ -290,7 +289,7 @@ class DoorHandler:
 
     def close(self):
         if self.state == DoorState.Closed:
-            return LogicResponse.AlreadyLocked
+            return LogicResponse.AlreadyActive
 
         self.do_close = True
         self.state = DoorState.Closed
@@ -299,7 +298,7 @@ class DoorHandler:
 
     def present(self):
         if self.state == DoorState.Present:
-            return LogicResponse.AlreadyOpen
+            return LogicResponse.AlreadyActive
 
         self.state = DoorState.Present
         # new hook?
@@ -357,7 +356,7 @@ class Logic:
                 playsound(wave_unlock)
             if self.door_handler.state == DoorState.Closed:
                 playsound(wave_lock)
-        elif err == LogicResponse.AlreadyLocked or err == LogicResponse.AlreadyOpen:
+        elif err == LogicResponse.AlreadyActive:
             playsound(wave_zonk)
         self.emit_status(err)
         return err
@@ -419,8 +418,7 @@ def api():
         json['err'] = response.value
         json['msg'] = response.to_html() if msg is None else msg
         if response == LogicResponse.Success or \
-           response == LogicResponse.AlreadyLocked or \
-           response == LogicResponse.AlreadyOpen:
+           response == LogicResponse.AlreadyActive:
             # TBD: Remove 'open'. No more users. Still used in App Version 2.1.1!
             json['open'] = logic.state.is_open()
             json['status'] = logic.state.value
