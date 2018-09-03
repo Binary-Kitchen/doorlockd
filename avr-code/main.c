@@ -35,6 +35,7 @@ enum state_source {
 	BUTTON,
 	COMM,
 	TIMEOUT,
+	EMERGENCY,
 };
 
 static inline void set_schnapper(bool state)
@@ -120,8 +121,16 @@ static void update_state(unsigned char new_state, enum state_source source)
 		break;
 	}
 
-	if (source == BUTTON)
+	switch (source) {
+	case BUTTON:
 		ret = toupper(ret);
+		break;
+	case EMERGENCY:
+		ret = 'E';
+		break;
+	default:
+		break;
+	}
 
 	uart_putc(ret);
 }
@@ -207,13 +216,17 @@ int main(void)
 	sei();
 
 	for (;;) {
-		i = get_keys();
-		if (i & GREEN)
-			update_state(GREEN, BUTTON);
-		else if (i & YELLOW)
-			update_state(YELLOW, BUTTON);
-		else if (i & RED)
-			update_state(RED, BUTTON);
+		if (is_emergency()) {
+			update_state(GREEN, EMERGENCY);
+		} else {
+			i = get_keys();
+			if (i & GREEN)
+				update_state(GREEN, BUTTON);
+			else if (i & YELLOW)
+				update_state(YELLOW, BUTTON);
+			else if (i & RED)
+				update_state(RED, BUTTON);
+		}
 		set_leds();
 	}
 }
