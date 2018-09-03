@@ -35,7 +35,7 @@ $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -O ihex -R .eeprom $^ $@
 
 program: $(TARGET).hex
-	$(AVRDUDE) -p $(AVRDUDE_MCU) -P usb -c avrispmkII -U flash:w:$^
+	$(AVRDUDE) -p $(AVRDUDE_MCU) -c linuxspi -P /dev/spidev0.0 -U flash:w:$^
 
 clean:
 	rm -f $(OBJS)
