@@ -218,7 +218,8 @@ class DoorHandler:
     BUTTON_PRESENT = b'Y'
     BUTTON_OPEN = b'G'
     BUTTON_CLOSE = b'R'
-    # TBD EMERGENCY OPEN
+
+    CMD_EMERGENCY_SWITCH = b'E'
     # TBD DOOR NOT CLOSED
 
     def __init__(self, device):
@@ -245,9 +246,9 @@ class DoorHandler:
             # playsound...
             self.state = DoorState.Present
             logic.emit_status(LogicResponse.ButtonPresent)
-        # elif recv == DoorHandler.BUTTON_EMERGENCY_PRESS:
-        #     playsound(wave_emergency)
-        #     logic.emit_status(LogicResponse.EmergencyUnlock)
+        elif recv == DoorHandler.CMD_EMERGENCY_SWITCH:
+            playsound(wave_emergency)
+            logic.emit_status(LogicResponse.EmergencyUnlock)
 
         if expect is None:
             return True
