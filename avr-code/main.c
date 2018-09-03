@@ -160,6 +160,16 @@ static inline void setup_ports(void)
 	DDRD = (1 << PD5) | (1 << PD6);
 }
 
+static inline bool is_emergency(void)
+{
+	return !(PINB & (1 << PB3));
+}
+
+static inline bool is_door_open(void)
+{
+	return !(PINB & (1 << PB2));
+}
+
 static unsigned char get_keys(void)
 {
 	unsigned char ret = 0;
