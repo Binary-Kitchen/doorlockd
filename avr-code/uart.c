@@ -25,8 +25,6 @@
   #error Choose another crystal. Baud error too high.
 #endif
 
-static void (*recv_handler)(unsigned char c) = NULL;
-
 void uart_init()
 {
 	// Enable receive and transmit
@@ -37,11 +35,6 @@ void uart_init()
 
 	UBRRH = UBRR_VAL >> 8;
 	UBRRL = UBRR_VAL & 0xFF;
-}
-
-void uart_set_recv_handler(void (*handler)(unsigned char c))
-{
-	recv_handler = handler;
 }
 
 void uart_putc(const char c)
