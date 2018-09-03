@@ -12,6 +12,7 @@
 
 #include "uart.h"
 
+#include <ctype.h>
 #include <stdbool.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -28,7 +29,13 @@
 		port &= ~(1 << pin);
 
 /* can either be red, green, or yellow */
-static unsigned char state;
+static unsigned char state = RED;
+
+enum state_source {
+	BUTTON,
+	COMM,
+	TIMEOUT,
+};
 
 static inline void set_schnapper(bool state)
 {
@@ -86,31 +93,37 @@ static void set_leds(void)
 	}
 }
 
-static void update_state(unsigned char new_state)
+static void update_state(unsigned char new_state, enum state_source source)
 {
+	char ret;
 	reset_timeout();
 
 	if (new_state == state)
 		return;
-
 	state = new_state;
+
 	switch (state) {
 	case RED:
 		set_bolzen(false);
 		set_schnapper(false);
-		uart_putc('r');
+		ret = 'r';
 		break;
 	case YELLOW:
 		set_bolzen(true);
 		set_schnapper(false);
-		uart_putc('y');
+		ret = 'y';
 		break;
 	case GREEN:
 		set_bolzen(true);
 		set_schnapper(true);
-		uart_putc('g');
+		ret = 'g';
 		break;
 	}
+
+	if (source == BUTTON)
+		ret = toupper(ret);
+
+	uart_putc(ret);
 }
 
 ISR(USART_RX_vect)
@@ -120,13 +133,13 @@ ISR(USART_RX_vect)
 
 	switch (c) {
 	case 'r':
-		update_state(RED);
+		update_state(RED, COMM);
 		break;
 	case 'y':
-		update_state(YELLOW);
+		update_state(YELLOW, COMM);
 		break;
 	case 'g':
-		update_state(GREEN);
+		update_state(GREEN, COMM);
 		break;
 	default:
 		respond = false;
@@ -140,7 +153,7 @@ ISR(USART_RX_vect)
 ISR(TIMER1_OVF_vect)
 {
 	reset_timeout();
-	update_state(RED);
+	update_state(RED, TIMEOUT);
 }
 
 static inline void timer_init(void)
@@ -189,25 +202,18 @@ int main(void)
 	timer_init();
 	uart_init();
 
-	update_state(RED);
 	reset_timeout();
 
 	sei();
 
 	for (;;) {
 		i = get_keys();
-		if (i & GREEN) {
-			uart_putc('G');
-			update_state(GREEN);
-		} else if (i & YELLOW) {
-			uart_putc('Y');
-			update_state(YELLOW);
-		} else if (i & RED) {
-			uart_putc('R');
-			update_state(RED);
-		}
-		while (get_keys())
-			reset_timeout();
+		if (i & GREEN)
+			update_state(GREEN, BUTTON);
+		else if (i & YELLOW)
+			update_state(YELLOW, BUTTON);
+		else if (i & RED)
+			update_state(RED, BUTTON);
 		set_leds();
 	}
 }
