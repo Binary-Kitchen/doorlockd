@@ -95,7 +95,7 @@ static void set_leds(void)
 
 static void update_state(unsigned char new_state, enum state_source source)
 {
-	char ret;
+	char ret = 0;
 	reset_timeout();
 
 	if (new_state == state)
