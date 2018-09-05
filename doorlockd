@@ -41,6 +41,10 @@ PREFIX = '.'
 
 root_prefix = join(PREFIX, 'share', 'doorlockd')
 sounds_prefix = join(root_prefix, 'sounds')
+static_folder = join(root_prefix, 'static')
+template_folder = join(root_prefix, 'templates')
+
+flask_config = join(SYSCONFDIR, 'doorlockd.cfg')
 
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
@@ -62,8 +66,10 @@ default_binddn = 'cn=%s,ou=people,dc=binary-kitchen,dc=de'
 
 html_title = 'Binary Kitchen Doorlock (%s - v%s)' % (__status__, __version__)
 
-webapp = Flask(__name__)
-webapp.config.from_pyfile(join(SYSCONFDIR, 'doorlockd.cfg'))
+webapp = Flask(__name__,
+               template_folder=template_folder,
+               static_folder=static_folder)
+webapp.config.from_pyfile(flask_config)
 socketio = SocketIO(webapp, async_mode='threading')
 Bootstrap(webapp)
 serial_port = webapp.config.get('SERIAL_PORT')
