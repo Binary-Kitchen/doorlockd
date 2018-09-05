@@ -43,6 +43,7 @@ root_prefix = join(PREFIX, 'share', 'doorlockd')
 sounds_prefix = join(root_prefix, 'sounds')
 static_folder = join(root_prefix, 'static')
 template_folder = join(root_prefix, 'templates')
+scripts_prefix = join(root_prefix, 'scripts')
 
 flask_config = join(SYSCONFDIR, 'doorlockd.cfg')
 
@@ -136,15 +137,15 @@ def start_hook(script):
         log.info('Hooks disabled: not starting %s' % script)
         return
     log.info('Starting hook %s' % script)
-    Popen(['nohup', script])
+    Popen(['nohup', join(scripts_prefix, script)])
 
 
 def run_lock():
-    start_hook('./scripts/post_lock')
+    start_hook('post_lock')
 
 
 def run_unlock():
-    start_hook('./scripts/post_unlock')
+    start_hook('post_unlock')
 
 
 class AuthMethod(Enum):
