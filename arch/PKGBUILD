@@ -1,0 +1,22 @@
+# Author: Ralf Ramsauer <ralf@binary-kitchen.de>
+
+pkgname=doorlockd
+pkgver=2.0
+pkgrel=1
+pkgdesc="Binary Kitchen's doorlockd"
+arch=('any')
+url="https://github.com/Binary-Kitchen/${pkgname}"
+license=(GPL)
+depends=('python3' 'alsa-utils' 'mosquitto' 'wol' 'python-flask-wtf' 'python-flask-socketio')
+source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=next")
+sha256sums=('SKIP')
+
+build() {
+  cd "$srcdir/$pkgname/"
+  make PREFIX=/usr sysconfdir=/etc
+}
+
+package() {
+  cd "$srcdir/$pkgname/"
+  make PREFIX=/usr sysconfdir=/etc DESTDIR="$pkgdir" install
+}

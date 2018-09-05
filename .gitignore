@@ -1,3 +1,7 @@
 *.hex
 *.elf
 *.o
+arch/pkg
+arch/src
+arch/doorlockd
+arch/*.xz
