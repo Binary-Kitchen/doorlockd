@@ -39,6 +39,9 @@ from wtforms.validators import DataRequired, Length
 SYSCONFDIR = '.'
 PREFIX = '.'
 
+root_prefix = join(PREFIX, 'share', 'doorlockd')
+sounds_prefix = join(root_prefix, 'sounds')
+
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
 __license__ = 'GPLv2'
@@ -76,12 +79,13 @@ if 'LDAP_CA' in webapp.config.keys():
 ldap_uri = webapp.config.get('LDAP_URI')
 ldap_binddn = webapp.config.get('LDAP_BINDDN')
 
-wave_emergency = webapp.config.get('WAVE_EMERGENCY')
-wave_lock = webapp.config.get('WAVE_LOCK')
-wave_lock_button = webapp.config.get('WAVE_LOCK_BUTTON')
-wave_unlock = webapp.config.get('WAVE_UNLOCK')
-wave_unlock_button = webapp.config.get('WAVE_UNLOCK_BUTTON')
-wave_zonk = webapp.config.get('WAVE_ZONK')
+wave_emergency = 'emergency_unlock.wav'
+wave_lock = 'lock.wav'
+wave_lock_button = 'lock_button.wav'
+wave_unlock = 'unlock.wav'
+wave_unlock_button = 'unlock_button.wav'
+wave_zonk = 'zonk.wav'
+
 sounds = webapp.config.get('SOUNDS')
 
 host = 'localhost'
@@ -118,7 +122,7 @@ def choose_insult():
 def playsound(filename):
     if not sounds:
         return
-    Popen(['nohup', 'aplay', filename])
+    Popen(['nohup', 'aplay', join(sounds_prefix, filename)])
 
 
 def start_hook(script):
