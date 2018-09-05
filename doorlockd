@@ -22,6 +22,7 @@ import logging
 import sys
 
 from enum import Enum
+from os.path import join
 from random import sample
 from serial import Serial
 from subprocess import Popen
@@ -34,6 +35,9 @@ from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length
+
+SYSCONFDIR = '.'
+PREFIX = '.'
 
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
@@ -56,7 +60,7 @@ default_binddn = 'cn=%s,ou=people,dc=binary-kitchen,dc=de'
 html_title = 'Binary Kitchen Doorlock (%s - v%s)' % (__status__, __version__)
 
 webapp = Flask(__name__)
-webapp.config.from_pyfile('config.cfg')
+webapp.config.from_pyfile(join(SYSCONFDIR, 'doorlockd.cfg'))
 socketio = SocketIO(webapp, async_mode='threading')
 Bootstrap(webapp)
 serial_port = webapp.config.get('SERIAL_PORT')
