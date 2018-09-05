@@ -123,22 +123,23 @@ static void update_state(unsigned char new_state, enum state_source source)
 
 	switch (source) {
 	case BUTTON:
-		ret = toupper(ret);
+		uart_putc(toupper(ret));
 		break;
 	case EMERGENCY:
-		ret = 'E';
+		uart_putc('E');
 		break;
+	case TIMEOUT:
+		uart_putc(ret);
+		break;
+	case COMM:
 	default:
 		break;
 	}
-
-	uart_putc(ret);
 }
 
 ISR(USART_RX_vect)
 {
 	unsigned char c = UDR;
-	bool respond = true;
 
 	switch (c) {
 	case 'r':
@@ -150,13 +151,7 @@ ISR(USART_RX_vect)
 	case 'g':
 		update_state(GREEN, COMM);
 		break;
-	default:
-		respond = false;
-		break;
 	}
-
-	if (respond)
-		uart_putc(c);
 }
 
 ISR(TIMER1_OVF_vect)

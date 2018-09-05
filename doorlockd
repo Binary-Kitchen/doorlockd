@@ -248,56 +248,50 @@ class DoorHandler:
         self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
                              stopbits=1, timeout=0)
         self.thread = Thread(target=self.thread_worker)
+        log.debug('Spawning RS232 Thread')
         self.thread.start()
-
-    def handle_input(self, recv, expect=None):
-        if recv == DoorHandler.BUTTON_CLOSE:
-            playsound(wave_lock_button)
-            if self.state.is_open():
-                run_lock()
-            self.state = DoorState.Closed
-            logic.emit_status(LogicResponse.ButtonLock)
-        elif recv == DoorHandler.BUTTON_OPEN:
-            playsound(wave_unlock_button)
-            self.state = DoorState.Open
-            logic.emit_status(LogicResponse.ButtonUnlock)
-        elif recv == DoorHandler.BUTTON_PRESENT:
-            # playsound...
-            self.state = DoorState.Present
-            logic.emit_status(LogicResponse.ButtonPresent)
-        elif recv == DoorHandler.CMD_EMERGENCY_SWITCH:
-            playsound(wave_emergency)
-            logic.emit_status(LogicResponse.EmergencyUnlock)
-
-        if expect is None:
-            return True
-        return recv == expect
-
-    def send_command(self, cmd):
-        self.serial.write(cmd)
-        self.serial.flush()
-        sleep(0.1)
-        char = self.serial.read(1)
-        if not self.handle_input(char, cmd):
-            log.warning('Sent serial command, got wrong response')
 
     def thread_worker(self):
         while True:
             sleep(0.4)
             while True:
-                char = self.serial.read(1)
-                if len(char) == 0:
+                rx = self.serial.read(1)
+                if len(rx) == 0:
                     break
-                self.handle_input(char)
+                if rx == DoorHandler.BUTTON_CLOSE:
+                    self.close()
+                    log.info('Closed due to Button press')
+                    logic.emit_status(LogicResponse.ButtonLock)
+                elif rx == DoorHandler.BUTTON_OPEN:
+                    self.open()
+                    log.info('Opened due to Button press')
+                    logic.emit_status(LogicResponse.ButtonUnlock)
+                elif rx == DoorHandler.BUTTON_PRESENT:
+                    self.present()
+                    log.info('Present due to Button press')
+                    logic.emit_status(LogicResponse.ButtonPresent)
+                elif rx == DoorHandler.CMD_EMERGENCY_SWITCH:
+                    log.warning('Emergency unlock')
+                    logic.emit_status(LogicResponse.EmergencyUnlock)
+                else:
+                    log.error('Received unknown message "%s" from AVR' % rx)
 
             if self.do_close:
-                self.send_command(DoorHandler.CMD_CLOSE)
+                tx = DoorHandler.CMD_CLOSE
                 self.do_close = False
-            elif self.state.is_open():
-                if self.state == DoorState.Present:
-                    self.send_command(DoorHandler.CMD_PRESENT)
-                else:
-                    self.send_command(DoorHandler.CMD_OPEN)
+            if self.state == DoorState.Present:
+                tx = DoorHandler.CMD_PRESENT
+            elif self.state == DoorState.Open:
+                tx = DoorHandler.CMD_OPEN
+            else:
+                tx = None
+
+            if not tx:
+                continue
+
+            self.serial.write(tx)
+            self.serial.flush()
+            sleep(0.1)
 
     def open(self):
         if self.state == DoorState.Open:
