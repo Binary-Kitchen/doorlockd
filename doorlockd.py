@@ -80,6 +80,10 @@ wave_unlock_button = webapp.config.get('WAVE_UNLOCK_BUTTON')
 wave_zonk = webapp.config.get('WAVE_ZONK')
 sounds = webapp.config.get('SOUNDS')
 
+host = 'localhost'
+if webapp.config.get('DEBUG'):
+    host = '0.0.0.0'
+
 # copied from sudo
 eperm_insults = {
         'Wrong!  You cheating scum!',
@@ -407,8 +411,6 @@ def on_connect():
 
 @webapp.route('/display')
 def display():
-    if request.remote_addr != '127.0.0.1':
-        abort(403)
     return render_template('display.html')
 
 
@@ -492,6 +494,6 @@ if __name__ == '__main__':
 
     logic = Logic()
 
-    socketio.run(webapp, host='0.0.0.0', port=8080)
+    socketio.run(webapp, host=host, port=8080)
 
     sys.exit(0)
