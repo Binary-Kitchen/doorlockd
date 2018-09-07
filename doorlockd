@@ -503,6 +503,6 @@ if __name__ == '__main__':
 
     logic = Logic()
 
-    socketio.run(webapp, host=host, port=8080)
+    socketio.run(webapp, host=host, port=8080, use_reloader=False)
 
     sys.exit(0)
