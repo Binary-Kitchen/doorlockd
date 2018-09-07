@@ -284,9 +284,6 @@ class DoorHandler:
             elif self.state == DoorState.Open:
                 tx = DoorHandler.CMD_OPEN
             else:
-                tx = None
-
-            if not tx:
                 continue
 
             self.serial.write(tx)
