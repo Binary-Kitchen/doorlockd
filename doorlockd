@@ -271,7 +271,7 @@ class DoorHandler:
             if self.do_close:
                 tx = DoorHandler.CMD_CLOSE
                 self.do_close = False
-            if self.state == DoorState.Present:
+            elif self.state == DoorState.Present:
                 tx = DoorHandler.CMD_PRESENT
             elif self.state == DoorState.Open:
                 tx = DoorHandler.CMD_OPEN
@@ -280,7 +280,6 @@ class DoorHandler:
 
             self.serial.write(tx)
             self.serial.flush()
-            sleep(0.1)
 
     def open(self):
         if self.state == DoorState.Open:
