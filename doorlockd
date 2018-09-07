@@ -140,14 +140,6 @@ def start_hook(script):
     Popen(['nohup', join(scripts_prefix, script)])
 
 
-def run_lock():
-    start_hook('post_lock')
-
-
-def run_unlock():
-    start_hook('post_unlock')
-
-
 class AuthMethod(Enum):
     LDAP_USER_PW = 1
 
@@ -295,7 +287,15 @@ class DoorHandler:
             return LogicResponse.AlreadyActive
 
         self.state = DoorState.Open
-        run_unlock()
+        start_hook('post_unlock')
+        return LogicResponse.Success
+
+    def present(self):
+        if self.state == DoorState.Present:
+            return LogicResponse.AlreadyActive
+
+        self.state = DoorState.Present
+        start_hook('post_present')
         return LogicResponse.Success
 
     def close(self):
@@ -304,15 +304,7 @@ class DoorHandler:
 
         self.do_close = True
         self.state = DoorState.Closed
-        run_lock()
-        return LogicResponse.Success
-
-    def present(self):
-        if self.state == DoorState.Present:
-            return LogicResponse.AlreadyActive
-
-        self.state = DoorState.Present
-        # new hook?
+        start_hook('post_lock')
         return LogicResponse.Success
 
     def request(self, state):
