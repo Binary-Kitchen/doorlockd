@@ -20651,11 +20651,11 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <part name="GND4" library="SparkFun-PowerSymbols" library_urn="urn:adsk.eagle:library:530" deviceset="GND" device=""/>
 <part name="SUPPLY2" library="supply2" library_urn="urn:adsk.eagle:library:372" deviceset="GND2" device=""/>
 <part name="R1" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
-<part name="R2" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
+<part name="R2" library="rcl" deviceset="R-EU_" device="R0805" value="10k"/>
 <part name="SUPPLY3" library="SparkFun-PowerSymbols" library_urn="urn:adsk.eagle:library:530" deviceset="VCC" device=""/>
 <part name="GND3" library="SparkFun-PowerSymbols" library_urn="urn:adsk.eagle:library:530" deviceset="GND" device=""/>
 <part name="R3" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
-<part name="R15" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
+<part name="R15" library="rcl" deviceset="R-EU_" device="R0805" value="10k"/>
 <part name="P+5" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+5V" device=""/>
 <part name="P+8" library="supply1" deviceset="+12V" device=""/>
 <part name="P+9" library="supply1" deviceset="+12V" device=""/>
@@ -20676,6 +20676,10 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <part name="LED2" library="led" library_urn="urn:adsk.eagle:library:259" deviceset="LED" device="CHIP-LED0805" package3d_urn="urn:adsk.eagle:package:15818/2"/>
 <part name="JP1" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X2" device="" package3d_urn="urn:adsk.eagle:package:22435/2"/>
 <part name="J1" library="SparkFun-Connectors" library_urn="urn:adsk.eagle:library:513" deviceset="RJ45-8" device="" package3d_urn="urn:adsk.eagle:package:38235/1" value="RJ45"/>
+<part name="C5" library="rcl" deviceset="C-EU" device="C0805" value="100n"/>
+<part name="C6" library="rcl" deviceset="C-EU" device="C0805" value="100n"/>
+<part name="R18" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
+<part name="R19" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
 </parts>
 <sheets>
 <sheet>
@@ -20720,11 +20724,11 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <instance part="GND4" gate="1" x="33.02" y="157.48"/>
 <instance part="SUPPLY2" gate="G$1" x="45.72" y="55.88" rot="MR0"/>
 <instance part="R1" gate="G$1" x="53.34" y="83.82"/>
-<instance part="R2" gate="G$1" x="86.36" y="96.52" rot="R90"/>
-<instance part="SUPPLY3" gate="G$1" x="88.9" y="106.68"/>
-<instance part="GND3" gate="1" x="86.36" y="53.34"/>
+<instance part="R2" gate="G$1" x="96.52" y="96.52" rot="R90"/>
+<instance part="SUPPLY3" gate="G$1" x="99.06" y="106.68"/>
+<instance part="GND3" gate="1" x="81.28" y="48.26"/>
 <instance part="R3" gate="G$1" x="53.34" y="68.58"/>
-<instance part="R15" gate="G$1" x="91.44" y="96.52" rot="R90"/>
+<instance part="R15" gate="G$1" x="101.6" y="96.52" rot="R90"/>
 <instance part="P+5" gate="1" x="182.88" y="96.52"/>
 <instance part="P+8" gate="1" x="134.62" y="78.74"/>
 <instance part="P+9" gate="1" x="134.62" y="93.98"/>
@@ -20754,6 +20758,10 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <instance part="LED2" gate="G$1" x="248.92" y="114.3" rot="R270"/>
 <instance part="JP1" gate="G$1" x="116.84" y="175.26" rot="R180"/>
 <instance part="J1" gate="JP1" x="22.86" y="182.88" rot="R180"/>
+<instance part="C5" gate="G$1" x="96.52" y="60.96"/>
+<instance part="C6" gate="G$1" x="101.6" y="60.96"/>
+<instance part="R18" gate="G$1" x="88.9" y="68.58"/>
+<instance part="R19" gate="G$1" x="88.9" y="83.82"/>
 </instances>
 <busses>
 </busses>
@@ -20785,12 +20793,12 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <pinref part="R2" gate="G$1" pin="2"/>
 <pinref part="SUPPLY3" gate="G$1" pin="VCC"/>
 <pinref part="R15" gate="G$1" pin="2"/>
-<wire x1="88.9" y1="104.14" x2="86.36" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="88.9" y1="104.14" x2="88.9" y2="106.68" width="0.1524" layer="91"/>
-<junction x="88.9" y="104.14"/>
-<wire x1="86.36" y1="101.6" x2="86.36" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="91.44" y1="101.6" x2="91.44" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="88.9" y1="104.14" x2="91.44" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="104.14" x2="96.52" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="104.14" x2="99.06" y2="106.68" width="0.1524" layer="91"/>
+<junction x="99.06" y="104.14"/>
+<wire x1="96.52" y1="101.6" x2="96.52" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="101.6" x2="101.6" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="104.14" x2="101.6" y2="104.14" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="X1" gate="G$1" pin="3V3A"/>
@@ -20859,13 +20867,22 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 </segment>
 <segment>
 <pinref part="OK1" gate="B" pin="EMIT"/>
-<wire x1="78.74" y1="63.5" x2="86.36" y2="63.5" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="63.5" x2="81.28" y2="63.5" width="0.1524" layer="91"/>
 <pinref part="GND3" gate="1" pin="GND"/>
-<wire x1="86.36" y1="63.5" x2="86.36" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="81.28" y1="63.5" x2="81.28" y2="53.34" width="0.1524" layer="91"/>
 <pinref part="OK1" gate="A" pin="EMIT"/>
-<wire x1="78.74" y1="78.74" x2="86.36" y2="78.74" width="0.1524" layer="91"/>
-<wire x1="86.36" y1="78.74" x2="86.36" y2="63.5" width="0.1524" layer="91"/>
-<junction x="86.36" y="63.5"/>
+<wire x1="81.28" y1="53.34" x2="81.28" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="78.74" x2="81.28" y2="78.74" width="0.1524" layer="91"/>
+<wire x1="81.28" y1="78.74" x2="81.28" y2="63.5" width="0.1524" layer="91"/>
+<junction x="81.28" y="63.5"/>
+<pinref part="C6" gate="G$1" pin="2"/>
+<wire x1="101.6" y1="55.88" x2="101.6" y2="53.34" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="53.34" x2="96.52" y2="53.34" width="0.1524" layer="91"/>
+<junction x="81.28" y="53.34"/>
+<pinref part="C5" gate="G$1" pin="2"/>
+<wire x1="96.52" y1="53.34" x2="81.28" y2="53.34" width="0.1524" layer="91"/>
+<wire x1="96.52" y1="55.88" x2="96.52" y2="53.34" width="0.1524" layer="91"/>
+<junction x="96.52" y="53.34"/>
 </segment>
 <segment>
 <pinref part="X1" gate="G$1" pin="GND_A"/>
@@ -20960,12 +20977,14 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 </segment>
 <segment>
 <pinref part="R15" gate="G$1" pin="1"/>
-<wire x1="91.44" y1="68.58" x2="91.44" y2="91.44" width="0.1524" layer="91"/>
-<wire x1="91.44" y1="68.58" x2="99.06" y2="68.58" width="0.1524" layer="91"/>
-<label x="99.06" y="68.58" size="1.27" layer="95" font="fixed" xref="yes"/>
-<pinref part="OK1" gate="B" pin="COL"/>
-<wire x1="78.74" y1="68.58" x2="91.44" y2="68.58" width="0.1524" layer="91"/>
-<junction x="91.44" y="68.58"/>
+<wire x1="101.6" y1="68.58" x2="101.6" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="101.6" y1="68.58" x2="104.14" y2="68.58" width="0.1524" layer="91"/>
+<label x="104.14" y="68.58" size="1.27" layer="95" font="fixed" xref="yes"/>
+<pinref part="R18" gate="G$1" pin="2"/>
+<wire x1="93.98" y1="68.58" x2="101.6" y2="68.58" width="0.1524" layer="91"/>
+<junction x="101.6" y="68.58"/>
+<pinref part="C6" gate="G$1" pin="1"/>
+<wire x1="101.6" y1="68.58" x2="101.6" y2="63.5" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$20" class="0">
@@ -21281,13 +21300,14 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <net name="TUERSTATUS" class="0">
 <segment>
 <pinref part="R2" gate="G$1" pin="1"/>
-<wire x1="91.44" y1="83.82" x2="96.52" y2="83.82" width="0.1524" layer="91"/>
-<label x="96.52" y="83.82" size="1.27" layer="95" font="fixed" xref="yes"/>
-<pinref part="OK1" gate="A" pin="COL"/>
-<wire x1="78.74" y1="83.82" x2="86.36" y2="83.82" width="0.1524" layer="91"/>
-<wire x1="86.36" y1="83.82" x2="91.44" y2="83.82" width="0.1524" layer="91"/>
-<wire x1="86.36" y1="91.44" x2="86.36" y2="83.82" width="0.1524" layer="91"/>
-<junction x="86.36" y="83.82"/>
+<wire x1="93.98" y1="83.82" x2="96.52" y2="83.82" width="0.1524" layer="91"/>
+<label x="104.14" y="83.82" size="1.27" layer="95" font="fixed" xref="yes"/>
+<wire x1="96.52" y1="83.82" x2="104.14" y2="83.82" width="0.1524" layer="91"/>
+<pinref part="R19" gate="G$1" pin="2"/>
+<wire x1="96.52" y1="91.44" x2="96.52" y2="83.82" width="0.1524" layer="91"/>
+<junction x="96.52" y="83.82"/>
+<pinref part="C5" gate="G$1" pin="1"/>
+<wire x1="96.52" y1="83.82" x2="96.52" y2="63.5" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="IC1" gate="G$1" pin="PB2"/>
@@ -21404,6 +21424,20 @@ Note, you may also be interested in the "MAGJACK" version of this. It is basical
 <pinref part="J1" gate="JP1" pin="6"/>
 <pinref part="R14" gate="G$1" pin="1"/>
 <wire x1="30.48" y1="187.96" x2="35.56" y2="187.96" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$3" class="0">
+<segment>
+<pinref part="OK1" gate="B" pin="COL"/>
+<pinref part="R18" gate="G$1" pin="1"/>
+<wire x1="78.74" y1="68.58" x2="83.82" y2="68.58" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$5" class="0">
+<segment>
+<pinref part="OK1" gate="A" pin="COL"/>
+<pinref part="R19" gate="G$1" pin="1"/>
+<wire x1="78.74" y1="83.82" x2="83.82" y2="83.82" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
