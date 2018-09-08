@@ -1,5 +1,4 @@
 {% extends "layout.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
 
 {%- block metas %}
 {{super()}}
@@ -13,7 +12,20 @@
 		<img src="{{ led }}">
 	</div>
 	<div class="col-md-8">
-		{{ wtf.quick_form(authentication_form, button_map={'open': 'success btn-lg btn-block', 'present': 'warning btn-lg btn-block', 'close': 'danger btn-lg btn-block'}) }}
+		<form action="" method="post" class="form" role="form">
+			{{ authentication_form.csrf_token }}
+			<div class="form-group ">
+				<label class="control-label" for="username">Username</label>
+				<input class="form-control" id="username" name="username" type="text" value="">
+			</div>
+			<div class="form-group  required">
+				<label class="control-label" for="password">Password</label>
+				<input class="form-control" id="password" name="password" required type="password" value="">
+			</div>
+			<input class="btn btn-success btn-lg btn-block" id="open" name="open" type="submit" value="Open">
+			<input class="btn btn-warning btn-lg btn-block" id="present" name="present" type="submit" value="Present">
+			<input class="btn btn-danger btn-lg btn-block" id="close" name="close" type="submit" value="Close">
+		</form>
 		{% if response %}
 		<hr/>
 		<h1>{{ response.to_html() }}</h1>

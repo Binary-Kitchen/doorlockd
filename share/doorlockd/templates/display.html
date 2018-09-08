@@ -1,12 +1,15 @@
 {% extends "layout.html" %}
 
 {% block head %}
+{{ title }}
 {{ super() }}
 <meta http-equiv="refresh" content="600">
 {% endblock %}
 
 {% block scripts %}
 	{{ super() }}
+	<script src="/static/js/jquery.min.js"></script>
+	<script src="/static/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="static/socket.io.slim.js"></script>
 	<script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
@@ -31,7 +34,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="text-center">Willkommen in der Binary Kitchen!</h1>
+<h1 class="text-center display-4">Willkommen in der Binary Kitchen!</h1>
 <div class="row">
 	<div class="col-md-3 text-center">
 		<img id="led" src="">
