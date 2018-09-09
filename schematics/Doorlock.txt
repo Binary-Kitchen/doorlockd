@@ -1,0 +1,29 @@
+Qty Value             Device                 Package           Parts                         Reichelt
+2                     BC817-16-NPN-SOT23-BEC SOT23-BEC         T1, T2                        BC 816-16 SMD
+1                     CRYSTALHC49UP          HC49UP            Q1                            4,0000-HC49-SMD
+2                     LEDCHIP-LED0805        CHIP-LED0805      LED1, LED2                    SLO SMD-R0805-0
+1                     PINHD-1X2              1X02              JP1                           BKL 10120183
+1                     SJ2W                   SJ_2              SJ1                           JUMPER 2,54GL SW
+1   0                 R-EU_R0805             R0805             R14                           SMD-0805 0,00
+2   100               R-EU_R0805             R0805             R16, R17                      SMD-0805 100
+6   100n              C-EUC0805              C0805             C3, C5, C6, C8, C9, C11       X7R 0805 CD 120N
+5   10k               R-EU_R0805             R0805             R2, R6, R7, R11, R15          SMD-0805 10,0K
+7   1k                R-EU_R0805             R0805             R1, R3, R4, R5, R10, R18, R19 SMD-0805 1,00K
+2   220               R-EU_R0805             R0805             R12, R13                      SMD-0805 220
+2   22p               C-EUC0805              C0805             C1, C2                        NPO 0805 BG 22P
+1   24C32ASN          24C32ASN               SO-08             IC2                           ST 24C32 MN6
+2   3k3               R-EU_R0805             R0805             R8, R9                        SMD-0805 3,30K
+3   3k9               R-EU_R0805             R0805             R20, R21, R22                 SMD-0805 3,90K
+1   AT90S2313S        AT90S2313S             SO20L             IC1                           ATTINY 2313A-SU
+2   CGRM4002-G        CGRM4002-G             SOD-123_MINI-SMA  D1, D2                        RND 1N4148W
+2   G5V1              G5V1                   G5V1              K1, K2                        G5V-1 5V
+1   ILD205            ILD205                 SOIC08            OK1                           ILD 217T
+1   RASPI_BOARD_B+#_H RASPI_BOARD_B+#_H      RASPI_BOARD_B+HAT X1                            /
+1   RIA182-04         RIA182-04              RIA182-04         X2                            AKL 169-04 / AKL 182-04
+1   RIA182-05         RIA182-05              RIA182-05         X4                            AKL 169-05 / AKL 182-05
+1   RJ45              RJ45-8                 RJ45-8            J1                            MEBP 8-8S
+1   VF1000/10K-G      CPOL-EUUD-10X10        UD-10X10_NICHICON C4                            VF 1000/10K-G
+
+Buchsenleiste: MPE 094-2-040
+
+https://www.reichelt.de/my/1503673
