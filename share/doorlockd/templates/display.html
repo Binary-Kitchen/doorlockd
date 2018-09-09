@@ -36,12 +36,48 @@
 {% block content %}
 <h1 class="text-center display-4">Willkommen in der Binary Kitchen!</h1>
 <div class="row">
-	<div class="col-md-3 text-center">
-		<img id="led" src="">
-		<div class="h2" id="message"></div>
+	<div class="col">
+		<div class="text-center">
+			<img id="led" src="">
+			<div class="h2" id="message"></div>
+		</div>
+		<hr>
+		<div>
+		<h4 class="text">Kontakt</h4>
+		<table class="table-sm">
+			<thead>
+				<tr>
+					<th scope="col">Raum</th>
+					<th scope="col">Telefonnummer</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Hauptraum</td>
+					<td>0941 - ...</td>
+				</tr>
+				<tr>
+					<td>Kellergeschoss</td>
+					<td>0941 - ...</td>
+				</tr>
+				<tr>
+					<td>Werkstatt</td>
+					<td>0941 - ...</td>
+				</tr>
+			</tbody>
+		</table>
+		<hr>
+		Keine App? Kein Problem! WiFi anschalten und https://lock.binary.kitchen besuchen.
+		</div>
 	</div>
-	<div class="col-md-8">
-		<img src="static/token.svg" height="400">
+	<div class="col-6">
+		<a class="twitter-grid" data-partner="tweetdeck" href="https://twitter.com/binary_kitchen/timelines/1038927503446949888?ref_src=twsrc%5Etfw">gallery</a>
+		<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+	</div>
+	<div class="col text-center">
+		<img src="static/token.svg" height="300">
+		<img width=175 src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png'/>
+		<img width=175 src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' />
 	</div>
 </div>
 {{ super() }}
