@@ -53,7 +53,7 @@ __license__ = 'GPLv2'
 __email__ = 'ralf@binary-kitchen.de'
 __status__ = 'Development'
 __maintainer__ = 'Ralf Ramsauer'
-__version__ = '0.01a'
+__version__ = '2.0-rc1'
 
 log_level = logging.DEBUG
 date_fmt = '%Y-%m-%d %H:%M:%S'
