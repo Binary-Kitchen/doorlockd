@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 
 {% block head %}
-{{ title }}
 {{ super() }}
 <meta http-equiv="refresh" content="600">
 {% endblock %}
@@ -34,10 +33,11 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="text-center display-4">Willkommen in der Binary Kitchen!</h1>
+<h1 class="text-center display-4">{{ welcome }}</h1>
 <div class="row">
 	<div class="col">
 		<div class="text-center">
+			<div class="h2">{{ room }}</div>
 			<img id="led" src="">
 			<div class="h2" id="message"></div>
 		</div>

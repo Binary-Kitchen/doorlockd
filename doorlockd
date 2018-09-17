@@ -64,8 +64,6 @@ default_ldap_uri = 'ldaps://ldap1.binary.kitchen/ ' \
                    'ldaps://ldapm.binary.kitchen/'
 default_binddn = 'cn=%s,ou=people,dc=binary-kitchen,dc=de'
 
-html_title = 'Binary Kitchen Doorlock (%s - v%s)' % (__status__, __version__)
-
 webapp = Flask(__name__,
                template_folder=template_folder,
                static_folder=static_folder)
@@ -75,6 +73,11 @@ serial_port = webapp.config.get('SERIAL_PORT')
 simulate_ldap = webapp.config.get('SIMULATE_LDAP')
 simulate_serial = webapp.config.get('SIMULATE_SERIAL')
 run_hooks = webapp.config.get('RUN_HOOKS')
+room = webapp.config.get('ROOM')
+title = webapp.config.get('TITLE')
+welcome = webapp.config.get('WELCOME')
+
+html_title = '%s (%s - v%s)' % (title, __status__, __version__)
 
 ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
 ldap.set_option(ldap.OPT_REFERRALS, 0)
@@ -406,7 +409,10 @@ def on_connect():
 
 @webapp.route('/display')
 def display():
-    return render_template('display.html')
+    return render_template('display.html',
+                           room=room,
+                           title=title,
+                           welcome=welcome)
 
 
 @webapp.route('/api', methods=['POST'])
@@ -478,7 +484,7 @@ def home():
                            response=response,
                            state_text=logic.state.to_html(),
                            led=logic.state.to_img(),
-                           title=html_title)
+                           banner='%s - %s' % (title, room))
 
 
 if __name__ == '__main__':
