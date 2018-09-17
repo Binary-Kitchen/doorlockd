@@ -13,6 +13,7 @@ install:
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)
 
 	install doorlockd $(DESTDIR)/$(PREFIX)/bin/
+	install doorlockd-passwd $(DESTDIR)/$(PREFIX)/bin/
 	install -m 0644 doorlockd.cfg $(DESTDIR)/$(SYSCONFDIR)
 	install -m 0644 doorlockd.service $(DESTDIR)/$(SYSCONFDIR)/systemd/system
 
