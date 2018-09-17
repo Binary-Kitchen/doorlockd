@@ -408,6 +408,7 @@ class Logic:
 class AuthenticationForm(FlaskForm):
     username = StringField('Username', [Length(min=3, max=25)])
     password = PasswordField('Password', [DataRequired()])
+    method = StringField('Method', [DataRequired()])
     open = SubmitField('Open')
     present = SubmitField('Present')
     close = SubmitField('Close')
@@ -424,6 +425,11 @@ class AuthenticationForm(FlaskForm):
             self.desired_state = DoorState.Open
         elif self.present.data:
             self.desired_state = DoorState.Present
+
+        if self.method.data == 'Local':
+            self.method = AuthMethod.LOCAL_USER_DB
+        else: # default: use LDAP
+            self.method = AuthMethod.LDAP_USER_PW
 
         return True
 
@@ -500,9 +506,11 @@ def home():
     if request.method == 'POST' and authentication_form.validate():
         user = authentication_form.username.data
         password = authentication_form.password.data
-        credentials = AuthMethod.LDAP_USER_PW, user, password
+        method = authentication_form.method
+        credentials = method, user, password
 
         log.info('Incoming request from %s' % user.encode('utf-8'))
+        log.info('  authentication method: %s' % method)
         desired_state = authentication_form.desired_state
         log.info('  desired state: %s' % desired_state)
         log.info('  current state: %s' % logic.state)
