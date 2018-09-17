@@ -17,6 +17,7 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
 
+import hashlib
 import ldap
 import logging
 import sys
@@ -76,6 +77,7 @@ run_hooks = webapp.config.get('RUN_HOOKS')
 room = webapp.config.get('ROOM')
 title = webapp.config.get('TITLE')
 welcome = webapp.config.get('WELCOME')
+file_local_db = webapp.config.get('LOCAL_USER_DB')
 
 html_title = '%s (%s - v%s)' % (title, __status__, __version__)
 
@@ -143,6 +145,7 @@ def start_hook(script):
 
 class AuthMethod(Enum):
     LDAP_USER_PW = 1
+    LOCAL_USER_DB = 2
 
 
 class DoorState(Enum):
@@ -319,6 +322,28 @@ class DoorHandler:
 class Logic:
     def __init__(self):
         self.door_handler = DoorHandler(serial_port)
+        self.local_db = dict()
+
+        if not file_local_db:
+            return
+
+        with open(file_local_db, 'r') as f:
+            for line in f:
+                line = line.split()
+                user = line[0]
+                pwd = line[1].split(':')
+                self.local_db[user] = pwd
+
+    def _try_auth_local(self, user, password):
+        if user not in self.local_db:
+            return LogicResponse.Perm
+
+        stored_pw = self.local_db[user][0]
+        stored_salt = self.local_db[user][1]
+        if stored_pw == hashlib.sha256(stored_salt.encode() + password.encode()).hexdigest():
+            return LogicResponse.Success
+
+        return LogicResponse.Perm
 
     def _try_auth_ldap(self, user, password):
         if simulate_ldap:
@@ -343,6 +368,8 @@ class Logic:
         method = credentials[0]
         if method == AuthMethod.LDAP_USER_PW:
             return self._try_auth_ldap(credentials[1], credentials[2])
+        elif method == AuthMethod.LOCAL_USER_DB:
+            return self._try_auth_local(credentials[1], credentials[2])
 
         return LogicResponse.Inval
 
@@ -428,9 +455,15 @@ def api():
             json['status'] = logic.state.value
         return jsonify(json)
 
+    method = request.form.get('method')
     user = request.form.get('user')
     password = request.form.get('pass')
     command = request.form.get('command')
+
+    if method == 'local':
+        method = AuthMethod.LOCAL_USER_DB
+    else: # 'ldap' or default
+        method = AuthMethod.LDAP_USER_PW
 
     if any(v is None for v in [user, password, command]):
         log.warning('Incomplete API request')
@@ -441,7 +474,7 @@ def api():
         return json_response(LogicResponse.Inval,
                              'Invalid username or password format')
 
-    credentials = AuthMethod.LDAP_USER_PW, user, password
+    credentials = method, user, password
 
     if command == 'status':
         return json_response(logic.try_auth(credentials))
