@@ -16,6 +16,10 @@ F_OSC ?= 4000000
 UART_BAUD ?= 9600
 AVRDUDE_MCU ?= t2313
 
+PROGRAMMER=linuxspi
+PORT=/dev/spidev0.0:/dev/gpiochip0:25
+SPEED=125000
+
 OBJS = main.o uart.o
 
 CC = avr-gcc
@@ -35,7 +39,10 @@ $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -O ihex -R .eeprom $^ $@
 
 program: $(TARGET).hex
-	$(AVRDUDE) -p $(AVRDUDE_MCU) -c linuxspi -P /dev/spidev0.0:/dev/gpiochip0:25 -U flash:w:$^
+	$(AVRDUDE) -p $(AVRDUDE_MCU) -c $(PROGRAMMER) -P $(PORT) -U flash:w:$^
+
+fuse:
+	$(AVRDUDE) -p $(AVRDUDE_MCU) -c $(PROGRAMMER) -P $(PORT) -b $(SPEED) -U lfuse:w:0xfd:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
 
 clean:
 	rm -f $(OBJS)
