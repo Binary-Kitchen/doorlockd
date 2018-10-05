@@ -105,17 +105,17 @@ static void update_state(unsigned char new_state, enum state_source source)
 
 	switch (state) {
 	case RED:
-		set_bolzen(false);
+		set_bolzen(true);
 		set_schnapper(false);
 		ret = 'r';
 		break;
 	case YELLOW:
-		set_bolzen(true);
+		set_bolzen(false);
 		set_schnapper(false);
 		ret = 'y';
 		break;
 	case GREEN:
-		set_bolzen(true);
+		set_bolzen(false);
 		set_schnapper(true);
 		ret = 'g';
 		break;
@@ -206,6 +206,7 @@ int main(void)
 	timer_init();
 	uart_init();
 
+	set_bolzen(true);
 	reset_timeout();
 
 	sei();
