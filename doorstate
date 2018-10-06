@@ -1,0 +1,23 @@
+#!/bin/bash
+
+GPIO=22
+
+function publish {
+	mosquitto_pub -r -t kitchen/doorlock/frontdoor/doorstate -m "$1"
+}
+
+if [ "$(id -u)" != "0" ]; then
+	echo "Please run as root!"
+	exit -1
+fi
+
+while true; do
+	gpio-wait /dev/gpiochip0 22
+	ret=$?
+
+	if [ $ret -eq 0 ]; then
+		publish "closed"
+	elif [ $ret -eq 1 ]; then
+		publish "open"
+	fi
+done

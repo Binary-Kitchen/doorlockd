@@ -6,3 +6,4 @@ arch/src
 arch/doorlockd
 arch/*.xz
 arch/BKCA.crt
+gpio-wait
