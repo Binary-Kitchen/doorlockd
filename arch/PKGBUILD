@@ -8,15 +8,21 @@ arch=('any')
 url="https://github.com/Binary-Kitchen/${pkgname}"
 license=(GPL)
 depends=('python3' 'python-ldap' 'alsa-utils' 'mosquitto' 'wol' 'python-flask-wtf' 'python-flask-socketio')
-source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=next")
-sha256sums=('SKIP')
+source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=next"
+        "https://www.binary-kitchen.de/static/BKCA.crt")
+sha256sums=('SKIP'
+            '2e8b1ffabcf16e3e60cfc277b40955ae499dedcf39762efbb0512003be9db10f')
 
 build() {
   cd "$srcdir/$pkgname/"
   make PREFIX=/usr sysconfdir=/etc
+  cp -v ../BKCA.crt .
 }
 
 package() {
+  install=${pkgname}.install
   cd "$srcdir/$pkgname/"
   make PREFIX=/usr sysconfdir=/etc DESTDIR="$pkgdir" install
+  mkdir -p $pkgdir/etc/ca-certificates/trust-source/anchors
+  cp -v BKCA.crt $pkgdir/etc/ca-certificates/trust-source/anchors
 }
