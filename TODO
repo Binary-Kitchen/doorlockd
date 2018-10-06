@@ -1,0 +1,10 @@
+- add sounds for button switch
+- add sounds for present state
+- respect door state
+- add xorg, xorg-fbdev, chromium, slim as dependency
+- add alsa stuff as dependency
+- alsactl store
+- automatically setup doorlock user
+- automatically deploy nginx
+- unclutter stuff for X (hide cursor)
+- certificates are still an issue
