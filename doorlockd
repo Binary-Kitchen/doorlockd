@@ -83,8 +83,6 @@ html_title = '%s (%s - v%s)' % (title, __status__, __version__)
 
 ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
 ldap.set_option(ldap.OPT_REFERRALS, 0)
-if 'LDAP_CA' in webapp.config.keys():
-    ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, webapp.config.get('LDAP_CA'))
 
 ldap_uri = webapp.config.get('LDAP_URI')
 ldap_binddn = webapp.config.get('LDAP_BINDDN')
