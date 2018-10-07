@@ -26,8 +26,9 @@
 			<div class="form-group">
 				<label for="method">Authentication method</label>
 				<select name="method" id="method" class="form-control">
-					<option selected>LDAP</option>
-					<option>Local</option>
+					{% for backend in auth_backends %}
+					<option>{{ backend }}</option>
+					{% endfor %}
 				</select>
 			</div>
 			<input class="btn btn-success btn-lg btn-block" id="open" name="open" type="submit" value="Open">
@@ -36,7 +37,7 @@
 		</form>
 		{% if response %}
 		<hr/>
-		<h1>{{ response.to_html() }}</h1>
+		<h1>{{ response }}</h1>
 		{%  endif %}
 		<hr/>
 		Die Kitchen ist: {{ state_text }}

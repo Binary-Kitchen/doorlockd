@@ -17,14 +17,11 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
 
-import hashlib
-import ldap
 import logging
 import sys
 
 from enum import Enum
 from os.path import join
-from random import sample
 from serial import Serial
 from subprocess import Popen
 from threading import Thread
@@ -35,6 +32,8 @@ from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length
+
+from pydoorlock.Authenticator import Authenticator, AuthMethod, AuthenticationResult
 
 SYSCONFDIR = '.'
 PREFIX = '.'
@@ -66,7 +65,7 @@ webapp = Flask(__name__,
 webapp.config.from_pyfile(flask_config)
 socketio = SocketIO(webapp, async_mode='threading')
 serial_port = webapp.config.get('SERIAL_PORT')
-simulate_ldap = webapp.config.get('SIMULATE_LDAP')
+simulate_auth = webapp.config.get('SIMULATE_AUTH')
 simulate_serial = webapp.config.get('SIMULATE_SERIAL')
 run_hooks = webapp.config.get('RUN_HOOKS')
 room = webapp.config.get('ROOM')
@@ -75,9 +74,6 @@ welcome = webapp.config.get('WELCOME')
 file_local_db = webapp.config.get('LOCAL_USER_DB')
 
 html_title = '%s (%s - v%s)' % (title, __status__, __version__)
-
-ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
-ldap.set_option(ldap.OPT_REFERRALS, 0)
 
 ldap_uri = webapp.config.get('LDAP_URI')
 ldap_binddn = webapp.config.get('LDAP_BINDDN')
@@ -100,32 +96,6 @@ sounds = webapp.config.get('SOUNDS')
 host = 'localhost'
 if webapp.config.get('DEBUG'):
     host = '0.0.0.0'
-
-# copied from sudo
-eperm_insults = {
-        'Wrong!  You cheating scum!',
-        'And you call yourself a Rocket Scientist!',
-        'No soap, honkie-lips.',
-        'Where did you learn to type?',
-        'Are you on drugs?',
-        'My pet ferret can type better than you!',
-        'You type like i drive.',
-        'Do you think like you type?',
-        'Your mind just hasn\'t been the same since the electro-shock, has it?',
-        'Maybe if you used more than just two fingers...',
-        'BOB says:  You seem to have forgotten your passwd, enter another!',
-        'stty: unknown mode: doofus',
-        'I can\'t hear you -- I\'m using the scrambler.',
-        'The more you drive -- the dumber you get.',
-        'Listen, broccoli brains, I don\'t have time to listen to this trash.',
-        'I\'ve seen penguins that can type better than that.',
-        'Have you considered trying to match wits with a rutabaga?',
-        'You speak an infinite deal of nothing',
-}
-
-
-def choose_insult():
-    return(sample(eperm_insults, 1)[0])
 
 
 def playsound(filename):
@@ -160,11 +130,6 @@ def sound_helper(old_state, new_state, button):
             playsound(wave_present)
         elif new_state == DoorState.Closed:
             playsound(wave_lock)
-
-
-class AuthMethod(Enum):
-    LDAP_USER_PW = 1
-    LOCAL_USER_DB = 2
 
 
 class DoorState(Enum):
@@ -211,14 +176,13 @@ class LogicResponse(Enum):
     # don't break old apps, value 3 is reserved now
     RESERVED = 3
     Inval = 4
-    LDAP = 5
 
     EmergencyUnlock = 10,
     ButtonLock = 11,
     ButtonUnlock = 12,
     ButtonPresent = 13,
 
-    def to_html(self):
+    def __str__(self):
         if self == LogicResponse.Success:
             return 'Yo, passt.'
         elif self == LogicResponse.Perm:
@@ -227,8 +191,6 @@ class LogicResponse(Enum):
             return 'Zustand bereits aktiv'
         elif self == LogicResponse.Inval:
             return 'Das was du willst geht nicht.'
-        elif self == LogicResponse.LDAP:
-            return 'Moep! Geh LDAP fixen!'
         elif self == LogicResponse.EmergencyUnlock:
             return '!!! Emergency Unlock !!!'
         elif self == LogicResponse.ButtonLock:
@@ -238,7 +200,7 @@ class LogicResponse(Enum):
         elif self == LogicResponse.ButtonPresent:
             return 'Present by button'
 
-        return 'Bitte spezifizieren Sie.'
+        return 'Error'
 
 
 class DoorHandler:
@@ -344,61 +306,19 @@ class DoorHandler:
 
 class Logic:
     def __init__(self):
+        self.auth = Authenticator(simulate_auth)
+        if ldap_uri and ldap_binddn:
+            log.info('Initialising LDAP auth backend')
+            self.auth.enable_ldap_backend(ldap_uri, ldap_binddn)
+        if file_local_db:
+            log.info('Initialising local auth backend')
+            self.auth.enable_local_backend(file_local_db)
+
         self.door_handler = DoorHandler(serial_port)
-        self.local_db = dict()
-
-        if not file_local_db:
-            return
-
-        with open(file_local_db, 'r') as f:
-            for line in f:
-                line = line.split()
-                user = line[0]
-                pwd = line[1].split(':')
-                self.local_db[user] = pwd
-
-    def _try_auth_local(self, user, password):
-        if user not in self.local_db:
-            return LogicResponse.Perm
-
-        stored_pw = self.local_db[user][0]
-        stored_salt = self.local_db[user][1]
-        if stored_pw == hashlib.sha256(stored_salt.encode() + password.encode()).hexdigest():
-            return LogicResponse.Success
-
-        return LogicResponse.Perm
-
-    def _try_auth_ldap(self, user, password):
-        if simulate_ldap:
-            log.info('SIMULATION MODE! ACCEPTING ANYTHING!')
-            return LogicResponse.Success
-
-        log.info('  Trying to LDAP auth (user, password) as user %s', user)
-        ldap_username = ldap_binddn % user
-        try:
-            l = ldap.initialize(ldap_uri)
-            l.simple_bind_s(ldap_username, password)
-            l.unbind_s()
-        except ldap.INVALID_CREDENTIALS:
-            log.info('  Invalid credentials')
-            return LogicResponse.Perm
-        except ldap.LDAPError as e:
-            log.info('  LDAP Error: %s' % e)
-            return LogicResponse.LDAP
-        return LogicResponse.Success
-
-    def try_auth(self, credentials):
-        method = credentials[0]
-        if method == AuthMethod.LDAP_USER_PW:
-            return self._try_auth_ldap(credentials[1], credentials[2])
-        elif method == AuthMethod.LOCAL_USER_DB:
-            return self._try_auth_local(credentials[1], credentials[2])
-
-        return LogicResponse.Inval
 
     def _request(self, state, credentials):
-        err = self.try_auth(credentials)
-        if err != LogicResponse.Success:
+        err = self.auth.try_auth(credentials)
+        if err != AuthenticationResult.Success:
             return err
         return self.door_handler.request(state)
 
@@ -415,7 +335,7 @@ class Logic:
         if message is None:
             message = self.state.to_html()
         else:
-            message = message.to_html()
+            message = str(message)
 
         socketio.emit('status', {'led': led, 'message': message})
 
@@ -541,6 +461,7 @@ def home():
 
     return render_template('index.html',
                            authentication_form=authentication_form,
+                           auth_backends=logic.auth.backends,
                            response=response,
                            state_text=logic.state.to_html(),
                            led=logic.state.to_img(),
