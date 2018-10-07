@@ -60,11 +60,6 @@ date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
 
-default_ldap_uri = 'ldaps://ldap1.binary.kitchen/ ' \
-                   'ldaps://ldap2.binary.kitchen/ ' \
-                   'ldaps://ldapm.binary.kitchen/'
-default_binddn = 'cn=%s,ou=people,dc=binary-kitchen,dc=de'
-
 webapp = Flask(__name__,
                template_folder=template_folder,
                static_folder=static_folder)
