@@ -88,10 +88,16 @@ ldap_uri = webapp.config.get('LDAP_URI')
 ldap_binddn = webapp.config.get('LDAP_BINDDN')
 
 wave_emergency = 'emergency_unlock.wav'
+
 wave_lock = 'lock.wav'
 wave_lock_button = 'lock_button.wav'
+
+wave_present = 'present.wav'
+wave_present_button = 'present.wav'
+
 wave_unlock = 'unlock.wav'
 wave_unlock_button = 'unlock_button.wav'
+
 wave_zonk = 'zonk.wav'
 
 sounds = webapp.config.get('SOUNDS')
@@ -139,6 +145,26 @@ def start_hook(script):
         return
     log.info('Starting hook %s' % script)
     Popen(['nohup', join(scripts_prefix, script)])
+
+
+def sound_helper(old_state, new_state, button):
+    if old_state == new_state:
+        playsound(wave_zonk)
+
+    if button:
+        if new_state == DoorState.Open:
+            playsound(wave_unlock_button)
+        elif new_state == DoorState.Present:
+            playsound(wave_present_button)
+        elif new_state == DoorState.Closed:
+            playsound(wave_lock_button)
+    else:
+        if new_state == DoorState.Open:
+            playsound(wave_unlock)
+        elif new_state == DoorState.Present:
+            playsound(wave_present)
+        elif new_state == DoorState.Closed:
+            playsound(wave_lock)
 
 
 class AuthMethod(Enum):
@@ -252,6 +278,8 @@ class DoorHandler:
                 rx = self.serial.read(1)
                 if len(rx) == 0:
                     break
+
+                old_state = self.state
                 if rx == DoorHandler.BUTTON_CLOSE:
                     self.close()
                     log.info('Closed due to Button press')
@@ -269,6 +297,8 @@ class DoorHandler:
                     logic.emit_status(LogicResponse.EmergencyUnlock)
                 else:
                     log.error('Received unknown message "%s" from AVR' % rx)
+
+                sound_helper(old_state, self.state, True)
 
             if self.do_close:
                 tx = DoorHandler.CMD_CLOSE
@@ -378,14 +408,10 @@ class Logic:
         return self.door_handler.request(state)
 
     def request(self, state, credentials):
+        old_state = self.door_handler.state
         err = self._request(state, credentials)
-        if err == LogicResponse.Success:
-            if self.door_handler.state == DoorState.Open:
-                playsound(wave_unlock)
-            if self.door_handler.state == DoorState.Closed:
-                playsound(wave_lock)
-        elif err == LogicResponse.AlreadyActive:
-            playsound(wave_zonk)
+        if err == LogicResponse.Success or err == LogicResponse.AlreadyActive:
+            sound_helper(old_state, self.door_handler.state, False)
         self.emit_status(err)
         return err
 
