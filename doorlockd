@@ -35,9 +35,6 @@ from pydoorlock.Doorlock import DoorlockResponse
 SYSCONFDIR = '.'
 PREFIX = '.'
 
-root_prefix = join(PREFIX, 'share', 'doorlockd')
-scripts_prefix = join(root_prefix, 'scripts')
-
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
 __license__ = 'GPLv2'
@@ -50,6 +47,7 @@ log_level = logging.DEBUG
 date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
+
 
 class Config:
     config_topic = 'doorlock'
@@ -65,18 +63,8 @@ class Config:
     def str(self, key):
         return self.config.get(self.config_topic, key)
 
+
 cfg = Config(SYSCONFDIR)
-
-# Booleans
-run_hooks = cfg.boolean('RUN_HOOKS')
-
-
-def start_hook(script):
-    if not run_hooks:
-        log.info('Hooks disabled: not starting %s' % script)
-        return
-    log.info('Starting hook %s' % script)
-    Popen(['nohup', join(scripts_prefix, script)])
 
 
 class DoorHandler:
@@ -104,10 +92,13 @@ class DoorHandler:
 
     wave_zonk = 'zonk.wav'
 
-    def __init__(self, cfg, sounds_prefix):
+    def __init__(self, cfg, sounds_prefix, scripts_prefix):
         self.sounds = cfg.boolean('SOUNDS')
         if self.sounds:
             self.sounds_prefix = sounds_prefix
+
+        self.scripts_prefix = scripts_prefix
+        self.run_hooks = cfg.boolean('RUN_HOOKS')
 
         if cfg.boolean('SIMULATE_SERIAL'):
             return
@@ -168,7 +159,7 @@ class DoorHandler:
             return DoorlockResponse.AlreadyActive
 
         self.state = DoorState.Open
-        start_hook('post_unlock')
+        self.run_hook('post_unlock')
         return DoorlockResponse.Success
 
     def present(self):
@@ -176,7 +167,7 @@ class DoorHandler:
             return DoorlockResponse.AlreadyActive
 
         self.state = DoorState.Present
-        start_hook('post_present')
+        self.run_hook('post_present')
         return DoorlockResponse.Success
 
     def close(self):
@@ -185,7 +176,7 @@ class DoorHandler:
 
         self.do_close = True
         self.state = DoorState.Closed
-        start_hook('post_lock')
+        self.run_hook('post_lock')
         return DoorlockResponse.Success
 
     def request(self, state):
@@ -227,11 +218,18 @@ class DoorHandler:
 
         Popen(['nohup', 'aplay', join(self.sounds_prefix, filename)])
 
+    def run_hook(self, script):
+        if not self.run_hooks:
+            log.info('Hooks disabled: not starting %s' % script)
+            return
+        log.info('Starting hook %s' % script)
+        Popen(['nohup', join(self.scripts_prefix, script)])
+
 
 class Logic:
-    def __init__(self, cfg, sounds_prefix):
+    def __init__(self, cfg, sounds_prefix, scripts_prefix):
         self.auth = Authenticator(cfg)
-        self.door_handler = DoorHandler(cfg, sounds_prefix)
+        self.door_handler = DoorHandler(cfg, sounds_prefix, scripts_prefix)
 
     def request(self, state, credentials):
         err = self.auth.try_auth(credentials)
@@ -250,8 +248,11 @@ if __name__ == '__main__':
                         format=log_fmt, datefmt=date_fmt)
     log.info('Starting doorlockd')
 
+    root_prefix = join(PREFIX, 'share', 'doorlockd')
+
     sounds_prefix = join(root_prefix, 'sounds')
-    logic = Logic(cfg, sounds_prefix)
+    scripts_prefix = join(root_prefix, 'scripts')
+    logic = Logic(cfg, sounds_prefix, scripts_prefix)
 
     static_folder = abspath(join(root_prefix, 'static'))
     template_folder = abspath(join(root_prefix, 'templates'))
