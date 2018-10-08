@@ -72,11 +72,8 @@ class Config:
 cfg = Config(SYSCONFDIR)
 
 # Booleans
-simulate_serial = cfg.boolean('SIMULATE_SERIAL')
 run_hooks = cfg.boolean('RUN_HOOKS')
 sounds = cfg.boolean('SOUNDS')
-
-serial_port = cfg.str('SERIAL_PORT')
 
 wave_emergency = 'emergency_unlock.wav'
 
@@ -176,8 +173,11 @@ class DoorHandler:
     # TBD DOOR NOT CLOSED
 
     def __init__(self, device):
-        if simulate_serial:
+        if cfg.boolean('SIMULATE_SERIAL'):
             return
+
+        device = cfg.str('SERIAL_PORT')
+        log.info('Using serial port: %s' % device)
 
         self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
                              stopbits=1, timeout=0)
@@ -263,9 +263,9 @@ class DoorHandler:
 
 
 class Logic:
-    def __init__(self):
+    def __init__(self, cfg):
         self.auth = Authenticator(cfg)
-        self.door_handler = DoorHandler(serial_port)
+        self.door_handler = DoorHandler(cfg)
 
     def _request(self, state, credentials):
         err = self.auth.try_auth(credentials)
@@ -289,9 +289,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=log_level, stream=sys.stdout,
                         format=log_fmt, datefmt=date_fmt)
     log.info('Starting doorlockd')
-    log.info('Using serial port: %s' % serial_port)
 
-    logic = Logic()
+    logic = Logic(cfg)
 
     webapp_run(cfg, logic, __status__, __version__, template_folder,
                static_folder)
