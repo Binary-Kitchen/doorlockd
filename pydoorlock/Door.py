@@ -1,7 +1,6 @@
 from enum import Enum
 
 class DoorState(Enum):
-    # These numbers are used by the App since version 3.0, do NOT change them
     Open = 0
     Present = 1
     Closed = 2
@@ -29,7 +28,7 @@ class DoorState(Enum):
             led = 'green'
         return 'static/led-%s.png' % led
 
-    def to_html(self):
+    def __str__(self):
         if self == DoorState.Open:
             return 'Offen'
         elif self == DoorState.Present:

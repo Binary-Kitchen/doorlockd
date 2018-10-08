@@ -22,20 +22,14 @@ import sys
 
 from configparser import ConfigParser
 from enum import Enum
-from os.path import join
+from os.path import abspath, join
 from serial import Serial
 from subprocess import Popen
 from threading import Thread
 from time import sleep
 
-from flask import abort, Flask, jsonify, render_template, request
-from flask_socketio import SocketIO
-from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length
-
 from pydoorlock.Authenticator import Authenticator, AuthMethod, AuthenticationResult
-from pydoorlock.WebApp import AuthenticationForm
+from pydoorlock.WebApp import webapp_run, emit_doorstate
 from pydoorlock.Door import DoorState
 
 SYSCONFDIR = '.'
@@ -43,9 +37,10 @@ PREFIX = '.'
 
 root_prefix = join(PREFIX, 'share', 'doorlockd')
 sounds_prefix = join(root_prefix, 'sounds')
-static_folder = join(root_prefix, 'static')
-template_folder = join(root_prefix, 'templates')
 scripts_prefix = join(root_prefix, 'scripts')
+
+static_folder = abspath(join(root_prefix, 'static'))
+template_folder = abspath(join(root_prefix, 'templates'))
 
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
@@ -59,9 +54,6 @@ log_level = logging.DEBUG
 date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
-
-webapp = Flask(__name__)
-socketio = SocketIO(webapp, async_mode='threading')
 
 class Config:
     config_topic = 'doorlock'
@@ -80,17 +72,11 @@ class Config:
 cfg = Config(SYSCONFDIR)
 
 # Booleans
-debug = cfg.boolean('DEBUG')
 simulate_serial = cfg.boolean('SIMULATE_SERIAL')
 run_hooks = cfg.boolean('RUN_HOOKS')
 sounds = cfg.boolean('SOUNDS')
 
 serial_port = cfg.str('SERIAL_PORT')
-room = cfg.str('ROOM')
-title = cfg.str('TITLE')
-welcome = cfg.str('WELCOME')
-
-html_title = '%s (%s - v%s)' % (title, __status__, __version__)
 
 wave_emergency = 'emergency_unlock.wav'
 
@@ -211,18 +197,18 @@ class DoorHandler:
                 if rx == DoorHandler.BUTTON_CLOSE:
                     self.close()
                     log.info('Closed due to Button press')
-                    logic.emit_status(LogicResponse.ButtonLock)
+                    #emit_status(LogicResponse.ButtonLock)
                 elif rx == DoorHandler.BUTTON_OPEN:
                     self.open()
                     log.info('Opened due to Button press')
-                    logic.emit_status(LogicResponse.ButtonUnlock)
+                    #emit_status(LogicResponse.ButtonUnlock)
                 elif rx == DoorHandler.BUTTON_PRESENT:
                     self.present()
                     log.info('Present due to Button press')
-                    logic.emit_status(LogicResponse.ButtonPresent)
+                    #emit_status(LogicResponse.ButtonPresent)
                 elif rx == DoorHandler.CMD_EMERGENCY_SWITCH:
                     log.warning('Emergency unlock')
-                    logic.emit_status(LogicResponse.EmergencyUnlock)
+                    #emit_status(LogicResponse.EmergencyUnlock)
                 else:
                     log.error('Received unknown message "%s" from AVR' % rx)
 
@@ -268,11 +254,12 @@ class DoorHandler:
 
     def request(self, state):
         if state == DoorState.Closed:
-            return self.close()
+            err = self.close()
         elif state == DoorState.Present:
-            return self.present()
+            err = self.present()
         elif state == DoorState.Open:
-            return self.open()
+            err = self.open()
+        emit_doorstate()
 
 
 class Logic:
@@ -291,116 +278,11 @@ class Logic:
         err = self._request(state, credentials)
         if err == LogicResponse.Success or err == LogicResponse.AlreadyActive:
             sound_helper(old_state, self.door_handler.state, False)
-        self.emit_status(err)
         return err
-
-    def emit_status(self, message=None):
-        led = self.state.to_img()
-        if message is None:
-            message = self.state.to_html()
-        else:
-            message = str(message)
-
-        socketio.emit('status', {'led': led, 'message': message})
 
     @property
     def state(self):
         return self.door_handler.state
-
-
-@socketio.on('request_status')
-@socketio.on('connect')
-def on_connect():
-	logic.emit_status()
-
-
-@webapp.route('/display')
-def display():
-    return render_template('display.html',
-                           room=room,
-                           title=title,
-                           welcome=welcome)
-
-
-@webapp.route('/api', methods=['POST'])
-def api():
-    def json_response(response, msg=None):
-        json = dict()
-        json['err'] = response.value
-        json['msg'] = response.to_html() if msg is None else msg
-        if response == LogicResponse.Success or \
-           response == LogicResponse.AlreadyActive:
-            # TBD: Remove 'open'. No more users. Still used in App Version 2.1.1!
-            json['open'] = logic.state.is_open()
-            json['status'] = logic.state.value
-        return jsonify(json)
-
-    method = request.form.get('method')
-    user = request.form.get('user')
-    password = request.form.get('pass')
-    command = request.form.get('command')
-
-    if method == 'local':
-        method = AuthMethod.LOCAL_USER_DB
-    else: # 'ldap' or default
-        method = AuthMethod.LDAP_USER_PW
-
-    if any(v is None for v in [user, password, command]):
-        log.warning('Incomplete API request')
-        abort(400)
-
-    if not user or not password:
-        log.warning('Invalid username or password format')
-        return json_response(LogicResponse.Inval,
-                             'Invalid username or password format')
-
-    credentials = method, user, password
-
-    if command == 'status':
-        return json_response(logic.try_auth(credentials))
-
-    desired_state = DoorState.from_string(command)
-    if not desired_state:
-        return json_response(LogicResponse.Inval, "Invalid command requested")
-
-    log.info('Incoming API request from %s' % user.encode('utf-8'))
-    log.info('  desired state: %s' % desired_state)
-    log.info('  current state: %s' % logic.state)
-
-    response = logic.request(desired_state, credentials)
-
-    return json_response(response)
-
-
-@webapp.route('/', methods=['GET', 'POST'])
-def home():
-    authentication_form = AuthenticationForm()
-    response = None
-
-    if request.method == 'POST' and authentication_form.validate():
-        user = authentication_form.username.data
-        password = authentication_form.password.data
-        method = authentication_form.method
-        credentials = method, user, password
-
-        log.info('Incoming request from %s' % user.encode('utf-8'))
-        log.info('  authentication method: %s' % method)
-        desired_state = authentication_form.desired_state
-        log.info('  desired state: %s' % desired_state)
-        log.info('  current state: %s' % logic.state)
-        response = logic.request(desired_state, credentials)
-        log.info('  response: %s' % response)
-
-    # Don't trust python, zero credentials
-    user = password = credentials = None
-
-    return render_template('index.html',
-                           authentication_form=authentication_form,
-                           auth_backends=logic.auth.backends,
-                           response=response,
-                           state_text=logic.state.to_html(),
-                           led=logic.state.to_img(),
-                           banner='%s - %s' % (title, room))
 
 
 if __name__ == '__main__':
@@ -411,13 +293,7 @@ if __name__ == '__main__':
 
     logic = Logic()
 
-    host = 'localhost'
-    if debug:
-        host = '0.0.0.0'
-
-    webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
-    webapp.template_folder=template_folder
-    webapp.static_folder=static_folder
-    socketio.run(webapp, host=host, port=8080, use_reloader=False, debug=debug)
+    webapp_run(cfg, logic, __status__, __version__, template_folder,
+               static_folder)
 
     sys.exit(0)
