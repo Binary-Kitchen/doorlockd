@@ -20,6 +20,7 @@ details.
 import logging
 import sys
 
+from configparser import ConfigParser
 from enum import Enum
 from os.path import join
 from serial import Serial
@@ -46,8 +47,6 @@ static_folder = join(root_prefix, 'static')
 template_folder = join(root_prefix, 'templates')
 scripts_prefix = join(root_prefix, 'scripts')
 
-flask_config = join(SYSCONFDIR, 'doorlockd.cfg')
-
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
 __license__ = 'GPLv2'
@@ -64,21 +63,46 @@ log = logging.getLogger()
 webapp = Flask(__name__,
                template_folder=template_folder,
                static_folder=static_folder)
-webapp.config.from_pyfile(flask_config)
 socketio = SocketIO(webapp, async_mode='threading')
-serial_port = webapp.config.get('SERIAL_PORT')
-simulate_auth = webapp.config.get('SIMULATE_AUTH')
-simulate_serial = webapp.config.get('SIMULATE_SERIAL')
-run_hooks = webapp.config.get('RUN_HOOKS')
-room = webapp.config.get('ROOM')
-title = webapp.config.get('TITLE')
-welcome = webapp.config.get('WELCOME')
-file_local_db = webapp.config.get('LOCAL_USER_DB')
+
+class Config:
+    config_topic = 'doorlock'
+
+    def __init__(self, sysconfdir):
+        self.config = ConfigParser()
+        self.config.read([join(sysconfdir, 'doorlockd.default.cfg'),
+                          join(sysconfdir, 'doorlockd.cfg')])
+
+    def boolean(self, key):
+        return self.config.getboolean(self.config_topic, key)
+
+    def str(self, key):
+        return self.config.get(self.config_topic, key)
+
+cfg = Config(SYSCONFDIR)
+
+# Booleans
+debug = cfg.boolean('DEBUG')
+simulate_auth = cfg.boolean('SIMULATE_AUTH')
+simulate_serial = cfg.boolean('SIMULATE_SERIAL')
+run_hooks = cfg.boolean('RUN_HOOKS')
+sounds = cfg.boolean('SOUNDS')
+
+serial_port = cfg.str('SERIAL_PORT')
+room = cfg.str('ROOM')
+title = cfg.str('TITLE')
+welcome = cfg.str('WELCOME')
+
+# Auth backends
+file_local_db = cfg.str('LOCAL_USER_DB')
+
+ldap_uri = cfg.str('LDAP_URI')
+ldap_binddn = cfg.str('LDAP_BINDDN')
+
+webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
+
 
 html_title = '%s (%s - v%s)' % (title, __status__, __version__)
-
-ldap_uri = webapp.config.get('LDAP_URI')
-ldap_binddn = webapp.config.get('LDAP_BINDDN')
 
 wave_emergency = 'emergency_unlock.wav'
 
@@ -93,10 +117,9 @@ wave_unlock_button = 'unlock_button.wav'
 
 wave_zonk = 'zonk.wav'
 
-sounds = webapp.config.get('SOUNDS')
 
 host = 'localhost'
-if webapp.config.get('DEBUG'):
+if debug:
     host = '0.0.0.0'
 
 
@@ -408,10 +431,10 @@ if __name__ == '__main__':
     logging.basicConfig(level=log_level, stream=sys.stdout,
                         format=log_fmt, datefmt=date_fmt)
     log.info('Starting doorlockd')
-    log.info('Using serial port: %s' % webapp.config.get('SERIAL_PORT'))
+    log.info('Using serial port: %s' % serial_port)
 
     logic = Logic()
 
-    socketio.run(webapp, host=host, port=8080, use_reloader=False)
+    socketio.run(webapp, host=host, port=8080, use_reloader=False, debug=debug)
 
     sys.exit(0)
