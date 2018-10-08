@@ -38,9 +38,6 @@ PREFIX = '.'
 root_prefix = join(PREFIX, 'share', 'doorlockd')
 scripts_prefix = join(root_prefix, 'scripts')
 
-static_folder = abspath(join(root_prefix, 'static'))
-template_folder = abspath(join(root_prefix, 'templates'))
-
 __author__ = 'Ralf Ramsauer'
 __copyright = 'Copyright (c) Ralf Ramsauer, 2018'
 __license__ = 'GPLv2'
@@ -256,6 +253,8 @@ if __name__ == '__main__':
     sounds_prefix = join(root_prefix, 'sounds')
     logic = Logic(cfg, sounds_prefix)
 
+    static_folder = abspath(join(root_prefix, 'static'))
+    template_folder = abspath(join(root_prefix, 'templates'))
     webapp_run(cfg, logic, __status__, __version__, template_folder,
                static_folder)
 
