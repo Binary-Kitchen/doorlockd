@@ -36,7 +36,7 @@ eperm_insults = {
 
 
 def choose_insult():
-    return(sample(eperm_insults, 1)[0])
+    return sample(eperm_insults, 1)[0]
 
 
 class DoorlockResponse(Enum):
