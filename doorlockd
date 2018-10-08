@@ -21,14 +21,13 @@ import logging
 import sys
 
 from configparser import ConfigParser
-from enum import Enum
 from os.path import abspath, join
 from serial import Serial
 from subprocess import Popen
 from threading import Thread
 from time import sleep
 
-from pydoorlock.Authenticator import Authenticator, AuthMethod
+from pydoorlock.Authenticator import Authenticator
 from pydoorlock.WebApp import webapp_run, emit_doorstate
 from pydoorlock.Door import DoorState
 from pydoorlock.Doorlock import DoorlockResponse
@@ -37,7 +36,6 @@ SYSCONFDIR = '.'
 PREFIX = '.'
 
 root_prefix = join(PREFIX, 'share', 'doorlockd')
-sounds_prefix = join(root_prefix, 'sounds')
 scripts_prefix = join(root_prefix, 'scripts')
 
 static_folder = abspath(join(root_prefix, 'static'))
@@ -74,26 +72,6 @@ cfg = Config(SYSCONFDIR)
 
 # Booleans
 run_hooks = cfg.boolean('RUN_HOOKS')
-sounds = cfg.boolean('SOUNDS')
-
-wave_emergency = 'emergency_unlock.wav'
-
-wave_lock = 'lock.wav'
-wave_lock_button = 'lock_button.wav'
-
-wave_present = 'present.wav'
-wave_present_button = 'present.wav'
-
-wave_unlock = 'unlock.wav'
-wave_unlock_button = 'unlock_button.wav'
-
-wave_zonk = 'zonk.wav'
-
-
-def playsound(filename):
-    if not sounds:
-        return
-    Popen(['nohup', 'aplay', join(sounds_prefix, filename)])
 
 
 def start_hook(script):
@@ -102,27 +80,6 @@ def start_hook(script):
         return
     log.info('Starting hook %s' % script)
     Popen(['nohup', join(scripts_prefix, script)])
-
-
-def sound_helper(old_state, new_state, button):
-    if old_state == new_state:
-        playsound(wave_zonk)
-        return
-
-    if button:
-        if new_state == DoorState.Open:
-            playsound(wave_unlock_button)
-        elif new_state == DoorState.Present:
-            playsound(wave_present_button)
-        elif new_state == DoorState.Closed:
-            playsound(wave_lock_button)
-    else:
-        if new_state == DoorState.Open:
-            playsound(wave_unlock)
-        elif new_state == DoorState.Present:
-            playsound(wave_present)
-        elif new_state == DoorState.Closed:
-            playsound(wave_lock)
 
 
 class DoorHandler:
@@ -138,9 +95,23 @@ class DoorHandler:
     BUTTON_CLOSE = b'R'
 
     CMD_EMERGENCY_SWITCH = b'E'
-    # TBD DOOR NOT CLOSED
 
-    def __init__(self, device):
+    wave_lock = 'lock.wav'
+    wave_lock_button = 'lock_button.wav'
+
+    wave_present = 'present.wav'
+    wave_present_button = 'present.wav'
+
+    wave_unlock = 'unlock.wav'
+    wave_unlock_button = 'unlock_button.wav'
+
+    wave_zonk = 'zonk.wav'
+
+    def __init__(self, cfg, sounds_prefix):
+        self.sounds = cfg.boolean('SOUNDS')
+        if self.sounds:
+            self.sounds_prefix = sounds_prefix
+
         if cfg.boolean('SIMULATE_SERIAL'):
             return
 
@@ -180,7 +151,7 @@ class DoorHandler:
                 else:
                     log.error('Received unknown message "%s" from AVR' % rx)
 
-                sound_helper(old_state, self.state, True)
+                self.sound_helper(old_state, self.state, True)
 
             if self.do_close:
                 tx = DoorHandler.CMD_CLOSE
@@ -229,15 +200,41 @@ class DoorHandler:
         elif state == DoorState.Open:
             err = self.open()
 
-        sound_helper(old_state, self.state, False)
+        self.sound_helper(old_state, self.state, False)
         emit_doorstate()
         return err
 
+    def sound_helper(self, old_state, new_state, button):
+        if not self.sounds:
+            return
+
+        # TBD: Emergency Unlock
+        # wave_emergency = 'emergency_unlock.wav'
+
+        if old_state == new_state:
+            filename = self.wave_zonk
+        elif button:
+            if new_state == DoorState.Open:
+                filename = self.wave_unlock_button
+            elif new_state == DoorState.Present:
+                filename = self.wave_present_button
+            elif new_state == DoorState.Closed:
+                filename = self.wave_lock_button
+        else:
+            if new_state == DoorState.Open:
+                filename = self.wave_unlock
+            elif new_state == DoorState.Present:
+                filename = self.wave_present
+            elif new_state == DoorState.Closed:
+                filename = self.wave_lock
+
+        Popen(['nohup', 'aplay', join(self.sounds_prefix, filename)])
+
 
 class Logic:
-    def __init__(self, cfg):
+    def __init__(self, cfg, sounds_prefix):
         self.auth = Authenticator(cfg)
-        self.door_handler = DoorHandler(cfg)
+        self.door_handler = DoorHandler(cfg, sounds_prefix)
 
     def request(self, state, credentials):
         err = self.auth.try_auth(credentials)
@@ -256,7 +253,8 @@ if __name__ == '__main__':
                         format=log_fmt, datefmt=date_fmt)
     log.info('Starting doorlockd')
 
-    logic = Logic(cfg)
+    sounds_prefix = join(root_prefix, 'sounds')
+    logic = Logic(cfg, sounds_prefix)
 
     webapp_run(cfg, logic, __status__, __version__, template_folder,
                static_folder)
