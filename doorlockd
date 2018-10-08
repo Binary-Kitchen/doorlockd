@@ -60,9 +60,7 @@ date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
 
-webapp = Flask(__name__,
-               template_folder=template_folder,
-               static_folder=static_folder)
+webapp = Flask(__name__)
 socketio = SocketIO(webapp, async_mode='threading')
 
 class Config:
@@ -92,9 +90,6 @@ room = cfg.str('ROOM')
 title = cfg.str('TITLE')
 welcome = cfg.str('WELCOME')
 
-webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
-
-
 html_title = '%s (%s - v%s)' % (title, __status__, __version__)
 
 wave_emergency = 'emergency_unlock.wav'
@@ -109,11 +104,6 @@ wave_unlock = 'unlock.wav'
 wave_unlock_button = 'unlock_button.wav'
 
 wave_zonk = 'zonk.wav'
-
-
-host = 'localhost'
-if debug:
-    host = '0.0.0.0'
 
 
 def playsound(filename):
@@ -421,6 +411,13 @@ if __name__ == '__main__':
 
     logic = Logic()
 
+    host = 'localhost'
+    if debug:
+        host = '0.0.0.0'
+
+    webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
+    webapp.template_folder=template_folder
+    webapp.static_folder=static_folder
     socketio.run(webapp, host=host, port=8080, use_reloader=False, debug=debug)
 
     sys.exit(0)
