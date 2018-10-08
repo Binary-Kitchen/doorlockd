@@ -24,6 +24,7 @@ from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length
 
 from .Door import DoorState
+from .Doorlock import DoorlockResponse
 from .Authenticator import AuthMethod
 
 log = logging.getLogger()
@@ -89,9 +90,9 @@ def api():
     def json_response(response, msg=None):
         json = dict()
         json['err'] = response.value
-        json['msg'] = response.to_html() if msg is None else msg
-        if response == LogicResponse.Success or \
-           response == LogicResponse.AlreadyActive:
+        json['msg'] = str(response) if msg is None else msg
+        if response == DoorlockResponse.Success or \
+           response == DoorlockResponse.AlreadyActive:
             # TBD: Remove 'open'. No more users. Still used in App Version 2.1.1!
             json['open'] = logic.state.is_open()
             json['status'] = logic.state.value
@@ -113,17 +114,17 @@ def api():
 
     if not user or not password:
         log.warning('Invalid username or password format')
-        return json_response(LogicResponse.Inval,
+        return json_response(DoorlockResponse.Inval,
                              'Invalid username or password format')
 
     credentials = method, user, password
 
     if command == 'status':
-        return json_response(logic.try_auth(credentials))
+        return json_response(logic.auth.try_auth(credentials))
 
     desired_state = DoorState.from_string(command)
     if not desired_state:
-        return json_response(LogicResponse.Inval, "Invalid command requested")
+        return json_response(DoorlockResponse.Inval, "Invalid command requested")
 
     log.info('Incoming API request from %s' % user.encode('utf-8'))
     log.info('  desired state: %s' % desired_state)
