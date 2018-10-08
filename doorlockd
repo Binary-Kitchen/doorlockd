@@ -83,7 +83,6 @@ cfg = Config(SYSCONFDIR)
 
 # Booleans
 debug = cfg.boolean('DEBUG')
-simulate_auth = cfg.boolean('SIMULATE_AUTH')
 simulate_serial = cfg.boolean('SIMULATE_SERIAL')
 run_hooks = cfg.boolean('RUN_HOOKS')
 sounds = cfg.boolean('SOUNDS')
@@ -92,12 +91,6 @@ serial_port = cfg.str('SERIAL_PORT')
 room = cfg.str('ROOM')
 title = cfg.str('TITLE')
 welcome = cfg.str('WELCOME')
-
-# Auth backends
-file_local_db = cfg.str('LOCAL_USER_DB')
-
-ldap_uri = cfg.str('LDAP_URI')
-ldap_binddn = cfg.str('LDAP_BINDDN')
 
 webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
 
@@ -294,14 +287,7 @@ class DoorHandler:
 
 class Logic:
     def __init__(self):
-        self.auth = Authenticator(simulate_auth)
-        if ldap_uri and ldap_binddn:
-            log.info('Initialising LDAP auth backend')
-            self.auth.enable_ldap_backend(ldap_uri, ldap_binddn)
-        if file_local_db:
-            log.info('Initialising local auth backend')
-            self.auth.enable_local_backend(file_local_db)
-
+        self.auth = Authenticator(cfg)
         self.door_handler = DoorHandler(serial_port)
 
     def _request(self, state, credentials):

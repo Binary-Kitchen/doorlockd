@@ -76,34 +76,38 @@ class AuthenticationResult(Enum):
             return 'Internal authentication error'
 
 class Authenticator:
-    def __init__(self, simulate=False):
-        self._simulate = simulate
+    def __init__(self, cfg):
+        self._simulate = cfg.boolean('SIMULATE_AUTH')
         self._backends = set()
+
+        if self._simulate:
+            return
+
+        self._ldap_uri = cfg.str('LDAP_URI')
+        self._ldap_binddn = cfg.str('LDAP_BINDDN')
+        if self._ldap_uri and self._ldap_binddn:
+            log.info('Initialising LDAP auth backend')
+            self._backends.add(AuthMethod.LDAP_USER_PW)
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+            ldap.set_option(ldap.OPT_REFERRALS, 0)
+
+        file_local_db = cfg.str('LOCAL_USER_DB')
+        if file_local_db:
+            log.info('Initialising local auth backend')
+            self._local_db = dict()
+
+            with open(file_local_db, 'r') as f:
+                for line in f:
+                    line = line.split()
+                    user = line[0]
+                    pwd = line[1].split(':')
+                    self._local_db[user] = pwd
+
+            self._backends.add(AuthMethod.LOCAL_USER_DB)
 
     @property
     def backends(self):
         return self._backends
-
-    def enable_ldap_backend(self, uri, binddn):
-        self._ldap_uri = uri
-        self._ldap_binddn = binddn
-        self._backends.add(AuthMethod.LDAP_USER_PW)
-
-        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
-        ldap.set_option(ldap.OPT_REFERRALS, 0)
-
-
-    def enable_local_backend(self, filename):
-        self._local_db = dict()
-
-        with open(filename, 'r') as f:
-            for line in f:
-                line = line.split()
-                user = line[0]
-                pwd = line[1].split(':')
-                self._local_db[user] = pwd
-
-        self._backends.add(AuthMethod.LOCAL_USER_DB)
 
     def _try_auth_local(self, user, password):
         if user not in self._local_db:
