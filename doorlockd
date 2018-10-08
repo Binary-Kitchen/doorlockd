@@ -28,9 +28,10 @@ from subprocess import Popen
 from threading import Thread
 from time import sleep
 
-from pydoorlock.Authenticator import Authenticator, AuthMethod, AuthenticationResult
+from pydoorlock.Authenticator import Authenticator, AuthMethod
 from pydoorlock.WebApp import webapp_run, emit_doorstate
 from pydoorlock.Door import DoorState
+from pydoorlock.Doorlock import DoorlockResponse
 
 SYSCONFDIR = '.'
 PREFIX = '.'
@@ -106,6 +107,7 @@ def start_hook(script):
 def sound_helper(old_state, new_state, button):
     if old_state == new_state:
         playsound(wave_zonk)
+        return
 
     if button:
         if new_state == DoorState.Open:
@@ -121,40 +123,6 @@ def sound_helper(old_state, new_state, button):
             playsound(wave_present)
         elif new_state == DoorState.Closed:
             playsound(wave_lock)
-
-
-class LogicResponse(Enum):
-    Success = 0
-    Perm = 1
-    AlreadyActive = 2
-    # don't break old apps, value 3 is reserved now
-    RESERVED = 3
-    Inval = 4
-
-    EmergencyUnlock = 10,
-    ButtonLock = 11,
-    ButtonUnlock = 12,
-    ButtonPresent = 13,
-
-    def __str__(self):
-        if self == LogicResponse.Success:
-            return 'Yo, passt.'
-        elif self == LogicResponse.Perm:
-            return choose_insult()
-        elif self == LogicResponse.AlreadyActive:
-            return 'Zustand bereits aktiv'
-        elif self == LogicResponse.Inval:
-            return 'Das was du willst geht nicht.'
-        elif self == LogicResponse.EmergencyUnlock:
-            return '!!! Emergency Unlock !!!'
-        elif self == LogicResponse.ButtonLock:
-            return 'Closed by button'
-        elif self == LogicResponse.ButtonUnlock:
-            return 'Opened by button'
-        elif self == LogicResponse.ButtonPresent:
-            return 'Present by button'
-
-        return 'Error'
 
 
 class DoorHandler:
@@ -229,37 +197,41 @@ class DoorHandler:
 
     def open(self):
         if self.state == DoorState.Open:
-            return LogicResponse.AlreadyActive
+            return DoorlockResponse.AlreadyActive
 
         self.state = DoorState.Open
         start_hook('post_unlock')
-        return LogicResponse.Success
+        return DoorlockResponse.Success
 
     def present(self):
         if self.state == DoorState.Present:
-            return LogicResponse.AlreadyActive
+            return DoorlockResponse.AlreadyActive
 
         self.state = DoorState.Present
         start_hook('post_present')
-        return LogicResponse.Success
+        return DoorlockResponse.Success
 
     def close(self):
         if self.state == DoorState.Closed:
-            return LogicResponse.AlreadyActive
+            return DoorlockResponse.AlreadyActive
 
         self.do_close = True
         self.state = DoorState.Closed
         start_hook('post_lock')
-        return LogicResponse.Success
+        return DoorlockResponse.Success
 
     def request(self, state):
+        old_state = self.state
         if state == DoorState.Closed:
             err = self.close()
         elif state == DoorState.Present:
             err = self.present()
         elif state == DoorState.Open:
             err = self.open()
+
+        sound_helper(old_state, self.state, False)
         emit_doorstate()
+        return err
 
 
 class Logic:
@@ -267,18 +239,12 @@ class Logic:
         self.auth = Authenticator(cfg)
         self.door_handler = DoorHandler(cfg)
 
-    def _request(self, state, credentials):
-        err = self.auth.try_auth(credentials)
-        if err != AuthenticationResult.Success:
-            return err
-        return self.door_handler.request(state)
-
     def request(self, state, credentials):
-        old_state = self.door_handler.state
-        err = self._request(state, credentials)
-        if err == LogicResponse.Success or err == LogicResponse.AlreadyActive:
-            sound_helper(old_state, self.door_handler.state, False)
-        return err
+        err = self.auth.try_auth(credentials)
+        if err != DoorlockResponse.Success:
+            return err
+
+        return self.door_handler.request(state)
 
     @property
     def state(self):
