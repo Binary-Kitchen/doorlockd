@@ -99,6 +99,8 @@ class DoorHandler:
     wave_zonk = 'zonk.wav'
 
     def __init__(self, cfg, sounds_prefix, scripts_prefix):
+        self._callback = None
+
         self.sounds = cfg.boolean('SOUNDS')
         if self.sounds:
             self.sounds_prefix = sounds_prefix
@@ -130,18 +132,18 @@ class DoorHandler:
                 if rx == DoorHandler.BUTTON_CLOSE:
                     self.close()
                     log.info('Closed due to Button press')
-                    #emit_status(LogicResponse.ButtonLock)
+                    self.invoke_callback(DoorlockResponse.ButtonLock)
                 elif rx == DoorHandler.BUTTON_OPEN:
                     self.open()
                     log.info('Opened due to Button press')
-                    #emit_status(LogicResponse.ButtonUnlock)
+                    self.invoke_callback(DoorlockResponse.ButtonUnlock)
                 elif rx == DoorHandler.BUTTON_PRESENT:
                     self.present()
                     log.info('Present due to Button press')
-                    #emit_status(LogicResponse.ButtonPresent)
+                    self.invoke_callback(DoorlockResponse.ButtonPresent)
                 elif rx == DoorHandler.CMD_EMERGENCY_SWITCH:
                     log.warning('Emergency unlock')
-                    #emit_status(LogicResponse.EmergencyUnlock)
+                    self.invoke_callback(DoorlockResponse.EmergencyUnlock)
                 else:
                     log.error('Received unknown message "%s" from AVR' % rx)
 
@@ -195,7 +197,7 @@ class DoorHandler:
             err = self.open()
 
         self.sound_helper(old_state, self.state, False)
-        #emit_doorstate()
+        self.invoke_callback(err)
         return err
 
     def sound_helper(self, old_state, new_state, button):
@@ -230,3 +232,10 @@ class DoorHandler:
             return
         log.info('Starting hook %s' % script)
         Popen(['nohup', join(self.scripts_prefix, script)])
+
+    def register_callback(self, callback):
+        self._callback = callback
+
+    def invoke_callback(self, val):
+        if self._callback:
+            self._callback(val)

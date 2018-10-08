@@ -15,9 +15,13 @@ webapp = Flask(__name__)
 socketio = SocketIO(webapp, async_mode='threading')
 
 
-def emit_doorstate():
+def emit_doorstate(response=None):
     state = logic.state
-    socketio.emit('status', {'led': state.to_img(), 'message': str(state)})
+    if response:
+        message = str(response)
+    else:
+        message = str(state)
+    socketio.emit('status', {'led': state.to_img(), 'message': message})
 
 
 class AuthenticationForm(FlaskForm):
