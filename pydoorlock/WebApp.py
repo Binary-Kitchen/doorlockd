@@ -56,7 +56,7 @@ class AuthenticationForm(FlaskForm):
 @socketio.on('request_status')
 @socketio.on('connect')
 def on_connect():
-	emit_doorstate()
+    emit_doorstate()
 
 
 @webapp.route('/display')
@@ -146,6 +146,7 @@ def home():
                            state_text=str(logic.state),
                            led=logic.state.to_img(),
                            banner='%s - %s' % (title, room))
+
 
 def webapp_run(cfg, my_logic, status, version, template_folder, static_folder):
     global logic

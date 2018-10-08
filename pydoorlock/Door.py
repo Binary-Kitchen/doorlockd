@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class DoorState(Enum):
     Open = 0
     Present = 1
