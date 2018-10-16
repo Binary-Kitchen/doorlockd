@@ -7,3 +7,5 @@ arch/doorlockd
 arch/*.xz
 arch/BKCA.crt
 gpio-wait
+
+pydoorlock/__pycache__/

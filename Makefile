@@ -17,7 +17,9 @@ install:
 
 	install doorlockd gpio-wait doorstate $(DESTDIR)/$(PREFIX)/bin/
 	install doorlockd-passwd $(DESTDIR)/$(PREFIX)/bin/
-	install -m 0644 doorlockd.cfg $(DESTDIR)/$(SYSCONFDIR)
+	install -m 0644 doorlockd.default.cfg doorlockd.cfg $(DESTDIR)/$(SYSCONFDIR)
 	install -m 0644 doorlockd.service doorstate.service $(DESTDIR)/$(SYSCONFDIR)/systemd/system
+
+	pip install --upgrade --force-reinstall --root=$(DESTDIR) .
 
 	cp -av share/* $(DESTDIR)/$(PREFIX)/share
