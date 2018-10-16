@@ -5,6 +5,7 @@ SYSCONFDIR ?= /etc
 all: gpio-wait
 	sed -i -r -e "s@(^SYSCONFDIR = ').*('$$)@\1$(SYSCONFDIR)\2@" doorlockd
 	sed -i -r -e "s@(^PREFIX = ').*('$$)@\1$(PREFIX)\2@" doorlockd
+	sed -i -r -e "s@(^__version__ = ').*('$$)@\1$(shell cat VERSION)\2@" doorlockd
 
 gpio-wait: gpio-wait.c
 
