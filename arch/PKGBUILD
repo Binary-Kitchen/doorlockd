@@ -9,6 +9,7 @@ url="https://github.com/Binary-Kitchen/${pkgname}"
 license=(GPL)
 depends=('python3'
          'python-ldap'
+	 'python-pip'
 	 'alsa-utils'
 	 'mosquitto'
 	 'wol'
