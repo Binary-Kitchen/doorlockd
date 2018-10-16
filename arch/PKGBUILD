@@ -19,7 +19,7 @@ depends=('python3'
 	 'fluxbox'
 	 'nginx'
 	 'slim')
-source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=next"
+source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=wip-pydoorlock"
         "https://www.binary-kitchen.de/static/BKCA.crt")
 sha256sums=('SKIP'
             '2e8b1ffabcf16e3e60cfc277b40955ae499dedcf39762efbb0512003be9db10f')
