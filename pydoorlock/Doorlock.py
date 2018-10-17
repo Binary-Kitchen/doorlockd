@@ -24,7 +24,7 @@ from serial import Serial
 from threading import Thread
 from time import sleep
 from os.path import join
-
+import gevent
 from .Door import DoorState
 from .Protocol import Protocol
 

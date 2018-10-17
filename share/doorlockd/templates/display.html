@@ -13,23 +13,27 @@
 	<script type="text/javascript" src="static/socket.io.slim.js"></script>
 	<script type="text/javascript" charset="utf-8">
 	$(document).ready(function() {
-		function request_status() {
-			socket.emit('request_status');
-		}
-
-		var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
-		var timer = setInterval(request_status, 120000);
-
-		socket.on('connect', function() {
-			socket.emit('connected');
+			var source = new EventSource('{{ url_for('push')}}');
+			source.onmessage = function(event){
+			console.log("event:" + event.data);
+			try{
+				var data = JSON.parse(event.data);
+				$('#message').html(data.message);
+				led = $('#led');
+				switch(data.status){
+					case 0:
+						led.attr('src','static/led-green.png');
+						break;
+					case 1:
+						led.attr('src','static/led-yellow.png');
+						break;
+					case 2:
+						led.attr('src','static/led-red.png');
+						break;
+					default:
+				}
+			} catch(e){console.log(e);}}
 		});
-		socket.on('status', function(status) {
-			$('#led').attr('src', status.led);
-			$('#message').html(status.message);
-			clearInterval(timer);
-			timer = setInterval(request_status, 120000);
-		});
-	});
 	</script>
 {% endblock %}
 
