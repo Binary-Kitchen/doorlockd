@@ -1,7 +1,7 @@
 """
 Doorlockd -- Binary Kitchen's smart door opener
 
-Copyright (c) Binary Kitchen e.V., 2018
+Copyright (c) Binary Kitchen e.V., 2020
 
 Author:
   Ralf Ramsauer <ralf@binary-kitchen.de>
@@ -16,9 +16,10 @@ details.
 """
 
 import logging
+import json
+import threading
 
-from flask import abort, Flask, jsonify, render_template, request
-from flask_socketio import SocketIO
+from flask import abort, Flask, jsonify, render_template, request, Response
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length
@@ -28,19 +29,41 @@ from .Doorlock import DoorlockResponse
 from .Authenticator import AuthMethod
 
 log = logging.getLogger()
-
 webapp = Flask(__name__)
-socketio = SocketIO(webapp, async_mode='threading')
+evt = threading.Event()
+json_push_state = ""
 
 
 def emit_doorstate(response=None):
-    state = logic.state
+    global json_push_state
+
     if response:
         message = str(response)
     else:
-        message = str(state)
-    socketio.emit('status', {'led': state.to_img(), 'message': message})
+        message = str(logic.state)
 
+    json_push_state = json.dumps({
+        'message' : message,
+        'img' : logic.state.to_img()})
+
+    #Notify push clients
+    evt.set()
+    evt.clear()
+
+def event_str():
+    return "data: {}\n\n".format(json_push_state)
+
+def push_state():
+    def event_str():
+        return "data: {}\n\n".format(json_push_state)
+    
+    try:
+        yield event_str()
+        while True:
+            evt.wait()
+            yield event_str()
+    except GeneratorExit:
+        return
 
 class AuthenticationForm(FlaskForm):
     username = StringField('Username', [Length(min=3, max=25)])
@@ -64,13 +87,6 @@ class AuthenticationForm(FlaskForm):
 
         return True
 
-
-@socketio.on('request_status')
-@socketio.on('connect')
-def on_connect():
-    emit_doorstate()
-
-
 @webapp.route('/display')
 def display():
     return render_template('display.html',
@@ -78,19 +94,27 @@ def display():
                            title=title,
                            welcome=welcome)
 
+@webapp.route('/push')
+def push():
+    emit_doorstate()
+    resp = Response(push_state(),mimetype="text/event-stream")
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Cache-Control'] = 'no-cache'
+    return resp
+
 
 @webapp.route('/api', methods=['POST'])
 def api():
     def json_response(response, msg=None):
-        json = dict()
-        json['err'] = response.value
-        json['msg'] = str(response) if msg is None else msg
+        json_dict = dict()
+        json_dict['err'] = response.value
+        json_dict['msg'] = str(response) if msg is None else msg
         if response == DoorlockResponse.Success or \
            response == DoorlockResponse.AlreadyActive:
             # TBD: Remove 'open'. No more users. Still used in App Version 2.1.1!
-            json['open'] = logic.state.is_open()
-            json['status'] = logic.state.value
-        return jsonify(json)
+            json_dict['open'] = logic.state.is_open()
+            json_dict['status'] = logic.state.value
+        return jsonify(json_dict)
 
     user = request.form.get('user')
     password = request.form.get('pass')
@@ -137,6 +161,7 @@ def home():
         desired_state = authentication_form.desired_state
         log.info('  desired state: %s' % desired_state)
         log.info('  current state: %s' % logic.state)
+        
         response = logic.request(desired_state, credentials)
         log.info('  response: %s' % response)
 
@@ -154,7 +179,7 @@ def home():
 def webapp_run(cfg, my_logic, status, version, template_folder, static_folder):
     global logic
     logic = my_logic
-
+    
     debug = cfg.boolean('DEBUG')
 
     host = 'localhost'
@@ -176,4 +201,5 @@ def webapp_run(cfg, my_logic, status, version, template_folder, static_folder):
     webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
     webapp.template_folder = template_folder
     webapp.static_folder = static_folder
-    socketio.run(webapp, host=host, port=8080, use_reloader=False, debug=debug)
+    webapp.debug = debug
+    webapp.run(host = host, port = 8080)
