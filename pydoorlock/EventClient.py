@@ -5,7 +5,6 @@ import json
 class EventClient:
     def __init__(self,url):
         self.r = requests.get(url,stream=True)
-        print("connected")
         if self.r.encoding is None:
             self.r.encoding = 'utf8'
 
