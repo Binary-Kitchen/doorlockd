@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+"""
+Doorlockd -- Binary Kitchen's smart door opener
+
+Copyright (c) Binary Kitchen e.V., 2018
+
+Author:
+  Thomas Schmid <tom@binary-kitchen.de>
+
+This work is licensed under the terms of the GNU GPL, version 2.  See
+the LICENSE file in the top-level directory.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+"""
+
+from pydoorlock.EventClient import EventClient
+from pydoorlock.Door import DoorState
+import json
+
+state = DoorState(0)
+
+if __name__ == "__main__":
+    #we need a thread that listens for server sent events
+    #we need a thread that does serial port communication
+    #do the networking in the main thread
+
+    ec = EventClient("http://localhost:8080/push")
+    for event in ec.events():
+        data = json.loads(event['data'])
+        state = DoorState(data['status'])
+        print(state)
