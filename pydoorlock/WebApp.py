@@ -157,9 +157,13 @@ def home():
     # Don't trust python, zero credentials
     user = password = credentials = None
 
+    auth_backends=[{"backend":b,
+                    "selected":(b==default_backend)}
+                    for b in logic.auth.backends]
+
     return render_template('index.html',
                            authentication_form=authentication_form,
-                           auth_backends=logic.auth.backends,
+                           auth_backends=auth_backends,
                            response=response,
                            state_text=str(logic.state),
                            led=logic.state.to_img(),
@@ -187,6 +191,9 @@ def webapp_run(cfg, my_logic, status, version, template_folder, static_folder):
 
     global html_title
     html_title = '%s (%s - v%s)' % (title, status, version)
+
+    global default_backend
+    default_backend = cfg.str('DEFAULT_BACKEND')
 
     webapp.config['SECRET_KEY'] = cfg.str('SECRET_KEY')
     webapp.template_folder = template_folder

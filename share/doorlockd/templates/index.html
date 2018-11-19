@@ -26,8 +26,8 @@
 			<div class="form-group">
 				<label for="method">Authentication method</label>
 				<select name="method" id="method" class="form-control">
-					{% for backend in auth_backends %}
-					<option>{{ backend }}</option>
+					{% for backend, selected in auth_backends|sort(attribute="backend") %}
+					<option{% if selected %} selected{% endif %}>{{ backend }}</option>
 					{% endfor %}
 				</select>
 			</div>
