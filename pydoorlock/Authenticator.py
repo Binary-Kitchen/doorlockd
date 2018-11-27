@@ -102,14 +102,10 @@ class Authenticator:
         if self._simulate:
             log.info('SIMULATION MODE! ACCEPTING ANYTHING!')
             return DoorlockResponse.Success
-
-        method = credentials[0]
-        if method not in self._backends:
-            return DoorlockResponse.InternalError
-
-        if method == AuthMethod.LDAP_USER_PW:
-            return self._try_auth_ldap(credentials[1], credentials[2])
-        elif method == AuthMethod.LOCAL_USER_DB:
-            return self._try_auth_local(credentials[1], credentials[2])
-
-        return DoorlockResponse.InternalError
+        if AuthMethod.LDAP_USER_PW in self._backends:
+            retval = self._try_auth_ldap(credentials[0], credentials[1])
+            if retval == DoorlockResponse.Success:
+                return retval
+        if AuthMethod.LOCAL_USER_DB in self._backends:
+            return self._try_auth_local(credentials[0], credentials[1])
+        return DoorlockResponse.Perm

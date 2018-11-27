@@ -45,7 +45,6 @@ def emit_doorstate(response=None):
 class AuthenticationForm(FlaskForm):
     username = StringField('Username', [Length(min=3, max=25)])
     password = PasswordField('Password', [DataRequired()])
-    method = StringField('Method', [DataRequired()])
     open = SubmitField('Open')
     present = SubmitField('Present')
     close = SubmitField('Close')
@@ -62,11 +61,6 @@ class AuthenticationForm(FlaskForm):
             self.desired_state = DoorState.Open
         elif self.present.data:
             self.desired_state = DoorState.Present
-
-        if self.method.data == 'Local':
-            self.method = AuthMethod.LOCAL_USER_DB
-        else: # default: use LDAP
-            self.method = AuthMethod.LDAP_USER_PW
 
         return True
 
@@ -98,15 +92,9 @@ def api():
             json['status'] = logic.state.value
         return jsonify(json)
 
-    method = request.form.get('method')
     user = request.form.get('user')
     password = request.form.get('pass')
     command = request.form.get('command')
-
-    if method == 'local':
-        method = AuthMethod.LOCAL_USER_DB
-    else: # 'ldap' or default
-        method = AuthMethod.LDAP_USER_PW
 
     if any(v is None for v in [user, password, command]):
         log.warning('Incomplete API request')
@@ -117,7 +105,7 @@ def api():
         return json_response(DoorlockResponse.Inval,
                              'Invalid username or password format')
 
-    credentials = method, user, password
+    credentials = user, password
 
     if command == 'status':
         return json_response(logic.auth.try_auth(credentials))
@@ -143,11 +131,9 @@ def home():
     if request.method == 'POST' and authentication_form.validate():
         user = authentication_form.username.data
         password = authentication_form.password.data
-        method = authentication_form.method
-        credentials = method, user, password
+        credentials = user, password
 
         log.info('Incoming request from %s' % user.encode('utf-8'))
-        log.info('  authentication method: %s' % method)
         desired_state = authentication_form.desired_state
         log.info('  desired state: %s' % desired_state)
         log.info('  current state: %s' % logic.state)
@@ -159,7 +145,6 @@ def home():
 
     return render_template('index.html',
                            authentication_form=authentication_form,
-                           auth_backends=logic.auth.backends,
                            response=response,
                            state_text=str(logic.state),
                            led=logic.state.to_img(),
