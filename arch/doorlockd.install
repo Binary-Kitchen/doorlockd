@@ -1,9 +1,0 @@
-post_install() {
-	echo "Running trust extract-compat"
-	trust extract-compat
-}
-
-post_remove() {
-	echo "Running trust extract-compat"
-	trust extract-compat
-}
