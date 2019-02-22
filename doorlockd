@@ -3,7 +3,7 @@
 """
 Doorlockd -- Binary Kitchen's smart door opener
 
-Copyright (c) Binary Kitchen e.V., 2018
+Copyright (c) Binary Kitchen e.V., 2018-2019
 
 Author:
   Ralf Ramsauer <ralf@binary-kitchen.de>
@@ -31,7 +31,7 @@ SYSCONFDIR = '.'
 PREFIX = '.'
 
 __author__ = 'Ralf Ramsauer'
-__copyright = 'Copyright (c) Ralf Ramsauer, 2018'
+__copyright = 'Copyright (c) Ralf Ramsauer, 2018-2019'
 __license__ = 'GPLv2'
 __email__ = 'ralf@binary-kitchen.de'
 __status__ = 'Development'
