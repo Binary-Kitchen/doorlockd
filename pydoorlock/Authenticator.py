@@ -73,14 +73,18 @@ class Authenticator:
         return self._backends
 
     def _try_auth_local(self, user, password):
+        log.info('  Trying to local auth (user, password) as user %s',user)
         if user not in self._local_db:
+            log.info('  No user %s in local database', user)
             return DoorlockResponse.Perm
 
         stored_pw = self._local_db[user][0]
         stored_salt = self._local_db[user][1]
         if stored_pw == hashlib.sha256(stored_salt.encode() + password.encode()).hexdigest():
+            log.info('  Authenticated as user %s', user)
             return DoorlockResponse.Success
 
+        log.info('  Invalid credentials')
         return DoorlockResponse.Perm
 
     def _try_auth_ldap(self, user, password):
@@ -96,6 +100,7 @@ class Authenticator:
         except ldap.LDAPError as e:
             log.info('  LDAP Error: %s' % e)
             return DoorlockResponse.InternalError
+        log.info('  Authenticated as user %s', user)
         return DoorlockResponse.Success
 
     def try_auth(self, credentials):
