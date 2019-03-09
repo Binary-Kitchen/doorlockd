@@ -16,6 +16,7 @@ details.
 """
 
 import logging
+import socket
 
 from enum import Enum
 from random import sample
@@ -121,22 +122,47 @@ class DoorHandler:
         self.run_hooks = cfg.boolean('RUN_HOOKS')
 
         if cfg.boolean('SIMULATE_SERIAL'):
-            return
+            log.info('Trying to connect to simulated serial port')
+            self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            try:
+                self.socket.connect(('localhost',cfg.int("SIMULATE_SERIAL_PORT")))
+                self.socket.setblocking(0)
+                log.info('Using simulated serial port')
+            except socket.error:
+                log.info('Unable to connect to simulated serial port')
+                return
+        else:
+            device = cfg.str('SERIAL_PORT')
+            log.info('Using serial port: %s' % device)
+            self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
+                                 stopbits=1, timeout=0)
 
-        device = cfg.str('SERIAL_PORT')
-        log.info('Using serial port: %s' % device)
-
-        self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
-                             stopbits=1, timeout=0)
         self.thread = Thread(target=self.thread_worker)
         log.debug('Spawning RS232 Thread')
         self.thread.start()
+
+    def read(self):
+        try:
+            return self.serial.read(1)
+        except AttributeError:
+            try:
+                return self.socket.recv(1)
+            except socket.error:
+                return ""
+
+    def write(self,c):
+        try:
+            self.serial.write(c)
+            self.serial.flush()
+        except AttributeError:
+            self.socket.send(c)
+            self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
     def thread_worker(self):
         while True:
             sleep(0.4)
             while True:
-                rx = self.serial.read(1)
+                rx = self.read()
                 if len(rx) == 0:
                     break
 
@@ -171,8 +197,7 @@ class DoorHandler:
             else:
                 continue
 
-            self.serial.write(tx)
-            self.serial.flush()
+            self.write(tx)
 
     def open(self):
         if self.state == DoorState.Open:

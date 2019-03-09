@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+
+"""
+Doorlockd -- Binary Kitchen's smart door opener
+
+Copyright (c) Binary Kitchen e.V., 2018-2019
+
+Author:
+  Thomas Schmid <tom@binary-kitchen.de>
+
+This work is licensed under the terms of the GNU GPL, version 2.  See
+the LICENSE file in the top-level directory.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+"""
+
+import sys
+import argparse
+import socket
+import curses
+
+from enum import Enum, auto
+from threading import Thread,Timer
+
+from pydoorlock.Config import Config
+from pydoorlock.Protocol import Protocol
+
+cfg = Config('doorlockd')
+
+class State(Enum):
+    RED = auto()
+    GREEN = auto()
+    YELLOW = auto()
+
+class Source(Enum):
+    BUTTON = auto()
+    EMERGENCY = auto()
+    TIMEOUT = auto()
+    COMM = auto()
+
+class NetworkWorker(Thread):
+    def __init__(self, client, logic):
+        Thread.__init__(self)
+        self.client = client
+        self.logic = logic
+
+    def run(self):
+            while True:
+                try:
+                    rec = self.client.recv(1).decode() 
+                    if rec == Protocol.STATE_SWITCH_RED.value:
+                        self.logic.update_state(State.RED, Source.COMM)
+                    elif rec == Protocol.STATE_SWITCH_GREEN.value:
+                        self.logic.update_state(State.GREEN, Source.COMM)
+                    elif rec == Protocol.STATE_SWITCH_YELLOW.value:
+                        self.logic.update_state(State.YELLOW, Source.COMM)
+                except socket.error:
+                    print("socket error")
+                    return
+
+class Watchdog:
+    def __init__(self, timeout, timeoutHandler=None):
+        self.timeout = timeout
+        self.handler = timeoutHandler if timeoutHandler is not None else self.defaultHandler
+        self.timer = Timer(self.timeout, self.handler)
+
+    def defaultHandler(self):
+        pass
+
+    def start(self):
+        self.timer.start()
+
+    def stop(self):
+        self.timer.cancel()
+
+    def reset(self):
+        self.timer.cancel()
+        self.timer = Timer(self.timeout, self.handler)
+        self.timer.start()
+
+class DoorlockLogic:
+    def __init__(self, client, timeout, initialState=State.RED):
+        self.state = initialState
+        self.client = client
+        self.watchdog = Watchdog(timeout, self.watchdog_handler)
+        self.watchdog.start()
+
+    def update_state(self,new_state,source):
+        self.watchdog.reset()
+        if new_state == self.state:
+            return
+
+        self.state = new_state
+        choices = {State.RED: Protocol.STATE_SWITCH_RED.value,
+                   State.GREEN: Protocol.STATE_SWITCH_GREEN.value,
+                   State.YELLOW: Protocol.STATE_SWITCH_YELLOW.value}
+        ret = choices.get(self.state)
+
+        if source == Source.BUTTON:
+            self.client.send(ret.upper())
+        elif source == Source.EMERGENCY:
+            self.client.send(Protocol.EMERGENCY.value)
+        elif source == Source.TIMEOUT:
+            self.client.send(ret)
+
+    def watchdog_handler(self):
+        self.update_state(State.RED, Source.TIMEOUT)
+
+def main(args):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(('localhost', cfg.int("SIMULATE_SERIAL_PORT")))
+    server.listen(1)
+    client, addr = server.accept()
+    try:
+        while True:
+            logic = DoorlockLogic(client, args.timeout)
+            NetworkWorker(client, logic).start()
+
+            while True:
+                rec = input("input desired state (l=lock, u=unlock, p=present, e=emergency unlock)...")
+                if rec=='l':
+                    logic.update_state(State.RED, Source.BUTTON)
+                elif rec=='u':
+                    logic.update_state(State.GREEN, Source.BUTTON)
+                elif rec=='p':
+                    logic.update_state(State.YELLOW, Source.BUTTON)
+                elif rec=='e':
+                    logic.update_state(State.GREEN, Source.EMERGENCY)
+                else:
+                    print("Invalid command ""{}""".format(rec))
+    finally:
+        print("closing")
+        client.close()
+        server.close()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description = 'Provide a simulated doorlock serial connection over tcp/ip')
+    parser.add_argument('-t', '--timeout', help='specify watchdog timeout interval', type=float, default=5.0)
+    args = parser.parse_args()
+    try:
+        main(args)
+    except KeyboardInterrupt as e:
+        sys.exit(0)
