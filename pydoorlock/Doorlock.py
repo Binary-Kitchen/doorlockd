@@ -1,7 +1,7 @@
 """
 Doorlockd -- Binary Kitchen's smart door opener
 
-Copyright (c) Binary Kitchen e.V., 2018
+Copyright (c) Binary Kitchen e.V., 2018-2019
 
 Author:
   Ralf Ramsauer <ralf@binary-kitchen.de>
@@ -19,7 +19,7 @@ import logging
 
 from enum import Enum
 from random import sample
-from subprocess import Popen
+from subprocess import run
 from serial import Serial
 from threading import Thread
 from time import sleep
@@ -54,6 +54,10 @@ eperm_insults = {
 
 def choose_insult():
     return sample(eperm_insults, 1)[0]
+
+
+def run_background(cmd):
+    run('%s &' % cmd, shell=True)
 
 
 class DoorlockResponse(Enum):
@@ -241,14 +245,14 @@ class DoorHandler:
             elif new_state == DoorState.Closed:
                 filename = self.wave_lock
 
-        Popen(['nohup', 'aplay', join(self.sounds_prefix, filename)])
+        run_background('aplay %s' % join(self.sounds_prefix, filename))
 
     def run_hook(self, script):
         if not self.run_hooks:
             log.info('Hooks disabled: not starting %s' % script)
             return
         log.info('Starting hook %s' % script)
-        Popen(['nohup', join(self.scripts_prefix, script)])
+        run_background(join(self.scripts_prefix, script))
 
     def register_callback(self, callback):
         self._callback = callback
