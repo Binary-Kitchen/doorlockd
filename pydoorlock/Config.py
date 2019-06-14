@@ -1,7 +1,7 @@
 """
 Doorlockd -- Binary Kitchen's smart door opener
 
-Copyright (c) Binary Kitchen e.V., 2018
+Copyright (c) Binary Kitchen e.V., 2018-2019
 
 Author:
   Ralf Ramsauer <ralf@binary-kitchen.de>
@@ -16,22 +16,36 @@ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 details.
 """
 
+import functools
 from configparser import ConfigParser
 from os.path import join
+
+
+def check_exists(func):
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        config = args[0]
+        if not config.config.has_option(config.config_topic, args[1]):
+            return None
+        return func(*args, **kwargs)
+    return decorator
+
 
 class Config:
     config_topic = 'doorlock'
 
     def __init__(self, sysconfdir):
         self.config = ConfigParser()
-        self.config.read([join(sysconfdir, 'doorlockd.default.cfg'),
-                          join(sysconfdir, 'doorlockd.cfg')])
+        self.config.read(join(sysconfdir, 'doorlockd.cfg'))
 
+    @check_exists
     def boolean(self, key):
         return self.config.getboolean(self.config_topic, key)
 
+    @check_exists
     def str(self, key):
         return self.config.get(self.config_topic, key)
 
+    @check_exists
     def int(self,key):
         return self.config.getint(self.config_topic, key)
