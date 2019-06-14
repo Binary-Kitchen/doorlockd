@@ -12,7 +12,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 while true; do
-	gpio-wait /dev/gpiochip0 22
+	gpio-wait /dev/gpiochip0 $GPIO
 	ret=$?
 
 	if [ $ret -eq 0 ]; then
