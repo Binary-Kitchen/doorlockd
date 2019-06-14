@@ -25,3 +25,7 @@ install:
 	pip install --upgrade --force-reinstall --root=$(DESTDIR) .
 
 	cp -av share/* $(DESTDIR)/$(PREFIX)/share
+
+clean:
+	rm -f gpio-wait
+	rm -rf pydoorlock/__pycache__
