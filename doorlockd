@@ -26,6 +26,7 @@ from os.path import abspath, join
 from pydoorlock.Authenticator import Authenticator
 from pydoorlock.WebApp import webapp_run, emit_doorstate
 from pydoorlock.Doorlock import DoorlockResponse, DoorHandler
+from pydoorlock.Config import Config
 
 SYSCONFDIR = '.'
 PREFIX = '.'
@@ -42,22 +43,6 @@ log_level = logging.DEBUG
 date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
-
-
-class Config:
-    config_topic = 'doorlock'
-
-    def __init__(self, sysconfdir):
-        self.config = ConfigParser()
-        self.config.read([join(sysconfdir, 'doorlockd.default.cfg'),
-                          join(sysconfdir, 'doorlockd.cfg')])
-
-    def boolean(self, key):
-        return self.config.getboolean(self.config_topic, key)
-
-    def str(self, key):
-        return self.config.get(self.config_topic, key)
-
 
 cfg = Config(SYSCONFDIR)
 
