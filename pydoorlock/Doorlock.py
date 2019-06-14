@@ -26,6 +26,7 @@ from time import sleep
 from os.path import join
 
 from .Door import DoorState
+from .Protocol import Protocol
 
 log = logging.getLogger()
 
@@ -98,16 +99,6 @@ class DoorHandler:
     state = DoorState.Closed
     do_close = False
 
-    CMD_PRESENT = b'y'
-    CMD_OPEN = b'g'
-    CMD_CLOSE = b'r'
-
-    BUTTON_PRESENT = b'Y'
-    BUTTON_OPEN = b'G'
-    BUTTON_CLOSE = b'R'
-
-    CMD_EMERGENCY_SWITCH = b'E'
-
     wave_lock = 'lock.wav'
     wave_lock_button = 'lock_button.wav'
 
@@ -150,19 +141,19 @@ class DoorHandler:
                     break
 
                 old_state = self.state
-                if rx == DoorHandler.BUTTON_CLOSE:
+                if rx == Protocol.STATE_SWITCH_RED.value.upper():
                     self.close()
                     log.info('Closed due to Button press')
                     self.invoke_callback(DoorlockResponse.ButtonLock)
-                elif rx == DoorHandler.BUTTON_OPEN:
+                elif rx == Protocol.STATE_SWITCH_GREEN.value.upper():
                     self.open()
                     log.info('Opened due to Button press')
                     self.invoke_callback(DoorlockResponse.ButtonUnlock)
-                elif rx == DoorHandler.BUTTON_PRESENT:
+                elif rx == Protocol.STATE_SWITCH_YELLOW.value.upper():
                     self.present()
                     log.info('Present due to Button press')
                     self.invoke_callback(DoorlockResponse.ButtonPresent)
-                elif rx == DoorHandler.CMD_EMERGENCY_SWITCH:
+                elif rx == Protocol.EMERGENCY.value:
                     log.warning('Emergency unlock')
                     self.invoke_callback(DoorlockResponse.EmergencyUnlock)
                 else:
@@ -171,12 +162,12 @@ class DoorHandler:
                 self.sound_helper(old_state, self.state, True)
 
             if self.do_close:
-                tx = DoorHandler.CMD_CLOSE
+                tx = Protocol.STATE_SWITCH_RED.value
                 self.do_close = False
             elif self.state == DoorState.Present:
-                tx = DoorHandler.CMD_PRESENT
+                tx = Protocol.STATE_SWITCH_YELLOW.value
             elif self.state == DoorState.Open:
-                tx = DoorHandler.CMD_OPEN
+                tx = Protocol.STATE_SWITCH_GREEN.value
             else:
                 continue
 
