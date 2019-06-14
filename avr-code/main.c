@@ -18,6 +18,8 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
+#include "protocol.h"
+
 #define RED	0x1
 #define GREEN	0x2
 #define YELLOW	0x4
@@ -107,17 +109,17 @@ static void update_state(unsigned char new_state, enum state_source source)
 	case RED:
 		set_bolzen(true);
 		set_schnapper(false);
-		ret = 'r';
+		ret = AVR_STATE_SWITCH_RED;
 		break;
 	case YELLOW:
 		set_bolzen(false);
 		set_schnapper(false);
-		ret = 'y';
+		ret = AVR_STATE_SWITCH_YELLOW;
 		break;
 	case GREEN:
 		set_bolzen(false);
 		set_schnapper(true);
-		ret = 'g';
+		ret = AVR_STATE_SWITCH_GREEN;
 		break;
 	}
 
@@ -126,7 +128,7 @@ static void update_state(unsigned char new_state, enum state_source source)
 		uart_putc(toupper(ret));
 		break;
 	case EMERGENCY:
-		uart_putc('E');
+		uart_putc(AVR_EMERGENCY);
 		break;
 	case TIMEOUT:
 		uart_putc(ret);
@@ -142,13 +144,13 @@ ISR(USART_RX_vect)
 	unsigned char c = UDR;
 
 	switch (c) {
-	case 'r':
+	case AVR_STATE_SWITCH_RED:
 		update_state(RED, COMM);
 		break;
-	case 'y':
+	case AVR_STATE_SWITCH_YELLOW:
 		update_state(YELLOW, COMM);
 		break;
-	case 'g':
+	case AVR_STATE_SWITCH_GREEN:
 		update_state(GREEN, COMM);
 		break;
 	}
