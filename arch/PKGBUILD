@@ -24,10 +24,11 @@ sha256sums=('SKIP')
 
 build() {
   cd "$srcdir/$pkgname/"
-  make PREFIX=/usr sysconfdir=/etc
+  make
 }
 
 package() {
   cd "$srcdir/$pkgname/"
+  make PREFIX=/usr sysconfdir=/etc package
   make PREFIX=/usr sysconfdir=/etc DESTDIR="$pkgdir" install
 }
