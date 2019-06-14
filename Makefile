@@ -2,12 +2,15 @@ DESTDIR ?= /
 PREFIX ?= /usr
 SYSCONFDIR ?= /etc
 
-all: gpio-wait
+all: gpio-wait pydoorlock/Protocol.py
 
 package:
 	sed -i -r -e "s@(^SYSCONFDIR = ').*('$$)@\1$(SYSCONFDIR)\2@" doorlockd
 	sed -i -r -e "s@(^PREFIX = ').*('$$)@\1$(PREFIX)\2@" doorlockd
 	sed -i -r -e "s@(^__version__ = ').*('$$)@\1$(shell cat VERSION)\2@" doorlockd
+
+pydoorlock/Protocol.py: avr-code/protocol.h
+	./scripts/gen_protocol.sh $^ > $@
 
 gpio-wait: gpio-wait.c
 
@@ -29,3 +32,4 @@ install:
 clean:
 	rm -f gpio-wait
 	rm -rf pydoorlock/__pycache__
+	rm -f pydoorlock/Protocol.py
