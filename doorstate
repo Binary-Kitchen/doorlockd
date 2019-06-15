@@ -1,23 +1,173 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-GPIO=22
+"""
+Doorlockd -- Binary Kitchen's smart door opener
 
-function publish {
-	mosquitto_pub -r -t kitchen/doorlock/frontdoor/doorstate -m "$1"
-}
+Copyright (c) Binary Kitchen e.V., 2019
 
-if [ "$(id -u)" != "0" ]; then
-	echo "Please run as root!"
-	exit -1
-fi
+Author:
+  Ralf Ramsauer <ralf@binary-kitchen.de>
 
-while true; do
-	gpio-wait /dev/gpiochip0 $GPIO
-	ret=$?
+This work is licensed under the terms of the GNU GPL, version 2.  See
+the LICENSE file in the top-level directory.
 
-	if [ $ret -eq 0 ]; then
-		publish "closed"
-	elif [ $ret -eq 1 ]; then
-		publish "open"
-	fi
-done
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+"""
+
+import gpiod
+import os
+import sys
+
+from subprocess import Popen
+from threading import Timer, Thread, Event
+
+import paho.mqtt.client as mqtt
+
+from pydoorlock.Config import Config, sounds_prefix
+
+prog = sys.argv[0]
+
+global is_locked
+is_locked = None
+
+class AudioPlayer(Thread):
+    def __init__(self, filename):
+        super(AudioPlayer, self).__init__()
+        self._filename = filename
+        self._event = Event()
+        self._shutdown = False
+        self._process = None
+        self._state = False
+
+    def set(self, state):
+        self._state = state
+        self._event.set()
+
+    def shutdown(self):
+        self._state = False
+        self._shutdown = True
+        self._event.set()
+
+    def run(self):
+        print('Run')
+
+        while not self._shutdown:
+            self._event.wait(1)
+
+            if self._event.is_set():
+                print('Came by event')
+                self._event.clear()
+
+            if self._process:
+                if self._process.poll() is not None:
+                    print('Cleaning up...')
+                    self._process.wait()
+                    self._process = None
+                    self._state = False
+                elif not self._state:
+                    print('Killing...')
+                    self._process.terminate()
+                    self._process.wait()
+                    self._process = None
+                    self._state = False
+            else:
+                if self._state:
+                    print('Starting...')
+                    self._process = Popen(['mpg123', self._filename])
+
+def mqtt_on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("MqTT: Connection returned result: " + mqtt.connack_string(rc))
+        client.subscribe(topic_alarm)
+        client.subscribe(topic_lockstate)
+    else:
+        print("MqTT: Bad connection Returned code=", rc)
+
+def mqtt_on_lockstate(client, userdata, message):
+    global is_locked
+    is_locked = message.payload.decode('utf-8') == 'locked'
+    print('is_locked: %s' % is_locked)
+
+def mqtt_on_alarm(client, userdata, message):
+    alarm_set = message.payload.decode('utf-8') == '1'
+    print('MQTT: alarm: %u' % alarm_set)
+    player_alarm.set(alarm_set)
+
+def publish_doorstate():
+    global door_open
+
+    message = 'open' if door_open else 'closed'
+    mqttc.publish(topic_doorstate, message, retain=True)
+
+
+cfg = Config('dooralarm')
+topic_alarm = cfg.str('TOPIC_ALARM')
+topic_doorstate = cfg.str('TOPIC_DOORSTATE')
+topic_lockstate = cfg.str('TOPIC_LOCKSTATE')
+doorstate_alarm_timeout = int(cfg.str('DOORSTATE_ALARM_TIMEOUT'))
+
+f_alarm = os.path.join(sounds_prefix, 'alarm.mp3')
+f_door_call = os.path.join(sounds_prefix, 'door_call.mp3')
+
+mqttc = mqtt.Client(client_id=prog)
+mqttc.username_pw_set(cfg.str('MQTT_USERNAME'), cfg.str('MQTT_PASSWORD'))
+mqttc.on_connect = mqtt_on_connect
+mqttc.message_callback_add(topic_alarm, mqtt_on_alarm)
+mqttc.message_callback_add(topic_lockstate, mqtt_on_lockstate)
+mqttc.connect(cfg.str('MQTT_HOST'))
+
+chip = gpiod.Chip(cfg.str('GPIO_CHIP'))
+pin = cfg.int('GPIO_PIN')
+
+line = chip.get_line(pin)
+line.request(consumer=prog, type=gpiod.LINE_REQ_EV_BOTH_EDGES)
+
+player_alarm = AudioPlayer(f_alarm)
+player_alarm.start()
+
+player_door_call = AudioPlayer(f_door_call)
+player_door_call.start()
+
+global door_open
+door_open = line.get_value() == 1
+
+door_alarm_set = False
+
+while True:
+    # Synchronous loops: MQTT + GPIO
+    mqttc.loop(timeout=0.5, max_packets=1)
+
+    ev_line = line.event_wait(sec=1)
+    if ev_line:
+        event = line.event_read()
+        door_open = event.type == gpiod.LineEvent.RISING_EDGE
+        publish_doorstate()
+
+    print('Loop: door_open: %s' % door_open)
+    print('Loop: is_locked: %s' % is_locked)
+    print('Loop: door_alarm_set: %s' % door_alarm_set)
+    print()
+
+    # Door State stuff
+    if is_locked is not None:
+        if is_locked is False:
+            if door_alarm_set:
+                player_door_call.set(False)
+            door_alarm_set = False
+        elif door_open is True:
+            if not door_alarm_set:
+                door_alarm_set = True
+                player_door_call.set(True)
+        elif door_open is False:
+            if door_alarm_set:
+                player_door_call.set(False)
+            door_alarm_set = False
+
+player_alarm.shutdown()
+player_alarm.join()
+
+player_door_call.shutdown()
+player_door_call.join()
