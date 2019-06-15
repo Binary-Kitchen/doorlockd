@@ -2,6 +2,12 @@ DESTDIR ?= /
 PREFIX ?= /usr
 SYSCONFDIR ?= /etc
 
+USR = $(DESTDIR)/$(PREFIX)
+BIN = $(USR)/bin/
+ETC = $(DESTDIR)/etc/
+SHARE = $(USR)/share/
+SYSTEMD_UNITS = $(ETC)/systemd/system/
+
 all: gpio-wait pydoorlock/Protocol.py
 
 package:
@@ -15,19 +21,19 @@ pydoorlock/Protocol.py: avr-code/protocol.h
 gpio-wait: gpio-wait.c
 
 install:
-	mkdir -p $(DESTDIR)/$(PREFIX)/bin/
-	mkdir -p $(DESTDIR)/$(PREFIX)/share/
-	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/systemd/system
-	mkdir -p $(DESTDIR)/$(SYSCONFDIR)
+	mkdir -p $(BIN)
+	mkdir -p $(SHARE)
+	mkdir -p $(SYSTEMD_UNITS)
+	mkdir -p $(ETC)
 
-	install doorlockd gpio-wait doorstate $(DESTDIR)/$(PREFIX)/bin/
-	install doorlockd-passwd $(DESTDIR)/$(PREFIX)/bin/
-	install -m 0644 doorlockd.cfg $(DESTDIR)/$(SYSCONFDIR)
-	install -m 0644 doorlockd.service doorstate.service $(DESTDIR)/$(SYSCONFDIR)/systemd/system
+	install doorlockd gpio-wait doorstate $(BIN)
+	install doorlockd-passwd $(BIN)
+	install -m 0644 doorlockd.cfg $(ETC)
+	install -m 0644 systemd/doorlockd.service systemd/doorstate.service $(SYSTEMD_UNITS)
 
 	pip install --upgrade --force-reinstall --root=$(DESTDIR) .
 
-	cp -av share/* $(DESTDIR)/$(PREFIX)/share
+	cp -av share/* $(SHARE)
 
 clean:
 	rm -f gpio-wait
