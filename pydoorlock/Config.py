@@ -21,6 +21,13 @@ from configparser import ConfigParser
 from os.path import join
 
 
+SYSCONFDIR = './etc'
+PREFIX = '.'
+
+root_prefix = join(PREFIX, 'share', 'doorlockd')
+sounds_prefix = join(root_prefix, 'sounds')
+
+
 def check_exists(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
@@ -32,10 +39,10 @@ def check_exists(func):
 
 
 class Config:
-    def __init__(self, sysconfdir, config_topic):
+    def __init__(self, config_topic):
         self.config_topic = config_topic
         self.config = ConfigParser()
-        self.config.read(join(sysconfdir, 'doorlockd.cfg'))
+        self.config.read(join(SYSCONFDIR, 'doorlockd.cfg'))
 
     @check_exists
     def boolean(self, key):
