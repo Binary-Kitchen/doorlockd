@@ -32,9 +32,8 @@ def check_exists(func):
 
 
 class Config:
-    config_topic = 'doorlock'
-
-    def __init__(self, sysconfdir):
+    def __init__(self, sysconfdir, config_topic):
+        self.config_topic = config_topic
         self.config = ConfigParser()
         self.config.read(join(sysconfdir, 'doorlockd.cfg'))
 

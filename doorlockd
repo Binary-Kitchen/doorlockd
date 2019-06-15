@@ -44,7 +44,7 @@ date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()
 
-cfg = Config(SYSCONFDIR)
+cfg = Config(SYSCONFDIR, 'doorlockd')
 
 
 class Logic:
