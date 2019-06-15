@@ -28,7 +28,7 @@ from pydoorlock.WebApp import webapp_run, emit_doorstate
 from pydoorlock.Doorlock import DoorlockResponse, DoorHandler
 from pydoorlock.Config import Config
 
-SYSCONFDIR = '.'
+SYSCONFDIR = './etc'
 PREFIX = '.'
 
 __author__ = 'Ralf Ramsauer'
