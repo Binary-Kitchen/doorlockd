@@ -1,0 +1,16 @@
+
+---
+- name: Install X-Server
+  pacman:
+    name: [xorg, xorg-xinit]
+    state: present
+
+- name: Install displaymanager
+  pacman:
+    name: [lightdm, lightdm-gtk-greeter]
+    state: present
+
+- name: Enable lightdm
+  service:
+    name: lightdm
+    enabled: yes

@@ -1,0 +1,5 @@
+---
+dependencies:
+- role: base
+- role: nginx
+- role: acme_sh

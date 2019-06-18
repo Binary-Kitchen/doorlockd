@@ -1,0 +1,13 @@
+---
+- name: Restart doorlock services
+  service:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+  - doorlockd
+  - doorstate
+
+- name: Restart doorstate
+  service:
+    name: doorstate
+    state: restarted

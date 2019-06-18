@@ -1,0 +1,77 @@
+---
+- name: Install some essential packages
+  pacman:
+    name: ['git','base-devel','sudo','vim']
+    state: present
+
+- name: Create doorlock user
+  user:
+    name: doorlock
+    append: yes
+    groups: wheel, uucp
+    state: present
+
+- name: Enable NOPASSWD for wheel
+  lineinfile:
+    path: /etc/sudoers
+    create: yes
+    regexp: '^%wheel\s'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+
+- name: Clone pikaur
+  become: yes
+  become_user: doorlock
+  git:
+    repo: https://aur.archlinux.org/pikaur.git
+    dest: /tmp/pikaur
+
+- name: Install pikaur
+  command: makepkg -fsri --noconfirm
+  become_user: doorlock
+  become_method: su
+  become: yes
+  args:
+    chdir: /tmp/pikaur
+
+- name: Clone Doorlock repo
+  become_user: doorlock
+  become: yes
+  git:
+    repo: https://github.com/Binary-Kitchen/doorlockd
+    version: next
+    dest: /tmp/doorlockd
+
+- name: Remove doorlockd
+  pacman:
+    name: doorlockd
+    state: absent
+
+- name: Install doorlockd
+  command: makepkg -si --noconfirm
+  become: yes
+  become_user: doorlock
+  become_method: su
+  args:
+    chdir: /tmp/doorlockd/arch
+  environment:
+    PACMAN: pikaur
+
+- name: Enable doorlockd and doorstate
+  service: 
+    enabled: yes
+    name: "{{ item }}"
+  with_items:
+  - doorlockd
+  - doorstate
+
+- name: Copy doorlockd configuration
+  template:
+    src: doorlockd.cfg
+    dest: /etc/doorlockd.cfg
+  notify: Restart doorlock services
+
+- name: Install nginx virtual host
+  copy:
+    src: doorlock_nginx_vhost
+    dest: /etc/nginx/sites-enabled/doorlock
+  notify: nginx restart

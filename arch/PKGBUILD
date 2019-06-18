@@ -9,7 +9,7 @@ url="https://github.com/Binary-Kitchen/${pkgname}"
 license=(GPL)
 depends=('python3'
 	 'python-pyserial'
-         'python-ldap'
+   'python-ldap'
 	 'python-pip'
 	 'alsa-utils'
 	 'libgpiod'
@@ -23,7 +23,7 @@ depends=('python3'
 	 'fluxbox'
 	 'nginx'
 	 'slim')
-source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=next")
+source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=tom")
 sha256sums=('SKIP')
 
 build() {

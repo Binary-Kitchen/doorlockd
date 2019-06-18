@@ -1,0 +1,6 @@
+---
+- hosts: all
+  gather_facts: no
+  become_method: su
+  roles:
+          - doorlock

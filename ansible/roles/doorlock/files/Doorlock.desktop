@@ -1,0 +1,4 @@
+[Desktop Entry]
+Name=Doorlock
+Type=Application
+Exec=/usr/share/xsessions/launch_doorlock_session.sh

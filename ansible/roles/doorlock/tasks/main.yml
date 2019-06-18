@@ -1,0 +1,52 @@
+---
+- name: Install unclutter
+  pacman:
+    name: unclutter
+    state: present
+
+- name: Copy doorlock xsession files
+  copy:
+    src: "{{ item.name }}"
+    dest: /usr/share/xsessions/{{ item.name }}
+    mode: "{{ item.mode }}"
+  with_items:
+  - { name: Doorlock.desktop, mode: preserve}
+  - { name: launch_doorlock_session.sh, mode: a+x}
+
+- name: Configure autologin
+  ini_file:
+    path: /etc/lightdm/lightdm.conf
+    section: Seat:*
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { option: "autologin-user", value: "doorlock"}
+    - { option: "user-session", value: "Doorlock"}
+    - { option: "autologin-session", value: "Doorlock"}
+  notify: Restart lightdm
+
+- name: Install accountsservice
+  pacman:
+    name: accountsservice
+    state: present
+
+- name: Create group autologin
+  group:
+    name: autologin
+    state: present 
+
+- name: Add user doorlock to group autologin
+  user:
+    append: yes
+    user: doorlock
+    groups: autologin
+
+- name: Disable root password login
+  user:
+    user: root
+    password: '*'
+
+- name: Delete alarm user
+  user:
+    user: alarm
+    state: absent

@@ -1,0 +1,4 @@
+---
+dependencies:
+- role: doorlockd
+- role: desktop

@@ -1,0 +1,42 @@
+---
+
+- name: Install acme.sh
+  pacman:
+    name: acme.sh
+    state: present
+
+- name: Install dependencies
+  pacman:
+    name: ['cronie','bind-tools']
+    state: present
+
+- name: Enable and start cronie
+  service:
+    name: cronie
+    enabled: yes
+    state: started
+
+- name: Run acem.sh --install
+  command: ./acme.sh --install
+  args:
+    chdir: /usr/share/acme.sh
+
+- name: Create acme directory
+  file:
+    path: /etc/acme/
+    state: directory
+
+- name: Copy nsupdate key
+  copy:
+    decrypt: yes
+    src: nsupdate.key
+    dest: /etc/acme/nsupdate.key
+
+- name: Issue ssl certificate
+  command: acme.sh --issue --home "/etc/acme/" --test -d lock.binary.kitchen --dns dns_nsupdate
+  register: command_result
+  failed_when: command_result.stderr != ''
+  changed_when: command_result.rc == 0
+  environment:
+    NSUPDATE_SERVER: ns1.binary-kitchen.de 
+    NSUPDATE_KEY: /etc/acme/nsupdate.key

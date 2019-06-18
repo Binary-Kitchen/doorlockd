@@ -1,0 +1,2 @@
+[all]
+doorlock ansible_host=172.23.3.243 ansible_user=root

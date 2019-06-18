@@ -1,0 +1,25 @@
+---
+- name: Pacman key init
+  raw: pacman-key --init
+
+- name: Pacman key populate
+  raw: | 
+       if [[ "`uname -m`" == "armv7l" ]]; then
+        pacman-key --populate archlinuxarm
+       else
+        pacman-key --populate archlinux
+       fi
+
+- name: Update System
+  raw: pacman -Syu --noconfirm
+
+- name: Install Python
+  raw: pacman -S python --noconfirm --
+  
+- name: Gather facts
+  setup:
+
+- name: Add authorized keys
+  authorized_key:
+    user: root
+    key: "{{ pub_keys|map(attribute='key')|join('\n') }}"
