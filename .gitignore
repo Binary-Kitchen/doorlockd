@@ -9,3 +9,5 @@ arch/BKCA.crt
 
 pydoorlock/Protocol.py
 pydoorlock/__pycache__/
+
+ci/download
