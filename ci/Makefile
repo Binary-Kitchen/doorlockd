@@ -96,6 +96,7 @@ $(QEMU_IMAGE): $(ARCHARM_PKG)
 
 	# Some adjustments. We need to modprobe drm-pl111 on boot.
 	echo pl111-drm | sudo tee $(MNT_ROOTFS)/etc/modules-load.d/drm-pl111.conf
+	echo /dev/mmcblk0p1 /boot vfat defaults 0 0 | sudo tee -a $(MNT_ROOTFS)/etc/fstab
 
 	sync
 	sudo umount $(MNT_ROOTFS)/boot
