@@ -29,7 +29,7 @@ IMAGE_SIZE = 5G
 
 MNT_ROOTFS = /tmp/ROOTFS
 
-all: $(QEMU_KERNEL)
+all: qemu_img
 
 qemu: extract_kernel
 	qemu-system-arm							\
