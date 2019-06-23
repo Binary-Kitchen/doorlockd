@@ -11,3 +11,5 @@ pydoorlock/Protocol.py
 pydoorlock/__pycache__/
 
 ci/download
+
+ansible/.vault_pass
