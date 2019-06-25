@@ -14,7 +14,7 @@
   raw: pacman -Syu --noconfirm
 
 - name: Install Python
-  raw: pacman -S python --noconfirm --
+  raw: pacman -S python --noconfirm --needed
 
 - name: Gather facts
   setup:
