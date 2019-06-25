@@ -23,13 +23,20 @@ VEXPRESS_DTB = vexpress-v2p-ca15-tc1.dtb
 QEMU_IMAGE = $(OUT)/qemu-vexpress.qcow2
 QEMU_KERNEL = $(OUT)/zImage
 QEMU_DTB = $(OUT)/$(VEXPRESS_DTB)
+NBD = /dev/nbd0
+
+NBD_CONNECT = "sudo modprobe nbd; sudo qemu-nbd --discard=on --connect=$(NBD) $(QEMU_IMAGE)"
+NBD_DISCONNECT = "sudo qemu-nbd --disconnect $(NBD)"
+
+MOUNT_ROOTFS = "mkdir $(MNT_ROOTFS) && sudo mount /dev/nbd0p2 $(MNT_ROOTFS)"
+UMOUNT_ROOTFS = "sudo umount $(MNT_ROOTFS) && rm -rf $(MNT_ROOTFS)"
 
 SSH_PORT = 5555
 IMAGE_SIZE = 5G
 
 MNT_ROOTFS = /tmp/ROOTFS
 
-all: qemu_img
+all:
 
 qemu: extract_kernel
 	qemu-system-arm							\
@@ -43,11 +50,8 @@ qemu: extract_kernel
 		-append "root=/dev/mmcblk0p2 rootwait rw audit=off"
 
 
-qemu_img: $(QEMU_IMAGE)
-
 extract_kernel: $(QEMU_IMAGE)
-	sudo modprobe nbd
-	sudo qemu-nbd -r --connect=/dev/nbd0 $(QEMU_IMAGE)
+	eval $(NBD_CONNECT)
 	mkdir $(MNT_ROOTFS)
 	sudo mount /dev/nbd0p1 $(MNT_ROOTFS)
 
@@ -56,28 +60,24 @@ extract_kernel: $(QEMU_IMAGE)
 
 	sudo umount $(MNT_ROOTFS)
 	rm -rf $(MNT_ROOTFS)
-	sudo qemu-nbd --disconnect /dev/nbd0
+	eval $(NBD_DISCONNECT)
 
-image_deploy_key: $(QEMU_IMAGE)
-	sudo modprobe nbd
-	sudo qemu-nbd --connect=/dev/nbd0 $(QEMU_IMAGE)
-
-	sudo mkdir $(MNT_ROOTFS)
-	sudo mount /dev/nbd0p2 $(MNT_ROOTFS)
+deploy_key: $(QEMU_IMAGE)
+	eval $(NBD_CONNECT)
+	eval $(MOUNT_ROOTFS)
 
 	sudo mkdir -p $(MNT_ROOTFS)/root/.ssh
 	sudo cp $(SSH_PUB_KEY) $(MNT_ROOTFS)/root/.ssh/authorized_keys
 
-	sudo umount $(MNT_ROOTFS)
-	sudo rm -rf $(MNT_ROOTFS)
-	sudo qemu-nbd --disconnect /dev/nbd0
+	eval $(UMOUNT_ROOTFS)
+	eval $(NBD_DISCONNECT)
 
 $(QEMU_IMAGE): $(ARCHARM_PKG)
 	mkdir -p $(OUT)
 	qemu-img create -f qcow2 -o size=$(IMAGE_SIZE) $(QEMU_IMAGE)
-	sudo modprobe nbd
-	sudo qemu-nbd --connect=/dev/nbd0 $(QEMU_IMAGE)
-	#sudo sfdisk /dev/nbd0 < part_layout
+
+	eval $(NBD_CONNECT)
+
 	sudo parted --script /dev/nbd0 		\
 		mklabel msdos			\
 		mkpart primary fat32 1M 128M	\
@@ -87,12 +87,14 @@ $(QEMU_IMAGE): $(ARCHARM_PKG)
 	sudo mkfs.ext4 -j -E lazy_itable_init=0,lazy_journal_init=0 /dev/nbd0p2
 	sync
 
-	sudo mkdir $(MNT_ROOTFS)
-	sudo mount /dev/nbd0p2 $(MNT_ROOTFS)
+	eval $(MOUNT_ROOTFS)
+
+	sudo rm -rf $(MNT_ROOTFS)/*
+	sudo mkdir -m 700 $(MNT_ROOTFS)/lost+found
 	sudo mkdir $(MNT_ROOTFS)/boot
 	sudo mount /dev/nbd0p1 $(MNT_ROOTFS)/boot
 
-	sudo tar -xf $^ -C $(MNT_ROOTFS)
+	sudo tar --warning=none -xf $< -C $(MNT_ROOTFS)
 
 	# Some adjustments. We need to modprobe drm-pl111 on boot.
 	echo pl111-drm | sudo tee $(MNT_ROOTFS)/etc/modules-load.d/drm-pl111.conf
@@ -100,10 +102,8 @@ $(QEMU_IMAGE): $(ARCHARM_PKG)
 
 	sync
 	sudo umount $(MNT_ROOTFS)/boot
-	sudo umount $(MNT_ROOTFS)
-	sudo rm -rf $(MNT_ROOTFS)
-	sudo qemu-nbd --disconnect /dev/nbd0
-
+	eval $(UMOUNT_ROOTFS)
+	eval $(NBD_DISCONNECT)
 
 $(ARCHARM_PKG):
 	mkdir -p $(DIR_DOWNLOAD)
