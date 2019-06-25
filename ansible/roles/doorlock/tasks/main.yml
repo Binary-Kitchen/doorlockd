@@ -1,4 +1,9 @@
 ---
+- name: Install some essential packages
+  pacman:
+    name: ['vim','htop','screen']
+    state: present
+
 - name: Install unclutter
   pacman:
     name: unclutter

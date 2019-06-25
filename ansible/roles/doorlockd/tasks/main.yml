@@ -1,7 +1,7 @@
 ---
 - name: Install some essential packages
   pacman:
-    name: ['git','base-devel','sudo','vim']
+    name: ['git','base-devel','sudo']
     state: present
 
 - name: Create doorlock user
