@@ -38,5 +38,5 @@
   failed_when: command_result.stderr != ''
   changed_when: command_result.rc == 0
   environment:
-    NSUPDATE_SERVER: ns1.binary-kitchen.de 
+    NSUPDATE_SERVER: ns1.binary-kitchen.de
     NSUPDATE_KEY: /etc/acme/nsupdate.key

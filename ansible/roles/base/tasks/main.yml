@@ -3,7 +3,7 @@
   raw: pacman-key --init
 
 - name: Pacman key populate
-  raw: | 
+  raw: |
        if [[ "`uname -m`" == "armv7l" ]]; then
         pacman-key --populate archlinuxarm
        else
@@ -15,7 +15,7 @@
 
 - name: Install Python
   raw: pacman -S python --noconfirm --
-  
+
 - name: Gather facts
   setup:
 

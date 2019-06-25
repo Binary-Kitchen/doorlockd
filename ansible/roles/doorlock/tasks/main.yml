@@ -33,7 +33,7 @@
 - name: Create group autologin
   group:
     name: autologin
-    state: present 
+    state: present
 
 - name: Add user doorlock to group autologin
   user:

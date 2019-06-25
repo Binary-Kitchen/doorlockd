@@ -57,7 +57,7 @@
     PACMAN: pikaur
 
 - name: Enable doorlockd and doorstate
-  service: 
+  service:
     enabled: yes
     name: "{{ item }}"
   with_items:
