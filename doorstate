@@ -77,12 +77,22 @@ class AudioPlayer(Thread):
                     self._process = Popen(['mpg123', self._filename])
 
 def mqtt_on_connect(client, userdata, flags, rc):
+    global mqtt_connected
+
     if rc == 0:
         print("MqTT: Connection returned result: " + mqtt.connack_string(rc))
         client.subscribe(topic_alarm)
         client.subscribe(topic_lockstate)
+        mqtt_connected = True
     else:
         print("MqTT: Bad connection Returned code=", rc)
+
+def mqtt_on_disconnect(client, userdata, rc):
+    global mqtt_connected
+
+    if rc != 0:
+        print("Unexpected MQTT disconnection")
+        mqtt_connected = False
 
 def mqtt_on_lockstate(client, userdata, message):
     global is_locked
@@ -113,6 +123,7 @@ f_door_call = os.path.join(sounds_prefix, 'door_call.mp3')
 mqttc = mqtt.Client(client_id=prog)
 mqttc.username_pw_set(cfg.str('MQTT_USERNAME'), cfg.str('MQTT_PASSWORD'))
 mqttc.on_connect = mqtt_on_connect
+mqttc.on_disconnect = mqtt_on_disconnect
 mqttc.message_callback_add(topic_alarm, mqtt_on_alarm)
 mqttc.message_callback_add(topic_lockstate, mqtt_on_lockstate)
 mqttc.connect(cfg.str('MQTT_HOST'))
@@ -134,16 +145,28 @@ door_open = line.get_value() == 1
 
 door_alarm_set = False
 
-while True:
-    # Synchronous loops: MQTT + GPIO
-    mqttc.loop(timeout=0.5, max_packets=1)
+global mqtt_connected
+mqtt_connected = False
 
+mqttc.loop_start()
+
+while True:
+    # Synchronous loop: GPIO
     ev_line = line.event_wait(sec=1)
     if ev_line:
         event = line.event_read()
         door_open = event.type == gpiod.LineEvent.RISING_EDGE
         print('door_open: %s' % door_open)
         publish_doorstate()
+
+    if not mqtt_connected:
+        print('No MQTT connection!')
+        if door_alarm_set:
+            player_door_call.set(False)
+        door_alarm_set = False
+
+        player_alarm.set(False)
+        continue
 
     # Door State stuff
     if is_locked is not None:
@@ -159,6 +182,8 @@ while True:
             if door_alarm_set:
                 player_door_call.set(False)
             door_alarm_set = False
+
+mqttc.loop_stop()
 
 player_alarm.shutdown()
 player_alarm.join()
