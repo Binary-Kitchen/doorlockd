@@ -52,8 +52,6 @@ class AudioPlayer(Thread):
         self._event.set()
 
     def run(self):
-        print('Run')
-
         while not self._shutdown:
             self._event.wait(1)
 
@@ -144,12 +142,8 @@ while True:
     if ev_line:
         event = line.event_read()
         door_open = event.type == gpiod.LineEvent.RISING_EDGE
+        print('door_open: %s' % door_open)
         publish_doorstate()
-
-    print('Loop: door_open: %s' % door_open)
-    print('Loop: is_locked: %s' % is_locked)
-    print('Loop: door_alarm_set: %s' % door_alarm_set)
-    print()
 
     # Door State stuff
     if is_locked is not None:
