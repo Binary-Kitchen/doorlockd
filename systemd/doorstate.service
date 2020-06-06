@@ -6,7 +6,8 @@ After=network.target network-online.target
 User=root
 Group=root
 ExecStart=doorstate
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
-
