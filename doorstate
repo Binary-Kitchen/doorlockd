@@ -149,6 +149,7 @@ global mqtt_connected
 mqtt_connected = False
 
 mqttc.loop_start()
+publish_doorstate()
 
 while True:
     # Synchronous loop: GPIO
