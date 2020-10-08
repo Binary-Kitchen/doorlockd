@@ -19,17 +19,20 @@ details.
 
 from pydoorlock.EventClient import EventClient
 from pydoorlock.Door import DoorState
+
 import json
+import threading
 
 state = DoorState(0)
 
-if __name__ == "__main__":
-    #we need a thread that listens for server sent events
-    #we need a thread that does serial port communication
-    #do the networking in the main thread
-
-    ec = EventClient("http://localhost:8080/push")
+def push_handler():
+    ec = EventClient("http://localhost:5000/push")
     for event in ec.events():
         data = json.loads(event['data'])
         state = DoorState(data['status'])
         print(state)
+
+if __name__ == "__main__":
+    status_thread = threading.Thread(target=push_handler)
+    status_thread.start()
+    status_thread.join()
