@@ -50,10 +50,6 @@ def emit_doorstate(response=None):
     evt.clear()
 
 
-def event_str():
-    return "data: {}\n\n".format(json_push_state)
-
-
 def push_state():
     def event_str():
         return "data: {}\n\n".format(json_push_state)
