@@ -26,7 +26,6 @@ from wtforms.validators import DataRequired, Length
 
 from .Door import DoorState
 from .Doorlock import DoorlockResponse
-from .Authenticator import AuthMethod
 
 log = logging.getLogger()
 webapp = Flask(__name__)
