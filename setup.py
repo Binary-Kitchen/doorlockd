@@ -17,6 +17,9 @@ with open("VERSION") as version_file:
 
 setup(name="pydoorlock", version=version,
       description="A Python interface for doorlock",
-      license="GPLv2", url="https://github.com/Binary-Kitchen/doorlockd/",
+      license="GPLv2",
+      url="https://github.com/Binary-Kitchen/doorlockd/",
       author_email="ralf@binary-kitchen.de",
-      packages=find_packages())
+      packages=find_packages(),
+      install_requires=["Flask", "Flask-WTF", "pyserial", "python-ldap"],
+      )
