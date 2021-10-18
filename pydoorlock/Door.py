@@ -23,6 +23,7 @@ class DoorState(Enum):
     Present = 1
     Closed = 2
 
+    @staticmethod
     def from_string(string):
         if string == 'lock':
             return DoorState.Closed
