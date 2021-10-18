@@ -53,5 +53,5 @@ class Config:
         return self.config.get(self.config_topic, key)
 
     @check_exists
-    def int(self,key):
+    def int(self, key):
         return self.config.getint(self.config_topic, key)
