@@ -73,7 +73,7 @@ class Authenticator:
         return self._backends
 
     def _try_auth_local(self, user, password):
-        log.info('  Trying to local auth (user, password) as user %s',user)
+        log.info('  Trying to local auth (user, password) as user %s', user)
         if user not in self._local_db:
             log.info('  No user %s in local database', user)
             return DoorlockResponse.Perm
