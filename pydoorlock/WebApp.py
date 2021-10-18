@@ -42,15 +42,17 @@ def emit_doorstate(response=None):
         message = str(logic.state)
 
     json_push_state = json.dumps({
-        'message' : message,
-        'img' : logic.state.to_img()})
+        'message': message,
+        'img': logic.state.to_img()})
 
-    #Notify push clients
+    # Notify push clients
     evt.set()
     evt.clear()
 
+
 def event_str():
     return "data: {}\n\n".format(json_push_state)
+
 
 def push_state():
     def event_str():
@@ -63,6 +65,7 @@ def push_state():
             yield event_str()
     except GeneratorExit:
         return
+
 
 class AuthenticationForm(FlaskForm):
     username = StringField('Username', [Length(min=3, max=25)])
@@ -86,6 +89,7 @@ class AuthenticationForm(FlaskForm):
 
         return True
 
+
 @webapp.route('/display')
 def display():
     return render_template('display.html',
@@ -93,10 +97,11 @@ def display():
                            title=title,
                            welcome=welcome)
 
+
 @webapp.route('/push')
 def push():
     emit_doorstate()
-    resp = Response(push_state(),mimetype="text/event-stream")
+    resp = Response(push_state(), mimetype="text/event-stream")
     resp.headers['X-Accel-Buffering'] = 'no'
     resp.headers['Cache-Control'] = 'no-cache'
     return resp
@@ -201,4 +206,4 @@ def webapp_run(cfg, my_logic, status, version, template_folder, static_folder):
     webapp.template_folder = template_folder
     webapp.static_folder = static_folder
     webapp.debug = debug
-    webapp.run(host = host, port = 8080)
+    webapp.run(host=host, port=8080)
