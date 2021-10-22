@@ -29,7 +29,7 @@ install:
 	install -m 0644 etc/doorlockd.cfg $(ETC)
 	install -m 0644 systemd/doorlockd.service systemd/doorstate.service $(SYSTEMD_UNITS)
 
-	pip install --upgrade --force-reinstall --root=$(DESTDIR) .
+	python setup.py install --root="$(DESTDIR)" --optimize=1
 
 	cp -av share/* $(SHARE)
 
