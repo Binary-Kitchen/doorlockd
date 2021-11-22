@@ -30,7 +30,7 @@ install:
 	install -m 0644 systemd/doorlockd.service systemd/doorstate.service $(SYSTEMD_UNITS)
 
 	#pip install --upgrade --force-reinstall --no-dependencies --root=$(DESTDIR) .
-	python setup.py install --root="$(DESTDIR)" --optimize=1 --skip-build
+	python setup.py install --root="$(DESTDIR)" --optimize=1
 
 	cp -av share/* $(SHARE)
 
