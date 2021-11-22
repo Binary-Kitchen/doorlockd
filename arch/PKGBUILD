@@ -22,7 +22,7 @@ depends=('python3'
 	 'fluxbox'
 	 'nginx'
 	 'slim')
-source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=next")
+source=("git+https://github.com/Binary-Kitchen/${pkgname}.git#branch=cleanup")
 sha256sums=('SKIP')
 
 build() {
