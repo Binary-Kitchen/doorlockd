@@ -32,8 +32,19 @@ def check_exists(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         config = args[0]
-        if not config.config.has_option(config.config_topic, args[1]):
+        key = args[1]
+
+        if (len(args) == 3):
+            section = args[2]
+        else:
+            section = config.config_topic
+
+        if section is None:
+            section = config.config_topic
+
+        if not config.config.has_option(section, key):
             return None
+
         return func(*args, **kwargs)
     return decorator
 
@@ -45,13 +56,22 @@ class Config:
         self.config.read(join(SYSCONFDIR, 'doorlockd.cfg'))
 
     @check_exists
-    def boolean(self, key):
-        return self.config.getboolean(self.config_topic, key)
+    def boolean(self, key, topic = None):
+        if topic == None:
+            topic = self.config_topic
+
+        return self.config.getboolean(topic, key)
 
     @check_exists
-    def str(self, key):
-        return self.config.get(self.config_topic, key)
+    def str(self, key, topic = None):
+        if topic == None:
+            topic = self.config_topic
+
+        return self.config.get(topic, key)
 
     @check_exists
-    def int(self, key):
-        return self.config.getint(self.config_topic, key)
+    def int(self, key, topic = None):
+        if topic == None:
+            topic = self.config_topic
+
+        return self.config.getint(topic, key)
