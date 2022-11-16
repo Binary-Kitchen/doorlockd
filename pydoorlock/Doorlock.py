@@ -24,6 +24,7 @@ from threading import Thread
 from time import sleep
 from os.path import join
 from pydoorlock.AvrDoorlock import AvrDoorlockBackend
+from pydoorlock.NukiBridge import NukiBridge
 from pydoorlock.SimulationBackend import SimulationBackend
 
 from .Config import Config
@@ -134,6 +135,10 @@ class DoorHandler:
 
         if backend_type == "avr":
             self.backend = AvrDoorlockBackend(self)
+        elif backend_type == "nuki":
+            self.backend = NukiBridge(cfg.str("NUKI_ENDPOINT", "backend"),
+                                      cfg.str("NUKI_APITOKEN", "backend"),
+                                      cfg.str("NUKI_DEVICE", "backend"))
         elif backend_type == "simulation":
             self.backend = SimulationBackend(self)
         else:

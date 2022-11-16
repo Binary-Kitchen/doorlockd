@@ -202,4 +202,4 @@ def webapp_run(cfg, my_logic, status, version, template_folder, static_folder):
     webapp.template_folder = template_folder
     webapp.static_folder = static_folder
     webapp.debug = debug
-    webapp.run(host=host, port=8080)
+    webapp.run(host = host, port = 8080, use_reloader=False)
