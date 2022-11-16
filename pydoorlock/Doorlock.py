@@ -20,10 +20,13 @@ import logging
 from enum import Enum
 from random import sample
 from subprocess import run
-from serial import Serial
 from threading import Thread
 from time import sleep
 from os.path import join
+from pydoorlock.AvrDoorlock import AvrDoorlockBackend
+from pydoorlock.SimulationBackend import SimulationBackend
+
+from .Config import Config
 
 from .Door import DoorState
 from .Protocol import Protocol
@@ -68,6 +71,7 @@ class DoorlockResponse(Enum):
     # don't break old apps, value 3 is reserved now
     RESERVED = 3
     Inval = 4
+    BackendError = 5
 
     EmergencyUnlock = 10,
     ButtonLock = 11,
@@ -91,6 +95,8 @@ class DoorlockResponse(Enum):
             return 'Opened by button'
         elif self == DoorlockResponse.ButtonPresent:
             return 'Present by button'
+        elif self == DoorlockResponse.BackendError:
+            return "Backend Error"
 
         return 'Error'
 
@@ -110,7 +116,7 @@ class DoorHandler:
 
     wave_zonk = 'zonk.wav'
 
-    def __init__(self, cfg, sounds_prefix, scripts_prefix):
+    def __init__(self, cfg: Config, sounds_prefix, scripts_prefix):
         self._callback = None
 
         self.sounds = cfg.boolean('SOUNDS')
@@ -120,84 +126,65 @@ class DoorHandler:
         self.scripts_prefix = scripts_prefix
         self.run_hooks = cfg.boolean('RUN_HOOKS')
 
-        if cfg.boolean('SIMULATE_SERIAL'):
+        backend_type = cfg.str("BACKEND_TYPE", "backend")
+        print(backend_type)
+        if not backend_type:
+            log.error("No backend configured")
+            raise RuntimeError()
+
+        if backend_type == "avr":
+            self.backend = AvrDoorlockBackend(self)
+        elif backend_type == "simulation":
+            self.backend = SimulationBackend(self)
+        else:
+            log.error(f"Unknown backend {backend_type}")
+            raise RuntimeError
+
+    def state_changed(self, new_state):
+        if new_state == DoorState.Open:
+            self.run_hook('post_unlock')
+        elif new_state == DoorState.Present:
+            self.run_hook('post_present')
+        elif new_state == DoorState.Closed:
+            self.run_hook('post_lock')
+        else:
             return
 
-        device = cfg.str('SERIAL_PORT')
-        log.info('Using serial port: %s' % device)
+        self.state = new_state
 
-        self.serial = Serial(device, baudrate=9600, bytesize=8, parity='N',
-                             stopbits=1, timeout=0)
-        self.thread = Thread(target=self.thread_worker)
-        log.debug('Spawning RS232 Thread')
-        self.thread.start()
-
-    def thread_worker(self):
-        while True:
-            sleep(0.4)
-            while True:
-                rx = self.serial.read(1)
-                if len(rx) == 0:
-                    break
-
-                old_state = self.state
-                if rx == Protocol.STATE_SWITCH_RED.value.upper():
-                    self.close()
-                    log.info('Closed due to Button press')
-                    self.invoke_callback(DoorlockResponse.ButtonLock)
-                elif rx == Protocol.STATE_SWITCH_GREEN.value.upper():
-                    self.open()
-                    log.info('Opened due to Button press')
-                    self.invoke_callback(DoorlockResponse.ButtonUnlock)
-                elif rx == Protocol.STATE_SWITCH_YELLOW.value.upper():
-                    self.present()
-                    log.info('Present due to Button press')
-                    self.invoke_callback(DoorlockResponse.ButtonPresent)
-                elif rx == Protocol.EMERGENCY.value:
-                    log.warning('Emergency unlock')
-                    self.invoke_callback(DoorlockResponse.EmergencyUnlock)
-                else:
-                    log.error('Received unknown message "%s" from AVR' % rx)
-
-                self.sound_helper(old_state, self.state, True)
-
-            if self.do_close:
-                tx = Protocol.STATE_SWITCH_RED.value
-                self.do_close = False
-            elif self.state == DoorState.Present:
-                tx = Protocol.STATE_SWITCH_YELLOW.value
-            elif self.state == DoorState.Open:
-                tx = Protocol.STATE_SWITCH_GREEN.value
-            else:
-                continue
-
-            self.serial.write(tx)
-            self.serial.flush()
 
     def open(self):
         if self.state == DoorState.Open:
             return DoorlockResponse.AlreadyActive
 
-        self.state = DoorState.Open
-        self.run_hook('post_unlock')
-        return DoorlockResponse.Success
+        if self.backend.set_state(DoorState.Open):
+            self.state = DoorState.Open
+            self.run_hook('post_unlock')
+            return DoorlockResponse.Success
+
+        return DoorlockResponse.BackendError
 
     def present(self):
         if self.state == DoorState.Present:
             return DoorlockResponse.AlreadyActive
 
-        self.state = DoorState.Present
-        self.run_hook('post_present')
-        return DoorlockResponse.Success
+        if self.backend.set_state(DoorState.Present):
+            self.state = DoorState.Present
+            self.run_hook('post_present')
+            return DoorlockResponse.Success
+
+        return DoorlockResponse.BackendError
 
     def close(self):
         if self.state == DoorState.Closed:
             return DoorlockResponse.AlreadyActive
 
-        self.do_close = True
-        self.state = DoorState.Closed
-        self.run_hook('post_lock')
-        return DoorlockResponse.Success
+        if self.backend.set_state(DoorState.Closed):
+            self.state = DoorState.Closed
+            self.run_hook('post_lock')
+            return DoorlockResponse.Success
+
+        return DoorlockResponse.BackendError
 
     def request(self, state):
         old_state = self.state
