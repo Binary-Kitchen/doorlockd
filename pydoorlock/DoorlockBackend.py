@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class DoorlockBackend(ABC):
     def __init__(self):
         self.callbacks = list()

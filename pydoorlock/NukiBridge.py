@@ -1,12 +1,13 @@
 import json
-import requests
-from urllib.parse import urljoin
-from .Door import DoorState
-from .DoorlockBackend import DoorlockBackend
 import logging
 import threading
 import time
-from typing import Set
+from urllib.parse import urljoin
+
+import requests
+
+from .Door import DoorState
+from .DoorlockBackend import DoorlockBackend
 
 log = logging.getLogger(__name__)
 

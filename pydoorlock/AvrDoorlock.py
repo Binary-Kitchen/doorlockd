@@ -1,10 +1,12 @@
-from .DoorlockBackend import DoorlockBackend
-from .Protocol import Protocol
-from .Door import DoorState
-from serial import Serial
-from time import sleep
 import logging
 import threading
+from time import sleep
+
+from serial import Serial
+
+from .Door import DoorState
+from .DoorlockBackend import DoorlockBackend
+from .Protocol import Protocol
 
 log = logging.getLogger(__name__)
 
