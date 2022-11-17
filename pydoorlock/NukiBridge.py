@@ -113,7 +113,7 @@ class NukiBridge(DoorlockBackend):
                 continue
 
             self.current_state = state
-            print(state)
+            log.debug(f"Nuki reported state: {state}")
             time.sleep(10)
 
     def set_state(self, state):

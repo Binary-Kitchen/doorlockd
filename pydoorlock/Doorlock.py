@@ -128,7 +128,6 @@ class DoorHandler:
         self.run_hooks = cfg.boolean('RUN_HOOKS')
 
         backend_type = cfg.str("BACKEND_TYPE", "backend")
-        print(backend_type)
         if not backend_type:
             log.error("No backend configured")
             raise RuntimeError()
