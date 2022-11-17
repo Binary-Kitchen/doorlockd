@@ -21,5 +21,5 @@ setup(name="pydoorlock", version=version,
       url="https://github.com/Binary-Kitchen/doorlockd/",
       author_email="ralf@binary-kitchen.de",
       packages=find_packages(),
-      install_requires=["Flask", "Flask-WTF", "pyserial", "python-ldap"],
+      install_requires=["Flask", "Flask-WTF", "pyserial", "python-ldap", "requests"],
       )
