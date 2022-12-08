@@ -1,0 +1,2 @@
+# Place blacklisted usernames here, separated by newlines. Blacklist applies to
+# all authentication backends.

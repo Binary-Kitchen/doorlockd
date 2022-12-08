@@ -43,6 +43,17 @@ class Authenticator:
         self._simulate = cfg.boolean('SIMULATE_AUTH')
         self._backends = set()
 
+        f_blacklist = cfg.str('USER_BLACKLIST')
+        self._user_blacklist = set()
+        if f_blacklist:
+            with open(f_blacklist, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('#'):
+                        continue
+                    if line:
+                        self._user_blacklist.add(line)
+
         if self._simulate:
             return
 
@@ -104,13 +115,18 @@ class Authenticator:
         return DoorlockResponse.Success
 
     def try_auth(self, credentials):
+        user, password = credentials
+
+        if user in self._user_blacklist:
+            return DoorlockResponse.Perm
+
         if self._simulate:
             log.info('SIMULATION MODE! ACCEPTING ANYTHING!')
             return DoorlockResponse.Success
         if AuthMethod.LDAP_USER_PW in self._backends:
-            retval = self._try_auth_ldap(credentials[0], credentials[1])
+            retval = self._try_auth_ldap(user, password)
             if retval == DoorlockResponse.Success:
                 return retval
         if AuthMethod.LOCAL_USER_DB in self._backends:
-            return self._try_auth_local(credentials[0], credentials[1])
+            return self._try_auth_local(user, password)
         return DoorlockResponse.Perm
