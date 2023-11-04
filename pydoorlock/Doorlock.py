@@ -31,7 +31,7 @@ from .Protocol import Protocol
 log = logging.getLogger()
 
 # copied from sudo
-eperm_insults = {
+eperm_insults = [
         'Wrong!  You cheating scum!',
         'And you call yourself a Rocket Scientist!',
         'No soap, honkie-lips.',
@@ -50,7 +50,7 @@ eperm_insults = {
         'I\'ve seen penguins that can type better than that.',
         'Have you considered trying to match wits with a rutabaga?',
         'You speak an infinite deal of nothing',
-}
+]
 
 
 def choose_insult():
