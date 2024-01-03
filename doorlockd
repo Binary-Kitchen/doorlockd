@@ -37,7 +37,7 @@ __status__ = 'Development'
 __maintainer__ = 'Ralf Ramsauer'
 __version__ = '0.0'
 
-log_level = logging.DEBUG
+log_level = logging.INFO
 date_fmt = '%Y-%m-%d %H:%M:%S'
 log_fmt = '%(asctime)-15s %(levelname)-8s %(message)s'
 log = logging.getLogger()

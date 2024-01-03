@@ -77,7 +77,7 @@ class DoorHandler:
             raise RuntimeError
 
         self.backend.set_state(self.state)
-        self.backend.register_state_changed_handler(self.update_state)
+        self.backend.register_state_changed_handler(self.backend_state_change_handler)
 
     def backend_state_change_handler(self, new_state):
         self.update_state(self.state, new_state, DoorlockResponse.Success)
@@ -121,7 +121,7 @@ class DoorHandler:
         elif state == DoorState.Open:
             err = self.open()
 
-        self.update_state(old_state, self.state, err)
+        self.update_state(old_state, state, err)
 
         return err
 

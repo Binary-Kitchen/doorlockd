@@ -145,15 +145,15 @@ class NukiBridge(DoorlockBackend):
                 continue
 
             if not NukiBridgeDevice.compare_device_state(dev_state, last_dev_state):
-                log.debug(f"Nuki changed state: {dev_state}")
+                log.info(f"Nuki changed state: {dev_state}")
 
                 if self.current_state != DoorState.Closed and dev_state["stateName"] == "locked":
                     self.current_state = DoorState.Closed
-                    self.state_change_callback(self.current_state, DoorlockResponse.Success)
+                    self.state_change_callback(self.current_state)
 
                 if self.current_state != DoorState.Open and dev_state["stateName"] == "unlocked":
                     self.current_state = DoorState.Open
-                    self.state_change_callback(self.current_state, DoorlockResponse.Success)
+                    self.state_change_callback(self.current_state)
 
             last_dev_state = dev_state
             time.sleep(10)
