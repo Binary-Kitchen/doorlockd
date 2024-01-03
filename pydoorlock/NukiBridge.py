@@ -25,8 +25,17 @@ import requests
 
 from .Door import DoorState
 from .DoorlockBackend import DoorlockBackend
+from .DoorlockResponse import DoorlockResponse
 
 log = logging.getLogger(__name__)
+reqlog = logging.getLogger('urllib3')
+reqlog.setLevel(logging.WARNING)
+
+def compare_dicts(d1, d2, ignore_keys):
+    ka = set(d1).difference(ignore_keys)
+    kb = set(d2).difference(ignore_keys)
+
+    return ka == kb and all(d1[k] == d2[k] for k in ka)
 
 class NukiBridgeDevice():
     """
@@ -80,6 +89,9 @@ class NukiBridgeDevice():
                 if info["nukiId"] == self.get_device_id():
                     return info["lastKnownState"]
 
+    def compare_device_state(state1, state2):
+        return compare_dicts(state1, state2, ["timestamp"])
+
     def lock(self, device_name: str = None): 
         if device_name == None:
             nukiId = self.device_id
@@ -121,25 +133,46 @@ class NukiBridge(DoorlockBackend):
         self.device = NukiBridgeDevice(endpoint, api_key, device_name)
         self.poll_thread = threading.Thread(target=self.poll_worker)
         self.poll_thread.start()
+        self.current_state = DoorState.Closed
 
     def poll_worker(self):
-        while True:
-            state = self.device.get_device_state()
+        last_dev_state = self.device.get_device_state()
 
-            if state is None:
+        while True:
+            dev_state = self.device.get_device_state()
+
+            if dev_state is None:
                 continue
 
-            self.current_state = state
-            log.debug(f"Nuki reported state: {state}")
+            if not NukiBridgeDevice.compare_device_state(dev_state, last_dev_state):
+                log.debug(f"Nuki changed state: {dev_state}")
+
+                if self.current_state != DoorState.Closed and dev_state["stateName"] == "locked":
+                    self.current_state = DoorState.Closed
+                    self.state_change_callback(self.current_state, DoorlockResponse.Success)
+
+                if self.current_state != DoorState.Open and dev_state["stateName"] == "unlocked":
+                    self.current_state = DoorState.Open
+                    self.state_change_callback(self.current_state, DoorlockResponse.Success)
+
+            last_dev_state = dev_state
             time.sleep(10)
 
     def set_state(self, state):
+        success = False
+
         if state == DoorState.Open:
             log.info("open nuki")
-            return self.device.unlock()
+            if self.device.unlock():
+                self.current_state = DoorState.Open
+                success = True
         elif state == DoorState.Closed:
             log.info("close nuki")
-            return self.device.lock()
+            if self.device.lock():
+                self.current_state = DoorState.Closed
+                success = True
+
+        return success
 
     def get_state(self, state):
         return self.current_state

@@ -21,7 +21,7 @@ import logging
 
 from enum import Enum
 
-from .Doorlock import DoorlockResponse
+from .DoorlockResponse import DoorlockResponse
 
 log = logging.getLogger()
 

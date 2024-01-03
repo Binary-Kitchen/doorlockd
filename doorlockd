@@ -25,7 +25,8 @@ from os.path import abspath, join
 
 from pydoorlock.Authenticator import Authenticator
 from pydoorlock.WebApp import webapp_run, emit_doorstate
-from pydoorlock.Doorlock import DoorlockResponse, DoorHandler
+from pydoorlock.Doorlock import DoorHandler
+from pydoorlock.DoorlockResponse import DoorlockResponse
 from pydoorlock.Config import Config, root_prefix, sounds_prefix
 
 __author__ = 'Ralf Ramsauer'

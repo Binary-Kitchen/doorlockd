@@ -23,8 +23,8 @@ class DoorlockBackend(ABC):
         self.callbacks = list()
         self.current_state = None
 
-    def update_state(self):
-        self.state_change_callback(self.current_state)
+    def register_state_changed_handler(self, callback):
+        self.state_change_callback = callback
 
     @abstractmethod
     def set_state(self, state):
