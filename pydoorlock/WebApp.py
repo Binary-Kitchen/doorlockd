@@ -120,6 +120,9 @@ def api():
     password = request.form.get('pass')
     command = request.form.get('command')
 
+    if (command is not None) and (command == 'status'):
+        return json_response(DoorlockResponse.Success)
+
     if any(v is None for v in [user, password, command]):
         log.warning('Incomplete API request')
         abort(400)
@@ -130,9 +133,6 @@ def api():
                              'Invalid username or password format')
 
     credentials = user, password
-
-    if command == 'status':
-        return json_response(logic.auth.try_auth(credentials))
 
     desired_state = DoorState.from_string(command)
     if not desired_state:
