@@ -128,11 +128,16 @@ mqttc.message_callback_add(topic_alarm, mqtt_on_alarm)
 mqttc.message_callback_add(topic_lockstate, mqtt_on_lockstate)
 mqttc.connect(cfg.str('MQTT_HOST'))
 
-chip = gpiod.Chip(cfg.str('GPIO_CHIP'))
 pin = cfg.int('GPIO_PIN')
 
-line = chip.get_line(pin)
-line.request(consumer=prog, type=gpiod.LINE_REQ_EV_BOTH_EDGES)
+request = gpiod.request_lines(
+        cfg.str('GPIO_CHIP'),
+        consumer = prog,
+        config = {
+            pin: gpiod.LineSettings(direction=gpiod.line.Direction.INPUT,
+                                    edge_detection=gpiod.line.Edge.BOTH),
+        },
+)
 
 player_alarm = AudioPlayer(f_alarm)
 player_alarm.start()
@@ -141,7 +146,7 @@ player_door_call = AudioPlayer(f_door_call)
 player_door_call.start()
 
 global door_open
-door_open = line.get_value() == 1
+door_open = request.get_value(pin) == gpiod.line.Value.ACTIVE
 
 door_alarm_set = False
 
@@ -153,10 +158,10 @@ publish_doorstate()
 
 while True:
     # Synchronous loop: GPIO
-    ev_line = line.event_wait(sec=1)
+    ev_line = request.wait_edge_events(1)
     if ev_line:
-        event = line.event_read()
-        door_open = event.type == gpiod.LineEvent.RISING_EDGE
+        request.read_edge_events()
+        door_open = request.get_value(pin) == gpiod.line.Value.ACTIVE
         print('door_open: %s' % door_open)
         publish_doorstate()
 
